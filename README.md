@@ -1,4 +1,4 @@
-# Project with FMM (Fast Multipole Method)
+# Project with FMM (Fast Marching Method)
 
 ### First stage: getting familiarized with FMM
 #### Spring Break 2022
