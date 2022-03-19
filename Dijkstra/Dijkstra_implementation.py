@@ -50,6 +50,16 @@ def Dijstra(vertices, edges, start):
     for j in range(N):
         if vertices[start][j] == 1:
             distance[j] = edges[start][j]
+            
+    # If the nodes are not connected then their distance is infinity in the original edge matrix
+    # We put those infinity entries in case the user put zeroes
+    
+    for j in range(N):
+        for i in range(N):
+            if vertices[i][j] == 0:
+                edges[i][j] = infinity
+    
+    
     
     for vertex in range(N):
         # Here we iterate for each vertex in our graph
@@ -79,7 +89,49 @@ def Dijstra(vertices, edges, start):
     return( distance, previous, Q )
         
                 
-                
-        
+## Uncomment this for examples
+## First example in Notizen
+#
+#vertices = [ [0, 1, 1, 0, 0], 
+#            [0, 0, 1, 0, 0], 
+#            [0, 0, 0, 1, 1], 
+#            [0, 1, 0, 0, 1], 
+#            [0, 0, 0, 0, 0] ]
+#edges = [ [0, 100, 30, 0, 0],
+#         [0, 0, 20, 0, 0], 
+#         [0, 0, 0, 10, 60],
+#         [0, 15, 0, 0, 50], 
+#         [0, 0, 0, 0, 0]]
+#
+#start = 0
+#distance, previous, Q = Dijstra(vertices, edges, start)     
+#print('Distance', distance)
+#print('Path', previous)
+#
+#
+## Second example in Notizen
+#vertices = [[0, 0, 1, 1, 0, 0, 0],
+#            [0, 0, 1, 0, 0, 1, 0],
+#            [1, 1, 0, 1, 1, 0, 0],
+#            [1, 0, 1, 0, 0, 0, 1],
+#            [0, 0, 1, 0, 0, 1, 0],
+#            [0, 1, 0, 0, 1, 0, 1],
+#            [0, 0, 0, 1, 0, 1, 0]]
+#
+#edges = [[0, 0, 1, 2, 0, 0, 0],
+#         [0, 0, 2, 0, 0, 3, 0],
+#         [1, 2, 0, 1, 3, 0, 0],
+#         [2, 0, 1, 0, 0, 0, 1],
+#         [0, 0, 3, 0, 0, 2, 0],
+#         [0, 3, 0, 0, 2, 0, 1],
+#         [0, 0, 0, 1, 0, 1, 0]] 
+#start = 1  
+#distance, previous, Q = Dijstra(vertices, edges, start)     
+#print('Distance', distance)
+#print('Path', previous)
+#start = 4
+#distance, previous, Q = Dijstra(vertices, edges, start)     
+#print('Distance', distance)
+#print('Path', previous)     
     
 
