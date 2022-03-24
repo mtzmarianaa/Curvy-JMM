@@ -5,10 +5,13 @@ I followed the same idea coded there but this is in C
  */
 
 #include <stdio.h>
-#define INFINITY 9999
+// #include <math.h>
+
+#define INFINITY 1e5
+
 #define MAX 5
 
-int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start );
+void Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start, int *distance);
 
 int main(){
     // Same example as in the python file
@@ -80,17 +83,17 @@ int main(){
     edges[4][3] = 0;
     edges[4][4] = 0;
 
-    distance = Dijkstra(vertices[MAX][MAX], edges[MAX][MAX], start )
+    Dijkstra(vertices, edges, start, distance);
 
-    for (i = 0, i< MAX, i++)
+    for (i = 0; i< MAX; i++)
     {
-        printf("Distance from %d, to %d is %lf", start, i, distance[i]);
+        printf("Distance from %d, to %d is %d \n", start, i, distance[i]);
     }
 
     return 0;
 }
 
-int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start ){
+void Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start, int *distance ){
     /*
      Dijkstra's algorithm to find the shortest path between all the nodes in a 
     grapha and the initial node (start).
@@ -102,20 +105,21 @@ int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start ){
        distance : the distance of the shortest path up to that node
     */
    // Initialization
-   int Q[MAX], distance[MAX], previous[MAX], minDistance, i, j, u, v;
+   int Q[MAX], previous[MAX], minDistance, i, j, u, v;
 
-   for(i = 0, i < MAX, i++)
+   for(int i = 0; i < MAX; i++)
    {
        Q[i] = 0;
        distance[i] = INFINITY;
        previous[i] = start;
    }
 
+
    Q[start] = 1;
    distance[start] = 0;
 
    // Initialize the distance of the nodes that are connected to the starting node
-   for(j = 0, j < MAX, j++)
+   for(j = 0; j < MAX; j++)
    {
        if(vertices[start][j] == 1)
        {
@@ -126,9 +130,9 @@ int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start ){
    // If the nodes are not connected then their distance is infinity in the original edge matrix
    // We put those infinity entries in case the user put zeroes
 
-   for(j = 0, j < MAX, j++)
+   for(j = 0; j < MAX; j++)
    {
-       for(i = 0, i < MAX, i++)
+       for(i = 0; i < MAX; i++)
        {
            if(vertices[i][j] == 0)
            {
@@ -137,13 +141,23 @@ int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start ){
        }
    }
 
+
+   for (int i = 0; i < MAX; ++i) {
+    for (int j = 0 ; j < MAX; ++j) {
+        printf("%d ", edges[i][j]);
+    }
+    printf("\n");
+   }
+   printf("\n");
+
    // We iterate for each vertex in our graph
 
-   for(v = 0, v < MAX, v++)
+   for(v = 0; v < MAX; v++)
    {
        minDistance = INFINITY;
+       int next_node_in_path;
        // Find the next optimal node in the path
-       for(u = 0, u < MAX, u++)
+       for(u = 0; u < MAX; u++)
        {
            if(distance[u] < minDistance && Q[u] == 0)
            {
@@ -158,17 +172,20 @@ int Dijkstra( int vertices[MAX][MAX], int edges[MAX][MAX], int start ){
        // Update all the other current weights of the nodes in the priority queue
        // But we must update just for the nodes that are actually the neighbours of next_node_in_path
 
-       for(i = 0, i< MAX, i++)
+       for(i = 0; i< MAX; i++)
        {
            if(Q[i] == 0 && (minDistance + edges[next_node_in_path][i] < distance[i]) )
            {
                // If this happens then it is a good idea to visit next_in_path and then i
                distance[i] = minDistance + edges[next_node_in_path][i];
                previous[i] = next_node_in_path;
+
+               for (int k = 0; k < MAX; ++k) 
+                    printf("%d ", distance[k]);
+               printf("\n");
            } 
        }
 
-       return(distance)
 
    }
 
