@@ -1,20 +1,19 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "C/C++ Runner: Debug Session",
-      "type": "cppdbg",
-      "request": "launch",
-      "args": [
-        ""
-      ],
-      "stopAtEntry": true,
-      "cwd": "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/Dijkstra",
-      "environment": [],
-      "program": "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/Dijkstra/build/Debug/outDebug",
-      "internalConsoleOptions": "openOnSessionStart",
-      "MIMode": "gdb",
-      "externalConsole": true
-    }
-  ]
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch (lldb)",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${fileDirname}/${fileBasenameNoExtension}",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false
+        }
+    ]
 }
