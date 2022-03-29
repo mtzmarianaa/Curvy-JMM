@@ -6,7 +6,12 @@ If you have a variable var in your program, &var will give you its address in th
 
 Pointers (pointer variables) are special variables that are used to store addresses rather than values.
 
+The name "malloc" stands for memory allocation.
 
+The malloc() function reserves a block of memory of the specified number of bytes. 
+And, it returns a pointer of void which can be casted into pointers of any form.
+Dynamically allocated memory created with either calloc() or malloc() doesn't get
+freed on their own. You must explicitly use free() to release the space.
 
 */
 
@@ -48,6 +53,32 @@ int main()
   printf("num2 = %d \n", num2);
   printf("Address num1 = %p\n", &num1);
   printf("Address num2 = %p \n", & num2);
+
+
+  int n, i, *ptr, sum = 0;
+
+  printf("Enter number of elements: ");
+  scanf("%d", &n);
+
+  ptr = (int*) malloc(n * sizeof(int));
+ 
+  // if memory cannot be allocated
+  if(ptr == NULL) {
+    printf("Error! memory not allocated.\n");
+    exit(0);
+  }
+
+  printf("Enter elements: \n");
+  for(i = 0; i < n; ++i) {
+    scanf("%d", ptr + i);
+    sum += *(ptr + i);
+  }
+
+  printf("Sum = %d \n", sum);
+  
+  // deallocating the memory
+  free(ptr);
+
 
   return 0;
 
