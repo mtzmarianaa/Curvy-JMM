@@ -5,12 +5,10 @@ which I also implemented.
  */
 
 #include <stdio.h>
-#include <math.h> 
-// Define the sizes of the grids
-#define M 5
-#define N 5
+#include <stdlib.h>
+#include <math.h>
 
-void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double distance[M*N] );
+void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double distance[M*N], int M, int N);
 
 double speed(double x, double y);
 
@@ -18,9 +16,10 @@ void printQGridFromQueue(int Q[M*N]);
 
 void printGridFromDistance(double distance[M*N]);
 
-
 int main(){
-    double x_min, x_max, y_min, y_max, distance[M*N];
+	int M = 5, N = 5;
+
+    double x_min, x_max, y_min, y_max;
     int start[2];
     x_min = 0.0;
     x_max = 10.0;
@@ -29,9 +28,17 @@ int main(){
     start[0] = 2;
     start[1] = 2;
 
-    FMM_2D( x_min, x_max, y_min, y_max, start, distance );
+	double *distance = malloc(M*N*sizeof(double));
+	if (distance == NULL) {
+		printf("oh no!\n");
+		exit(EXIT_FAILURE);
+	}
 
-    return 0;
+    FMM_2D( x_min, x_max, y_min, y_max, start, distance, M, N);
+
+	free(distance);
+
+    return EXIT_SUCCESS;
 }
 
 double speed(double x, double y){
@@ -62,7 +69,7 @@ void printGridFromDistance(double distance[M*N]){
 }
 
 
-void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double distance[M*N] ){
+void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double *distance, int M, int N){
     /*
      Naive implementation of the fast marching method in a 2D grid. In the priority queue:
          - 0: far
