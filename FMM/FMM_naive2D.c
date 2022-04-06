@@ -8,13 +8,13 @@ which I also implemented.
 #include <stdlib.h>
 #include <math.h>
 
-void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double distance[M*N], int M, int N);
+void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double *distance, int *Q, int M, int N);
 
 double speed(double x, double y);
 
-void printQGridFromQueue(int Q[M*N]);
+void printQGridFromQueue(int *Q, int M, int N);
 
-void printGridFromDistance(double distance[M*N]);
+void printGridFromDistance(double *distance, int M, int N);
 
 int main(){
 	int M = 5, N = 5;
@@ -29,14 +29,20 @@ int main(){
     start[1] = 2;
 
 	double *distance = malloc(M*N*sizeof(double));
+    int *Q = malloc(M*N*sizeof(int));
 	if (distance == NULL) {
 		printf("oh no!\n");
 		exit(EXIT_FAILURE);
 	}
+    if (Q == NULL){
+        printf("oh no! \n");
+        exit(EXIT_FAILURE);
+    }
 
-    FMM_2D( x_min, x_max, y_min, y_max, start, distance, M, N);
+    FMM_2D( x_min, x_max, y_min, y_max, start, distance, Q, M, N);
 
 	free(distance);
+    free(Q);
 
     return EXIT_SUCCESS;
 }
@@ -48,7 +54,7 @@ double speed(double x, double y){
     return 1.0;
 }
 
-void printQGridFromQueue(int Q[M*N]){
+void printQGridFromQueue(int *Q, int M, int N){
     for(int i = N-1; i>-1; i --){
         for(int j = 0; j<M; j++){
             printf("%d ", Q[i*N + j] );
@@ -58,7 +64,7 @@ void printQGridFromQueue(int Q[M*N]){
     printf("\n");
 }
 
-void printGridFromDistance(double distance[M*N]){
+void printGridFromDistance(double *distance, int M, int N){
     for(int i = N-1; i>-1; i --){
         for(int j = 0; j<M; j++){
             printf("%fl ", distance[i*N + j] );
@@ -69,7 +75,7 @@ void printGridFromDistance(double distance[M*N]){
 }
 
 
-void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double *distance, int M, int N){
+void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2], double *distance, int *Q, int M, int N){
     /*
      Naive implementation of the fast marching method in a 2D grid. In the priority queue:
          - 0: far
@@ -87,7 +93,7 @@ void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2
     */
    // INITIALIZATION PART
      // alive points (the starting point(s)), trial points (narrow band points), and far away points
-     int Q[M*N], i, j, next_valid, coordinate;
+     int i, j, next_valid, coordinate;
      double minDistance, x_linspace[N], y_linspace[M], h_x, h_y;
 
      // stepsize in x direction is h_x, stepsize in y direction is h_y
@@ -133,8 +139,8 @@ void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2
          Q[ N*(start[0]+1) + start[1] ] = 1;
          distance[ N*(start[0]+1) + start[1] ] = speed( x_linspace[start[0]], y_linspace[start[1] + 1] )*h_y;
      }
-     printQGridFromQueue(Q); // in case we need this
-     printGridFromDistance(distance);
+     printQGridFromQueue(Q, M, N); // in case we need this
+     printGridFromDistance(distance, M, N);
 
      // ITERATION PART
 
@@ -172,21 +178,8 @@ void FMM_2D( double x_min, double x_max, double y_min, double y_max, int start[2
 
           // Now we need to update the current distances of those points that are marked as trial
 
-          for(i = -1; i<= 1; i ++){ // the new valid point can only affect 9 surrounding points at most (including itself)
-              for (j = -1; j<= 1; j ++){
-                  coordinate = next_valid + i*N +j; // the point in that 9 stencil we're currently considering
-                  if( coordinate >= N && Q[coordinate] == 1 ){ // not in the southern part
-                      
-
-                  }
-              }
-
-          }
 
      }
 
-
-
-     minDistance = 0.0;
+}
      
-     }
