@@ -24,8 +24,8 @@ int main(){
     h = 0.5;
     x_min = 0.0;
     y_min = 0.0;
-    start[0] = 2;
-    start[1] = 2;
+    start[0] = 0;
+    start[1] = 0;
 
 	double *distance = malloc(M*N*sizeof(double));
     int *Q = malloc(M*N*sizeof(int));
