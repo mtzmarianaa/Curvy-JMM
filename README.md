@@ -12,6 +12,7 @@ Since I've never done something like this, the strategy to follow is to implemen
    - "Standarized" the LDDB json files and tasks.json files, now I can pseudo debug and compile + execute in the same task
    - Started implementing FMM in C with help
    - Finished FMM initialization step
+   - Finished FMM naive implementation (need to implement it with the correct data structures)
 
 
 Playlist: https://open.spotify.com/playlist/5pfHWAuOvRbiAeXKdrkndp?si=aadfa382c7dc4c45
