@@ -17,15 +17,15 @@ void printQGridFromQueue(int *Q, int M, int N);
 void printGridFromDistance(double *distance, int M, int N);
 
 int main(){
-	int M = 10, N = 10;
+	int M = 5, N = 5;
 
     double x_min, y_min, h;
     int start[2];
-    h = 0.5;
+    h = 1;
     x_min = 0.0;
     y_min = 0.0;
-    start[0] = 0;
-    start[1] = 0;
+    start[0] = 3;
+    start[1] = 3;
 
 	double *distance = malloc(M*N*sizeof(double));
     int *Q = malloc(M*N*sizeof(int));
@@ -177,13 +177,13 @@ void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q,
           if ( next_valid%N != 0 && Q[next_valid -1] == 0  ){ // if this happens then the next valid point is not in the west edge
               Q[next_valid -1] = 1;
           }
-          if ( next_valid%(N-1) != 0 && Q[next_valid + 1] == 0 ){ // if this happens then the next valid point is not in the east edge
+          if ( next_valid%N != N-1 && Q[next_valid + 1] == 0 ){ // if this happens then the next valid point is not in the east edge
               Q[next_valid + 1] = 1;
           }
-          if(next_valid <= N*(M-1)-1 && Q[next_valid + N] == 0 ){ // if this happens then the next valid point is not in the northern edge of the grid
+          if(next_valid/N <= M-1 && Q[next_valid + N] == 0 ){ // if this happens then the next valid point is not in the northern edge of the grid
               Q[next_valid + N] = 1;
           }
-          //printQGridFromQueue(Q, M, N); // Check
+          printQGridFromQueue(Q, M, N); // Check
 
           // UPDATE POINT IN THE 9 GRID STENCIL USING EITHER 2 POINT UPDATES OF 1 POINT UPDATES
           u1 = distance[next_valid];
@@ -223,7 +223,7 @@ void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q,
           }
 
           // next valid point is not a eastern edge + this neighbour is not valid currently
-          if( next_valid%(N-1) != 0 && Q[next_valid + 1] != 2  ){
+          if( next_valid%N != N-1 && Q[next_valid + 1] != 2  ){
               coordinate = next_valid + 1;
               two_point1 = twoPointUpdate(u1, distance[next_valid - N + 1], h, coordinate, N);
               two_point2 = twoPointUpdate(u1, distance[next_valid + N + 1], h, coordinate, N);
@@ -239,8 +239,8 @@ void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q,
               }
           }
 
-          // next valid point is not a southern edge + this neighbour is not valid currently
-          if( next_valid <= N*(M-1)-1 && Q[next_valid + N] != 0  ){
+          // next valid point is not a northern edge + this neighbour is not valid currently
+          if( next_valid/N <= M-1 && Q[next_valid + N] != 2   ){
               coordinate = next_valid - N;
               two_point1 = twoPointUpdate(u1, distance[next_valid + N - 1], h, coordinate, N);
               two_point2 = twoPointUpdate(u1, distance[next_valid + N + 1], h, coordinate, N);
@@ -256,10 +256,10 @@ void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q,
               }
           }
 
+          printGridFromDistance(distance, M, N);
+
 
      }
-     printQGridFromQueue(Q, M, N);
-     printGridFromDistance(distance, M, N);
 
 }
      
