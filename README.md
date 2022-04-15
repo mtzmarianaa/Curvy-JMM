@@ -13,6 +13,8 @@ Since I've never done something like this, the strategy to follow is to implemen
    - Started implementing FMM in C with help
    - Finished FMM initialization step
    - Finished FMM naive implementation (need to implement it with the correct data structures)
+   - Corrected the FMM implementation
+   - Added a file to plot the "solutions" I get using Python
 
 
 Playlist: https://open.spotify.com/playlist/5pfHWAuOvRbiAeXKdrkndp?si=aadfa382c7dc4c45
