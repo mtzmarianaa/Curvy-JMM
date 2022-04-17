@@ -23,11 +23,11 @@ int main(){
 
     double x_min, y_min, h;
     int start[2];
-    h = 0.1;
+    h = 0.001;
     x_min = 0.0;
     y_min = 0.0;
-    start[0] = 5;
-    start[1] = 5;
+    start[0] = 48;
+    start[1] = 71;
 
 	double *distance = malloc(M*N*sizeof(double));
     int *Q = malloc(M*N*sizeof(int));
@@ -54,7 +54,7 @@ double speed(double x, double y){
     /*
     Function that defines the 1/f function used in the eikonal equation |u| = 1/f
     */
-    return x*x;
+    return 1;
 }
 
 double twoPointUpdate(double u1, double u2, double h, int coordinate, int N){
@@ -65,7 +65,7 @@ double twoPointUpdate(double u1, double u2, double h, int coordinate, int N){
    double d;
    i = coordinate%N;
    j = (coordinate - i)/N;
-   d = 0.5*(u1+u2) + 0.5*sqrt( pow(u1 + u2, 2) - 2*(pow(u1, 2) + pow(u2, 2) - h/speed(i, j) )  );
+   d = 0.5*(u1+u2) + 0.5*sqrt( pow(u1 + u2, 2) - 2*(pow(u1, 2) + pow(u2, 2) -  pow(h,2)/speed(i, j) )  );
    return d;
 }
 
