@@ -7,31 +7,34 @@ which I also implemented.
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q, int M, int N, double h);
 
 double speed(double x, double y);
 
+void ActualSolution(double x_min, double y_min, int start[2], double *trueSolution, int M, int N, double h);
+
 void printQGridFromQueue(int *Q, int M, int N);
 
 void printGridFromDistance(double *distance, int M, int N);
 
-void generateDataForPlot(double *x, int M, int N);
+void generateDataForPlot(double *x, int M, int N, char data_name[10]);
 
 int main(){
 	int M = 200, N = 200;
-
     double x_min, y_min, h;
     int start[2];
     h = 0.001;
     x_min = 0.0;
     y_min = 0.0;
-    start[0] = 48;
-    start[1] = 71;
+    start[0] = 100;
+    start[1] = 100;
 
 	double *distance = malloc(M*N*sizeof(double));
+    double *trueSolution = malloc(M*N*sizeof(double));
     int *Q = malloc(M*N*sizeof(int));
-	if (distance == NULL) {
+	if (distance == NULL) { // we just need to worry about either distance or trueSolution to be null because up until rn they're the same
 		printf("oh no!\n");
 		exit(EXIT_FAILURE);
 	}
@@ -40,11 +43,24 @@ int main(){
         exit(EXIT_FAILURE);
     }
 
+    // Use naive FMM to solve
     FMM_2D( x_min, y_min, start, distance, Q, M, N, h);
 
-    generateDataForPlot(distance, M, N);
+    // Compute actual solution
+    ActualSolution(x_min, y_min, start, trueSolution, M, N, h);
+
+    // Generate data from both sources so that we can plot them
+
+    char data_name1[] = "from_FMM";
+
+    generateDataForPlot(distance, M, N, data_name1);
+
+    char data_name2[] = "exact";
+
+    generateDataForPlot(trueSolution, M, N, data_name2);
 
 	free(distance);
+    free(trueSolution);
     free(Q);
 
     return EXIT_SUCCESS;
@@ -55,6 +71,29 @@ double speed(double x, double y){
     Function that defines the 1/f function used in the eikonal equation |u| = 1/f
     */
     return 1;
+}
+
+void ActualSolution(double x_min, double y_min, int start[2], double *trueSolution, int M, int N, double h){
+    /*
+    This is the true solution of constant speed of sound.
+    */
+    double x_linspace[N], y_linspace[M], x_0, y_0;
+    int i;
+
+    for(i = 0; i<N; i++){
+         x_linspace[i] = x_min + i*h;
+     }
+     for(i = 0; i<M; i++){
+         y_linspace[i] = y_min + i*h;
+     }
+
+     x_0 = x_linspace[start[0]];
+     y_0 = y_linspace[start[1]];
+
+     for (i = 0; i < N*M; i++){
+         trueSolution[i] = sqrt(  pow( x_linspace[i%N] - x_0, 2  ) +  pow( y_linspace[i/N] - y_0, 2  )  );
+     }
+
 }
 
 double twoPointUpdate(double u1, double u2, double h, int coordinate, int N){
@@ -89,9 +128,9 @@ void printGridFromDistance(double *distance, int M, int N){
     printf("\n");
 }
 
-void generateDataForPlot(double *x, int M, int N){
-
-	FILE *fp = fopen("data.bin", "wb");
+void generateDataForPlot(double *x, int M, int N, char data_name[10]){
+    char ext[] = ".bin";
+	FILE *fp = fopen(strcat(data_name, ext), "wb");
 	fwrite(x, sizeof(double), M*N, fp);
 	fclose(fp);
 
