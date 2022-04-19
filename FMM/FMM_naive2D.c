@@ -22,14 +22,19 @@ void printGridFromDistance(double *distance, int M, int N);
 void generateDataForPlot(double *x, int M, int N, char data_name[10]);
 
 int main(){
-	int M = 200, N = 200;
+	int M, N, n;
     double x_min, y_min, h;
     int start[2];
-    h = 0.001;
-    x_min = 0.0;
-    y_min = 0.0;
-    start[0] = 100;
-    start[1] = 100;
+
+    n = pow(2, 1);
+    M = 2*n+1;
+    N = 2*n+1;
+    h = 1.0/n;
+
+    x_min = -1.0;
+    y_min = -1.0;
+    start[0] = n;
+    start[1] = n;
 
 	double *distance = malloc(M*N*sizeof(double));
     double *trueSolution = malloc(M*N*sizeof(double));
@@ -51,11 +56,11 @@ int main(){
 
     // Generate data from both sources so that we can plot them
 
-    char data_name1[] = "from_FMM";
+    char data_name1[] = "from_FMM_h001k1";
 
     generateDataForPlot(distance, M, N, data_name1);
 
-    char data_name2[] = "exact";
+    char data_name2[] = "exact_h001k1";
 
     generateDataForPlot(trueSolution, M, N, data_name2);
 
