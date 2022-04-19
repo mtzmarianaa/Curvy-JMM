@@ -92,11 +92,12 @@ x_exact_n = np.fromfile('exact_h001k8.bin')
 rel_err_n.append(norm(x_FMM_n -x_exact_n, 2 )/norm(x_exact_n, 2))
 
 plt.figure(5)
-plt.plot([1,2,3,4,5,6,7,8], rel_err_n, color = colormap2(130))
+plt.plot([2*2**1+1 ,2*2**2 + 1,2*2**3 + 1,2*2**4 + 1,2*2**5+ 1,2*2**6 + 1,2*2**7 + 1,2*2**8 +1], rel_err_n, color = colormap2(130))
 plt.show(block=False)
 ax.set_xlabel('Relative error')
 ax.set_ylabel('k (from n=2^k, 2*n+1 number of points')
 plt.yscale('log')
+plt.xscale('log')
 plt.title("Relative error vs number of points")
 
 
@@ -106,6 +107,7 @@ plt.show(block=False)
 ax.set_xlabel('Relative error')
 ax.set_ylabel('h')
 plt.yscale('log')
+plt.xscale('log')
 plt.title("Step size")
 
 
