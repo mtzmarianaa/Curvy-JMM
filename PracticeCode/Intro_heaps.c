@@ -15,81 +15,40 @@ Here we code different important operations performed on a heap.
 
 */
 
+
 #include <stdio.h>
-#include <math.h>
-
-void swap(int *n1, int *n2);
-void heapify(int array[], int size, int i);
-void insert(int array[], int newNum, int size);
-void deleteRoot(int array[], int num, int size);
-void printArray(int array[], int size);
-
-int main()
+int size = 0;
+void swap(int *a, int *b)
 {
-    int initial_i, size;
-    size = 6;
-    int array[size];
-    initial_i = 0;
-    array[0] = 1;
-    array[1] = 99;
-    array[2] = 3;
-    array[3] = 40;
-    array[4] = 5;
-    array[5] = 10;
-
-
-    printf("Original array: \n");
-    printArray(array, size);
-
-    heapify(array, size, initial_i);
-
-    printf("Heapified array: \n");
-    printArray(array, size);
-
-  
-  return 0;
-
-}
-
-void swap(int* n1, int* n2)
-{
-    /*
-    Exchanges two pointers. 
-    */
-    int temp;
-    temp = *n1;
-    *n1 = *n2;
-    *n2 = temp;
+  int temp = *b;
+  *b = *a;
+  *a = temp;
 }
 
 void heapify(int array[], int size, int i)
 {
-    /*
-    Creates a heap like structure from data in an array form. RECURSION
-    */
   if (size == 1)
   {
     printf("Single element in the heap");
   }
   else
   {
-    int largest = i;
-    int l = 2 * i + 1;
-    int r = 2 * i + 2;
-    if (l < size && array[l] > array[largest])
-      largest = l;
-    if (r < size && array[r] > array[largest])
-      largest = r;
-    if (largest != i)
+    int smallest = i;
+    int l = 2 * i + 1; // left child
+    int r = 2 * i + 2; // right child
+    if (l < size && array[l] < array[smallest])
+      smallest = l;
+    if (r < size && array[r] < array[smallest])
+      smallest = r;
+    if (smallest != i)
     {
-      swap(&array[i], &array[largest]);
-      heapify(array, size, largest);
+      swap(&array[i], &array[smallest]);
+      heapify(array, size, smallest); // recurencia
     }
   }
 }
 
-
-void insert(int array[], int newNum, int size)
+void insert(int array[], int newNum)
 {
   if (size == 0)
   {
@@ -107,9 +66,7 @@ void insert(int array[], int newNum, int size)
   }
 }
 
-
-
-void deleteRoot(int array[], int num, int size)
+void deleteRoot(int array[], int num)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -126,11 +83,40 @@ void deleteRoot(int array[], int num, int size)
   }
 }
 
-
-
 void printArray(int array[], int size)
 {
   for (int i = 0; i < size; ++i)
-    printf("Index, %d, contains: %d  \n", i, array[i]);
+    printf("%d ", array[i]);
   printf("\n");
+}
+
+int main()
+{
+  int array[10];
+
+  insert(array, 3);
+  printArray(array, size);
+  insert(array, 1);
+  printArray(array, size);
+  insert(array, 9);
+  printArray(array, size);
+  insert(array, 5);
+  printArray(array, size);
+  insert(array, 2);
+
+  printf("Min-Heap array: ");
+  printArray(array, size);
+
+  deleteRoot(array, 4);
+
+  printf("After deleting an element: ");
+
+  printArray(array, size);
+
+  deleteRoot(array, 0);
+
+  printf("After deleting the root: ");
+
+  printArray(array, size);
+
 }
