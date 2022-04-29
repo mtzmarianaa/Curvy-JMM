@@ -66,7 +66,7 @@ void insert(int array[], int newNum)
   }
 }
 
-void deleteRoot(int array[], int num)
+void delete(int array[], int num)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -76,6 +76,17 @@ void deleteRoot(int array[], int num)
   }
 
   swap(&array[i], &array[size - 1]);
+  size -= 1;
+  for (int i = size / 2 - 1; i >= 0; i--)
+  {
+    heapify(array, size, i);
+  }
+}
+
+void deleteRoot(int array[])
+{
+
+  swap(&array[0], &array[size - 1]);
   size -= 1;
   for (int i = size / 2 - 1; i >= 0; i--)
   {
@@ -103,17 +114,33 @@ int main()
   insert(array, 5);
   printArray(array, size);
   insert(array, 2);
+  printArray(array, size);
+  insert(array, 6);
+  printArray(array, size);
+  insert(array, 90);
+  printArray(array, size);
+  insert(array, 80);
+  printArray(array, size);
+  insert(array, 7);
+  printArray(array, size);
+  insert(array, 10);
 
   printf("Min-Heap array: ");
   printArray(array, size);
 
-  deleteRoot(array, 4);
+  delete(array, 3);
 
   printf("After deleting an element: ");
 
   printArray(array, size);
 
-  deleteRoot(array, 0);
+  delete(array, 99);
+
+  printf("After deleting the last one: ");
+
+  printArray(array, size);
+
+  deleteRoot(array);
 
   printf("After deleting the root: ");
 
