@@ -66,7 +66,24 @@ void insert(int array[], int newNum)
   }
 }
 
-void delete(int array[], int num)
+void delete_findNumber(int array[], int num)
+{
+  int i;
+  for (i = 0; i < size; i++)
+  {
+    if (num == array[i])
+      break;
+  }
+
+  swap(&array[i], &array[size - 1]);
+  size -= 1;
+  for (int i = size / 2 - 1; i >= 0; i--)
+  {
+    heapify(array, size, i);
+  }
+}
+
+void delete_index(int array[], int num)
 {
   int i;
   for (i = 0; i < size; i++)
