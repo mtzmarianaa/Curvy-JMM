@@ -1,7 +1,5 @@
 #pragma once
 
-typedef struct Priority_queue p_queue;
-
 static void swap(int *a, int *b);
 
 static void heapify(int array[], int size, int i);
