@@ -1,4 +1,5 @@
 #include "fmm_2d.h"
+#include "priority_queue.c"
 
 #include <stdio.h>
 #include <stdlib.h>

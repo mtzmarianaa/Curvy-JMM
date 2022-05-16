@@ -6,27 +6,28 @@ TESTS FOR THE PRIORITY QUEUE
 
 int main()
 {
-  int eik_queue[10], index_queue[10], ind_found;
+  double eik_queue[10];
+  int index_queue[10], ind_found;
 
-  insert(eik_queue, index_queue, 3, 0);
+  insert(eik_queue, index_queue, 3.0, 0);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 1, 1);
+  insert(eik_queue, index_queue, 1.0, 1);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 9, 2);
+  insert(eik_queue, index_queue, 9.0, 2);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 5, 3);
+  insert(eik_queue, index_queue, 5.0, 3);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 2, 4);
+  insert(eik_queue, index_queue, 2.0, 4);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 6, 5);
+  insert(eik_queue, index_queue, 6.0, 5);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue,index_queue, 90, 6);
+  insert(eik_queue,index_queue, 90.0, 6);
   printeik_queue(eik_queue,index_queue, size);
-  insert(eik_queue,index_queue, 80, 7);
+  insert(eik_queue,index_queue, 80.0, 7);
   printeik_queue(eik_queue,index_queue, size);
-  insert(eik_queue, index_queue, 7, 8);
+  insert(eik_queue, index_queue, 7.0, 8);
   printeik_queue(eik_queue, index_queue, size);
-  insert(eik_queue, index_queue, 10, 9);
+  insert(eik_queue, index_queue, 10.0, 9);
 
   printf("Min-Heap eik_queue: ");
   printeik_queue(eik_queue, index_queue, size);
@@ -37,7 +38,7 @@ int main()
 
   printeik_queue(eik_queue, index_queue, size);
 
-  delete_findValue(eik_queue, index_queue, 99);
+  delete_findValue(eik_queue, index_queue, 99.0);
 
   printf("After deleting the last one: ");
 
@@ -49,7 +50,7 @@ int main()
 
   printeik_queue(eik_queue, index_queue, size);
 
-  insert_end(eik_queue, index_queue, 1000, 10);
+  insert_end(eik_queue, index_queue, 1000.0, 10);
 
   printf("After inserting a number at the end of the queue: ");
 
@@ -61,13 +62,13 @@ int main()
 
   printeik_queue(eik_queue, index_queue, size);
 
-  update(eik_queue, index_queue, 70, 9);
+  update(eik_queue, index_queue, 70.0, 9);
 
   printf("After comparing the 9th index with a greater value: ");
 
   printeik_queue(eik_queue, index_queue, size);
 
-  update(eik_queue, index_queue, 4, 9);
+  update(eik_queue, index_queue, 4.0, 9);
 
   printf("After comparing the 9th index with a smaller value: ");
 

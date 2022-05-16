@@ -20,14 +20,21 @@ typedef struct Priority_queue {
 } p_queue;
 */
 
-static void swap(int *a, int *b)
+static void swap_double(double *a, double *b)
+{
+  double temp = *b;
+  *b = *a;
+  *a = temp;
+}
+
+static void swap_int(int *a, int *b)
 {
   int temp = *b;
   *b = *a;
   *a = temp;
 }
 
-static void heapify(int eik_queue[], int index_queue[], int size, int i)
+static void heapify(double eik_queue[], int index_queue[], int size, int i)
 {
   if (size == 1)
   {
@@ -46,14 +53,14 @@ static void heapify(int eik_queue[], int index_queue[], int size, int i)
       smallest = r;
     if (smallest != i)
     {
-      swap(&eik_queue[i], &eik_queue[smallest]); // swap in the eik_queue
-      swap(&index_queue[i], &index_queue[smallest]); // swap in the index_queue
+      swap_double(&eik_queue[i], &eik_queue[smallest]); // swap in the eik_queue
+      swap_int(&index_queue[i], &index_queue[smallest]); // swap in the index_queue
       heapify(eik_queue, index_queue, size, smallest); // recurrencia
     }
   }
 }
 
-static void insert(int eik_queue[], int index_queue[], int newNum, int newIndex)
+static void insert(double eik_queue[], int index_queue[], double newNum, int newIndex)
 {
   if (size == 0) // First time we insert an element in the tree
   {
@@ -73,14 +80,14 @@ static void insert(int eik_queue[], int index_queue[], int newNum, int newIndex)
   }
 }
 
-static void insert_end(int eik_queue[], int index_queue[], int newNum, int newIndex)
+static void insert_end(double eik_queue[], int index_queue[], double newNum, int newIndex)
 {
     eik_queue[size] = newNum;
     index_queue[size] = newIndex;
     size += 1;
 }
 
-static void delete_findValue(int eik_queue[], int index_queue[], int num)
+static void delete_findValue(double eik_queue[], int index_queue[], double num)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -89,8 +96,8 @@ static void delete_findValue(int eik_queue[], int index_queue[], int num)
       break;
   }
 
-  swap(&eik_queue[i], &eik_queue[size - 1]);
-  swap(&index_queue[i], &index_queue[size - 1]);
+  swap_double(&eik_queue[i], &eik_queue[size - 1]);
+  swap_int(&index_queue[i], &index_queue[size - 1]);
   size -= 1;
   for (int i = size / 2 - 1; i >= 0; i--)
   {
@@ -98,7 +105,7 @@ static void delete_findValue(int eik_queue[], int index_queue[], int num)
   }
 }
 
-static void delete_findIndex(int eik_queue[], int index_queue[], int ind)
+static void delete_findIndex(double eik_queue[], int index_queue[], int ind)
 {
   int i;
   for (i = 0; i < size; i++)
@@ -107,8 +114,8 @@ static void delete_findIndex(int eik_queue[], int index_queue[], int ind)
       break;
   }
 
-  swap(&eik_queue[i], &eik_queue[size - 1]);
-  swap(&index_queue[i], &index_queue[size - 1]);
+  swap_double(&eik_queue[i], &eik_queue[size - 1]);
+  swap_int(&index_queue[i], &index_queue[size - 1]);
   size -= 1;
   for (int i = size / 2 - 1; i >= 0; i--)
   {
@@ -116,11 +123,11 @@ static void delete_findIndex(int eik_queue[], int index_queue[], int ind)
   }
 }
 
-static void deleteRoot(int eik_queue[], int index_queue[])
+static void deleteRoot(double eik_queue[], int index_queue[])
 {
 
-  swap(&eik_queue[0], &eik_queue[size - 1]);
-  swap(&index_queue[0], &index_queue[size - 1]);
+  swap_double(&eik_queue[0], &eik_queue[size - 1]);
+  swap_int(&index_queue[0], &index_queue[size - 1]);
   size -= 1;
   for (int i = size / 2 - 1; i >= 0; i--)
   {
@@ -128,11 +135,11 @@ static void deleteRoot(int eik_queue[], int index_queue[])
   }
 }
 
-static void printeik_queue(int eik_queue[], int index_queue[], int size)
+static void printeik_queue(double eik_queue[], int index_queue[], int size)
 {
   printf("Eikonal values:");
   for (int i = 0; i < size; ++i)
-    printf("%d ", eik_queue[i]);
+    printf("%lf ", eik_queue[i]);
   printf("\n");
   printf("Indices:");
   for (int i = 0; i < size; ++i)
@@ -140,7 +147,7 @@ static void printeik_queue(int eik_queue[], int index_queue[], int size)
   printf("\n");
 }
 
-static void update(int eik_queue[], int index_queue[], int new_valConsidered, int index)
+static void update(double eik_queue[], int index_queue[], double new_valConsidered, int index)
 {
     // First find the current value associated with index
     int i;
@@ -160,7 +167,7 @@ static void update(int eik_queue[], int index_queue[], int new_valConsidered, in
     }
 }
 
-static int get_valueAtIndex(int eik_queue[], int index_queue[], int index, int size)
+static double get_valueAtIndex(double eik_queue[], int index_queue[], int index, int size)
 {
     int i;
     for (i = 0; i < size; i ++)
