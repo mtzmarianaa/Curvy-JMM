@@ -8,7 +8,7 @@ Here is the implementation of the prioriry queue for the 2D FMM. Explanaition
 
 */
 
-
+#include "priority_queue.h"
 #include <stdio.h>
 
 int size = 0; // Initial size is zero because we need to insert something to initialize the queue
