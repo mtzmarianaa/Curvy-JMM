@@ -97,6 +97,9 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      // alive points (the starting point(s)), trial points (narrow band points), and far away points
      int i, j, next_valid, coordinate;
      double minDistance, x_linspace[N], y_linspace[M], u1, two_point1, two_point2, one_point;
+     double eik_queue[M*N];
+     int index_queue[M*N];
+     int current_states[M*N];
 
 
      // Start the linspace in the x and y directions
@@ -109,12 +112,18 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
     // Initialize the queue and the distances with infinity
      for (i = 0; i< M*N; i++)
      {
+         current_states[i] = 0; // all the nodes are far
+         index_queue[i] = i; // all the nodes go into the priority queue (indeces)
+         insert(eik_queue, index_queue, INFINITY, i);
          Q[i] = 0;
          distance[i] = INFINITY;
      }
 
 
      // Add the starting point
+     current_states[start[0]*N + start[1] ] = 2;
+     update(eik_queue, index_queue, 0.0, (start[0]*N + start[1])); // add the point
+     deleteRoot(eik_queue, index_queue); // and delete the root, it has been accepted
      Q[start[0]*N + start[1] ] = 2;
      distance[start[0]*N + start[1] ] = 0;
 
@@ -123,18 +132,26 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      // We also know that these are the only connected points to our start point so we can initialize here
      // the distance of those points.
      if (start[0] !=0  ){ // we're not in the most southern part, we do have a neighbour south
+         current_states[N*(start[0]-1) + start[1] ] = 1; // update current states
+         update(eik_queue, index_queue, speed( x_linspace[start[0]], y_linspace[start[1]]-1 )*h, (N*(start[0]-1) + start[1] )); // update the current value in the priority eikonal queue
          Q[N*(start[0]-1) + start[1] ] = 1;
          distance[N*(start[0]-1) + start[1] ] = speed( x_linspace[start[0]], y_linspace[start[1]]-1 )*h;
      }
      if ( start[1] != 0 ){ // we're not in a west edge, we can have a neighbour to the left
+         current_states[ N*start[0] + start[1] -1 ] = 1;
+         update(eik_queue, index_queue, speed( x_linspace[start[0] -1 ], y_linspace[ start[1] ] )*h, (N*start[0] + start[1] -1));
          Q[ N*start[0] + start[1] -1 ] = 1;
          distance[ N*start[0] + start[1] -1 ] = speed( x_linspace[start[0] -1 ], y_linspace[ start[1] ] )*h;
      }
      if (start[1] != (N-1) ){ // we're not in a east edge, we can have a neighbour to the right
+         current_states[N*start[0] + start[1] + 1] = 1;
+         update(eik_queue, index_queue, speed( x_linspace[start[0] + 1], y_linspace[start[1]] )*h, (N*start[0] + start[1] + 1));
          Q[N*start[0] + start[1] + 1] = 1;
          distance[N*start[0] + start[1] + 1] = speed( x_linspace[start[0] + 1], y_linspace[start[1]] )*h;
      }
      if (start[0] != (M-1)){ // we're not in a north edge, we can have a neighbour north
+         current_states[ N*(start[0]+1) + start[1] ] = 1;
+         update(eik_queue, index_queue, speed( x_linspace[start[0]], y_linspace[start[1] + 1] )*h, (N*(start[0]+1) + start[1]));
          Q[ N*(start[0]+1) + start[1] ] = 1;
          distance[ N*(start[0]+1) + start[1] ] = speed( x_linspace[start[0]], y_linspace[start[1] + 1] )*h;
      }
@@ -148,31 +165,28 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      {
           minDistance = INFINITY;
           // Find the next optimal point (the one with minimum distance)
-          for(j = 0; j<M*N; j ++)
-          {
-              if(distance[j] < minDistance && Q[j] == 1 )
-              {
-                  minDistance = distance[j];
-                  next_valid = j;
-              }
-          }
+          minDistance = eik_queue[0]; // thanks to the binary tree we know its the first element
+          next_valid = index_queue[0]; // the same with the index queue
+
           // Now that we've found the next point to put on valid, we update
+          current_states[next_valid] = 2; // set this as valid
+          deleteRoot(eik_queue, index_queue); // delete the root of the priority queue (binary tree)
           Q[next_valid] = 2;
           //printQGridFromQueue(Q); // Check
           // Now we need to add its neighbours, mark them as trial but we know where their neighbours are
           // but we just need to mark them as trial if they are currently marked as far
           // ADD NON VALID NEIGHBOURS TO PRIORITY QUEUE
-          if( next_valid >= N && Q[next_valid - N] == 0 ){ // if this happens then the next valid point is not in the most southern part of the grid
-              Q[next_valid - N] = 1;
+          if( next_valid >= N && current_states[next_valid - N] == 0 ){ // if this happens then the next valid point is not in the most southern part of the grid
+              current_states[next_valid - N] = 1;
           }
-          if ( next_valid%N != 0 && Q[next_valid -1] == 0  ){ // if this happens then the next valid point is not in the west edge
-              Q[next_valid -1] = 1;
+          if ( next_valid%N != 0 && current_states[next_valid -1] == 0  ){ // if this happens then the next valid point is not in the west edge
+              current_states[next_valid -1] = 1;
           }
-          if ( next_valid%N != N-1 && Q[next_valid + 1] == 0 ){ // if this happens then the next valid point is not in the east edge
-              Q[next_valid + 1] = 1;
+          if ( next_valid%N != N-1 && current_states[next_valid + 1] == 0 ){ // if this happens then the next valid point is not in the east edge
+              current_states[next_valid + 1] = 1;
           }
-          if(next_valid/N < M-1 && Q[next_valid + N] == 0 ){ // if this happens then the next valid point is not in the northern edge of the grid
-              Q[next_valid + N] = 1;
+          if(next_valid/N < M-1 && current_states[next_valid + N] == 0 ){ // if this happens then the next valid point is not in the northern edge of the grid
+              current_states[next_valid + N] = 1;
           }
           //printQGridFromQueue(Q, M, N); // Check
 
@@ -180,16 +194,16 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
           u1 = distance[next_valid];
 
           // next valid point is not a southern edge + this neighbour is not valid currently
-          if( next_valid >= N && Q[next_valid - N] != 2  ){
+          if( next_valid >= N && current_states[next_valid - N] != 2  ){
               coordinate = next_valid - N;
               if ( coordinate%N != 0 ){ // its not in the west edge as well
-                  two_point1 = twoPointUpdate(u1, distance[next_valid - N - 1], h, coordinate, N);
+                  two_point1 = twoPointUpdate(minDistance, distance[next_valid - N - 1], h, coordinate, N);
               }
               else {
                   two_point1 = INFINITY;
               }
               if (coordinate%N != N-1 ){
-                  two_point2 = twoPointUpdate(u1, distance[next_valid - N + 1], h, coordinate, N);
+                  two_point2 = twoPointUpdate(minDistance, distance[next_valid - N + 1], h, coordinate, N);
               }
               else{
                   two_point2 = INFINITY;
@@ -204,19 +218,20 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
               if(distance[next_valid-N] > one_point){
                   distance[next_valid-N] = one_point;
               }
+              update(eik_queue, index_queue, distance[next_valid-N], next_valid-N);
           }
           
           // next valid point is not a western edge + this neighbour is not valid currently
-          if( next_valid%N != 0 && Q[next_valid -1] != 2  ){
+          if( next_valid%N != 0 && current_states[next_valid -1] != 2  ){
               coordinate = next_valid - 1;
               if( coordinate>= N ){
-                  two_point1 = twoPointUpdate(u1, distance[next_valid - N - 1], h, coordinate, N);
+                  two_point1 = twoPointUpdate(minDistance, distance[next_valid - N - 1], h, coordinate, N);
               }
               else{
                   two_point1 = INFINITY;
               }
               if ( coordinate/N < M-1 ){
-                  two_point2 = twoPointUpdate(u1, distance[next_valid + N - 1], h, coordinate, N);
+                  two_point2 = twoPointUpdate(minDistance, distance[next_valid + N - 1], h, coordinate, N);
               }
               else{
                   two_point2 = INFINITY;
@@ -231,19 +246,20 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
               if(distance[next_valid-1] > one_point){
                   distance[next_valid-1] = one_point;
               }
+              update(eik_queue, index_queue, distance[next_valid-1], next_valid-1);
           }
 
           // next valid point is not a eastern edge + this neighbour is not valid currently
-          if( next_valid%N != N-1 && Q[next_valid + 1] != 2  ){
+          if( next_valid%N != N-1 && current_states[next_valid + 1] != 2  ){
               coordinate = next_valid + 1;
               if ( coordinate>= N  ){
-                  two_point1 = twoPointUpdate(u1, distance[next_valid - N + 1], h, coordinate, N);
+                  two_point1 = twoPointUpdate(minDistance, distance[next_valid - N + 1], h, coordinate, N);
               }
               else{
                   two_point1 = INFINITY;
               }
               if( coordinate/N < M-1 ){
-                  two_point2 = twoPointUpdate(u1, distance[next_valid + N + 1], h, coordinate, N);
+                  two_point2 = twoPointUpdate(minDistance, distance[next_valid + N + 1], h, coordinate, N);
               }
               else{
                   two_point2 = INFINITY;
@@ -258,19 +274,20 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
               if(distance[next_valid+1] > one_point){
                   distance[next_valid+1] = one_point;
               }
+              update(eik_queue, index_queue, distance[next_valid+1], (next_valid+1) );
           }
 
           // next valid point is not a northern edge + this neighbour is not valid currently
-          if( next_valid/N < M-1 && Q[next_valid + N] != 2   ){
+          if( next_valid/N < M-1 && current_states[next_valid + N] != 2   ){
               coordinate = next_valid - N;
               if (coordinate%N != 0 ){
-                  two_point1 = twoPointUpdate(u1, distance[next_valid + N - 1], h, coordinate, N);
+                  two_point1 = twoPointUpdate(minDistance, distance[next_valid + N - 1], h, coordinate, N);
               }
               else{
                   two_point1 = INFINITY;
               }
               if (coordinate%N != N-1){
-                  two_point2 = twoPointUpdate(u1, distance[next_valid + N + 1], h, coordinate, N);
+                  two_point2 = twoPointUpdate(minDistance, distance[next_valid + N + 1], h, coordinate, N);
               }
               else{
                   two_point2 = INFINITY;
@@ -285,9 +302,10 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
               if(distance[next_valid+N] > one_point){
                   distance[next_valid+N] = one_point;
               }
+              update(eik_queue, index_queue, distance[next_valid+N], (next_valid+N));
           }
 
-          //printGridFromDistance(distance, M, N);
+          printGridFromDistance(distance, M, N);
 
 
      }
