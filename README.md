@@ -15,6 +15,7 @@ Since I've never done something like this, the strategy to follow is to implemen
    - Finished FMM naive implementation (need to implement it with the correct data structures)
    - Corrected the FMM implementation
    - Added a file to plot the "solutions" I get using Python
+   - Implemented the priority queue as a binary tree with a "parallel" array that has the information about the indices
 
 
-Playlist: https://open.spotify.com/playlist/5pfHWAuOvRbiAeXKdrkndp?si=aadfa382c7dc4c45
+Playlist: https://open.spotify.com/artist/12Chz98pHFMPJEknJQMWvI?si=aKJtT9jXS_qNeDneMQfZqQ
