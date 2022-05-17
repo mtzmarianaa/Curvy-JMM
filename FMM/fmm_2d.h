@@ -1,7 +1,7 @@
 #pragma once
 
 
-static void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q, int M, int N, double h);
+static void FMM_2D( double x_min, double y_min, int start[2], double *distance, double *eik_queue, int *index_queue, int *current_states, int M, int N, double h);
 
 static double speed(double x, double y);
 

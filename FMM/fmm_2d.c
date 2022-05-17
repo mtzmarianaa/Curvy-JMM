@@ -77,7 +77,7 @@ static void generateDataForPlot(double *x, int M, int N, char data_name[10]){
 }
 
 
-static void FMM_2D( double x_min, double y_min, int start[2], double *distance, int *Q, int M, int N, double h){
+static void FMM_2D( double x_min, double y_min, int start[2], double *distance, double *eik_queue, int *index_queue, int *current_states, int M, int N, double h){
     /*
      Naive implementation of the fast marching method in a 2D grid. In the priority queue:
          - 0: far
@@ -97,9 +97,6 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      // alive points (the starting point(s)), trial points (narrow band points), and far away points
      int i, j, next_valid, coordinate;
      double minDistance, x_linspace[N], y_linspace[M], u1, two_point1, two_point2, one_point;
-     double eik_queue[M*N];
-     int index_queue[M*N];
-     int current_states[M*N];
 
 
      // Start the linspace in the x and y directions
@@ -115,7 +112,6 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
          current_states[i] = 0; // all the nodes are far
          index_queue[i] = i; // all the nodes go into the priority queue (indeces)
          insert(eik_queue, index_queue, INFINITY, i);
-         Q[i] = 0;
          distance[i] = INFINITY;
      }
 
@@ -124,7 +120,6 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      current_states[start[0]*N + start[1] ] = 2;
      update(eik_queue, index_queue, 0.0, (start[0]*N + start[1])); // add the point
      deleteRoot(eik_queue, index_queue); // and delete the root, it has been accepted
-     Q[start[0]*N + start[1] ] = 2;
      distance[start[0]*N + start[1] ] = 0;
 
      // Initialize the points that are connected to that starting point (at most 4 points are connected to this starting point)
@@ -134,25 +129,21 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
      if (start[0] !=0  ){ // we're not in the most southern part, we do have a neighbour south
          current_states[N*(start[0]-1) + start[1] ] = 1; // update current states
          update(eik_queue, index_queue, speed( x_linspace[start[0]], y_linspace[start[1]]-1 )*h, (N*(start[0]-1) + start[1] )); // update the current value in the priority eikonal queue
-         Q[N*(start[0]-1) + start[1] ] = 1;
          distance[N*(start[0]-1) + start[1] ] = speed( x_linspace[start[0]], y_linspace[start[1]]-1 )*h;
      }
      if ( start[1] != 0 ){ // we're not in a west edge, we can have a neighbour to the left
          current_states[ N*start[0] + start[1] -1 ] = 1;
          update(eik_queue, index_queue, speed( x_linspace[start[0] -1 ], y_linspace[ start[1] ] )*h, (N*start[0] + start[1] -1));
-         Q[ N*start[0] + start[1] -1 ] = 1;
          distance[ N*start[0] + start[1] -1 ] = speed( x_linspace[start[0] -1 ], y_linspace[ start[1] ] )*h;
      }
      if (start[1] != (N-1) ){ // we're not in a east edge, we can have a neighbour to the right
          current_states[N*start[0] + start[1] + 1] = 1;
          update(eik_queue, index_queue, speed( x_linspace[start[0] + 1], y_linspace[start[1]] )*h, (N*start[0] + start[1] + 1));
-         Q[N*start[0] + start[1] + 1] = 1;
          distance[N*start[0] + start[1] + 1] = speed( x_linspace[start[0] + 1], y_linspace[start[1]] )*h;
      }
      if (start[0] != (M-1)){ // we're not in a north edge, we can have a neighbour north
          current_states[ N*(start[0]+1) + start[1] ] = 1;
          update(eik_queue, index_queue, speed( x_linspace[start[0]], y_linspace[start[1] + 1] )*h, (N*(start[0]+1) + start[1]));
-         Q[ N*(start[0]+1) + start[1] ] = 1;
          distance[ N*(start[0]+1) + start[1] ] = speed( x_linspace[start[0]], y_linspace[start[1] + 1] )*h;
      }
      //printQGridFromQueue(Q, M, N); // in case we need this
@@ -171,7 +162,6 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
           // Now that we've found the next point to put on valid, we update
           current_states[next_valid] = 2; // set this as valid
           deleteRoot(eik_queue, index_queue); // delete the root of the priority queue (binary tree)
-          Q[next_valid] = 2;
           //printQGridFromQueue(Q); // Check
           // Now we need to add its neighbours, mark them as trial but we know where their neighbours are
           // but we just need to mark them as trial if they are currently marked as far
@@ -305,7 +295,7 @@ static void FMM_2D( double x_min, double y_min, int start[2], double *distance, 
               update(eik_queue, index_queue, distance[next_valid+N], (next_valid+N));
           }
 
-          printGridFromDistance(distance, M, N);
+          //printGridFromDistance(distance, M, N);
 
 
      }
