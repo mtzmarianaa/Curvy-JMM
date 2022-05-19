@@ -10,15 +10,39 @@ Here is the implementation of the prioriry queue for the 2D FMM. Explanaition
 
 #include "priority_queue.h"
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
 int size = 0; // Initial size is zero because we need to insert something to initialize the queue
 
-/*
+
 typedef struct Priority_queue {
-  int queue_vals[10];
-  int queue_index[10];
+  double *queue_vals; // if we need more we'll add more
+  int *queue_index; // same here
+  int size; // current occupied size occupied
 } p_queue;
-*/
+
+void priority_queue_init( p_queue *p_queueImp  ) {
+  p_queueImp->queue_vals = malloc( 16*sizeof(double)  );
+  p_queueImp->queue_index = malloc( 16*sizeof(int) );
+  p_queueImp->size = 0;
+  assert( p_queueImp != NULL  ); // the queue should not be null if initialized
+}
+
+void priority_queue_deinit( p_queue *p_queueImp ) {
+  free( p_queueImp->queue_vals );
+  free(p_queueImp->queue_index  );
+  p_queueImp->queue_vals = NULL;
+  p_queueImp->queue_index = NULL;
+}
+
+
+
+void grow_queue( p_queue *p_queueImp ) {
+  p_queueImp->queue_vals = realloc( p_queueImp->queue_vals, 2*sizeof(p_queueImp->queue_vals)  );
+  p_queueImp->queue_index = realloc(p_queueImp->queue_index, 2*sizeof(p_queueImp->queue_index) );
+}
+
 
 static void swap_double(double *a, double *b)
 {
@@ -34,9 +58,9 @@ static void swap_int(int *a, int *b)
   *a = temp;
 }
 
-static void heapify(double eik_queue[], int index_queue[], int size, int i)
+static void heapify(p_queue *p_queueImp, int i)
 {
-  if (size == 1)
+  if (p_queueImp->size == 1)
   {
     printf("Single element in the heap, heapified done");
   }
@@ -47,45 +71,53 @@ static void heapify(double eik_queue[], int index_queue[], int size, int i)
     int r = 2 * i + 2; // right child
     // find if the children are smaller or not, if they are we need to swap them
     // BUT THE COMPARISON IS DONE IN THE eik_queue
-    if (l < size && eik_queue[l] < eik_queue[smallest])
+    if (l < p_queueImp->size && p_queueImp->queue_vals[l] < p_queueImp->queue_vals[smallest])
       smallest = l;
-    if (r < size && eik_queue[r] < eik_queue[smallest])
+    if (r < p_queueImp->size && p_queueImp->queue_vals[r] < p_queueImp->queue_vals[smallest])
       smallest = r;
     if (smallest != i)
     {
-      swap_double(&eik_queue[i], &eik_queue[smallest]); // swap in the eik_queue
-      swap_int(&index_queue[i], &index_queue[smallest]); // swap in the index_queue
-      heapify(eik_queue, index_queue, size, smallest); // recurrencia
+      swap_double(&p_queueImp->queue_vals[i], &p_queueImp->queue_vals[smallest]); // swap in the eik_queue
+      swap_int(&p_queueImp->queue_index[i], &p_queueImp->queue_index[smallest]); // swap in the index_queue
+      heapify(p_queueImp, smallest); // recurrencia
     }
   }
 }
 
-static void insert(double eik_queue[], int index_queue[], double newNum, int newIndex)
+static void insert(p_queue *p_queueImp, double newNum, int newIndex)
 {
-  if (size == 0) // First time we insert an element in the tree
+  if (p_queueImp->size == 0) // First time we insert an element in the tree
   {
-    eik_queue[0] = newNum;
-    index_queue[0] = newIndex;
-    size += 1;
+    p_queueImp->queue_vals[0] = newNum;
+    p_queueImp->queue_index[0] = newIndex;
+    p_queueImp->size += 1;
   }
   else // if there were elements in the tree before inserting
   {
-    eik_queue[size] = newNum;
-    index_queue[size] = newIndex;
-    size += 1;
-    for (int i = size / 2 - 1; i >= 0; i--)
+    if ( p_queueImp->size >=16  ) {
+      grow_queue( p_queueImp );
+    }
+    p_queueImp->queue_vals[p_queueImp->size] = newNum;
+    p_queueImp->queue_index[p_queueImp->size] = newIndex;
+    p_queueImp->size += 1;
+    for (int i = p_queueImp->size / 2 - 1; i >= 0; i--)
     {
-      heapify(eik_queue, index_queue, size, i);
+      heapify(p_queueImp, i);
     }
   }
 }
 
-static void insert_end(double eik_queue[], int index_queue[], double newNum, int newIndex)
+/*
+
+static void insert_end(p_queue *p_queueImp, double newNum, int newIndex)
 {
+    p_queueImp->queue_vals[   ]
     eik_queue[size] = newNum;
     index_queue[size] = newIndex;
     size += 1;
 }
+
+
 
 static void delete_findValue(double eik_queue[], int index_queue[], double num)
 {
@@ -178,3 +210,4 @@ static double get_valueAtIndex(double eik_queue[], int index_queue[], int index,
     return eik_queue[i];
 }
 
+*/

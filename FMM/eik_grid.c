@@ -20,9 +20,20 @@ typedef struct eik_grid {
   int *current_states;
 } eik_gridS;
 
-static void initialize_queue(double *eik_queue, int *index_queue, int M, int N)
+void eik_queue_alloc(double *eik_queue, int *index_queue)
 {
-    eik_queue = malloc(M*N*sizeof(double));
-    index_queue = malloc(M*N*sizeof(int));
+    eik_queue = malloc(16*sizeof(double));
+    index_queue = malloc(16*sizeof(int));
 }
+
+void eik_grid_alloc( eik_gridS **eik_g ) {
+  *eik_g = malloc( sizeof(eik_gridS)  );
+  assert(*eik_g != NULL); // eik_g should not be null
+}
+
+void eik_grid_dealloc( eik_gridS **eik_g ) {
+  free( *eik_g );
+  *eik_g = NULL;
+}
+
 
