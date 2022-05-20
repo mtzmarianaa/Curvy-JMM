@@ -26,10 +26,6 @@ static void deleteRoot(p_queue *p_queueImp);
 
 static void printeik_queue(p_queue *p_queueImp);
 
-/*
+static void update(p_queue *p_queueImp, double new_valConsidered, int index);
 
-static void update(double eik_queue[], int index_queue[], double new_valConsidered, int index);
-
-static double get_valueAtIndex(double eik_queue[], int index_queue[], int index, int size);
-
-*/
+static double get_valueAtIndex(p_queue *p_queueImp, int index);

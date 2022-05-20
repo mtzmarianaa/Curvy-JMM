@@ -13,17 +13,16 @@ Here is the implementation of the prioriry queue for the 2D FMM. Explanaition
 #include <stdlib.h>
 #include <assert.h>
 
-int size = 0; // Initial size is zero because we need to insert something to initialize the queue
-
-
-typedef struct Priority_queue {
+typedef struct Priority_queue 
+{
   double *queue_vals; // if we need more we'll add more
   int *queue_index; // same here
   int size; // current occupied size occupied
   int maxSize; // max sized of queue_vals and queue_index currently allowed
 } p_queue;
 
-void priority_queue_init( p_queue *p_queueImp  ) {
+void priority_queue_init( p_queue *p_queueImp  ) 
+{
   p_queueImp->maxSize = 2;
   p_queueImp->queue_vals = malloc( p_queueImp->maxSize*sizeof(double)  );
   p_queueImp->queue_index = malloc( p_queueImp->maxSize*sizeof(int) );
@@ -31,7 +30,8 @@ void priority_queue_init( p_queue *p_queueImp  ) {
   assert( p_queueImp != NULL  ); // the queue should not be null if initialized
 }
 
-void priority_queue_deinit( p_queue *p_queueImp ) {
+void priority_queue_deinit( p_queue *p_queueImp ) 
+{
   free( p_queueImp->queue_vals );
   free(p_queueImp->queue_index  );
   p_queueImp->queue_vals = NULL;
@@ -41,7 +41,8 @@ void priority_queue_deinit( p_queue *p_queueImp ) {
 }
 
 
-void grow_queue( p_queue *p_queueImp ) {
+void grow_queue( p_queue *p_queueImp ) 
+{
   p_queueImp->maxSize *= 2;
   p_queueImp->queue_vals = realloc( p_queueImp->queue_vals, p_queueImp->maxSize*sizeof(double)  );
   p_queueImp->queue_index = realloc( p_queueImp->queue_index, p_queueImp->maxSize*sizeof(int) );
@@ -124,8 +125,7 @@ static void insert_end(p_queue *p_queueImp, double newNum, int newIndex)
 
 static void delete_findValue(p_queue *p_queueImp, double num)
 {
-  int i;
-  for (i = 0; i < size; i++)
+  for (int i = 0; i < size; i++)
   {
     if (num == p_queueImp->queue_vals[i] ) // find the value
       break;
@@ -143,8 +143,7 @@ static void delete_findValue(p_queue *p_queueImp, double num)
 
 static void delete_findIndex(p_queue *p_queueImp, int ind)
 {
-  int i;
-  for (i = 0; i < p_queueImp->size; i++)
+  for (int i = 0; i < p_queueImp->size; i++)
   {
     if (ind == p_queueImp->queue_index[i])
       break;
@@ -190,8 +189,7 @@ static void printeik_queue(p_queue *p_queueImp)
 static void update(p_queue *p_queueImp, double new_valConsidered, int index)
 {
     // First find the current value associated with index
-    int i;
-    for (i = 0; i < size; i++)
+    for (int i = 0; i < size; i++)
     {
         if (index == p_queueImp->queue_index[i])
         break;
