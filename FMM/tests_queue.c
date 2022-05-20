@@ -11,22 +11,91 @@ int main()
 
   priority_queue_init( &p_queueImp  );
 
+  printeik_queue(&p_queueImp);
+
   printf("%d", p_queueImp.size);
 
-  grow_queue( &p_queueImp );
+  printf("\n--------");
+
+  printf("Insert value \n");
 
   insert(&p_queueImp, 3.0, 0);
 
-  printf("\n");
+  printeik_queue(&p_queueImp);
 
-  printf("%d", p_queueImp.size);
+  printf("\n-----");
 
-  printf("\n");
+  printf("\n Insert value \n");
 
-  printf("%d", p_queueImp.queue_index[0]);
-  
-  printf("\n");
+  insert(&p_queueImp, 2.0, 1);
 
-  printf("%lf", p_queueImp.queue_vals[0]);
+  printeik_queue(&p_queueImp);
+
+  printf("\n-----");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 12.5, 2);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 5.0, 3);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 1.1, 4);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 1.0, 5);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 4.0, 6);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Insert value \n");
+
+  insert(&p_queueImp, 1.2, 7);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Delete fourth element inserted, %fl \n", get_valueAtIndex(&p_queueImp, 4));
+
+  delete_findIndex(&p_queueImp, 4);
+
+  printeik_queue(&p_queueImp);
+
+  printf("\n--------");
+
+  printf("\n Delete root \n");
+
+  deleteRoot(&p_queueImp);
+
+  printeik_queue(&p_queueImp);
+
+  priority_queue_deinit(&p_queueImp);
+
 
 }

@@ -20,11 +20,13 @@ typedef struct Priority_queue {
   double *queue_vals; // if we need more we'll add more
   int *queue_index; // same here
   int size; // current occupied size occupied
+  int maxSize; // max sized of queue_vals and queue_index currently allowed
 } p_queue;
 
 void priority_queue_init( p_queue *p_queueImp  ) {
-  p_queueImp->queue_vals = malloc( 16*sizeof(double)  );
-  p_queueImp->queue_index = malloc( 16*sizeof(int) );
+  p_queueImp->maxSize = 2;
+  p_queueImp->queue_vals = malloc( p_queueImp->maxSize*sizeof(double)  );
+  p_queueImp->queue_index = malloc( p_queueImp->maxSize*sizeof(int) );
   p_queueImp->size = 0;
   assert( p_queueImp != NULL  ); // the queue should not be null if initialized
 }
@@ -34,13 +36,15 @@ void priority_queue_deinit( p_queue *p_queueImp ) {
   free(p_queueImp->queue_index  );
   p_queueImp->queue_vals = NULL;
   p_queueImp->queue_index = NULL;
+  p_queueImp->size = 0;
+  p_queueImp->maxSize = 2;
 }
 
 
-
 void grow_queue( p_queue *p_queueImp ) {
-  p_queueImp->queue_vals = realloc( p_queueImp->queue_vals, 2*sizeof(p_queueImp->queue_vals)  );
-  p_queueImp->queue_index = realloc(p_queueImp->queue_index, 2*sizeof(p_queueImp->queue_index) );
+  p_queueImp->maxSize *= 2;
+  p_queueImp->queue_vals = realloc( p_queueImp->queue_vals, p_queueImp->maxSize*sizeof(double)  );
+  p_queueImp->queue_index = realloc( p_queueImp->queue_index, p_queueImp->maxSize*sizeof(int) );
 }
 
 
@@ -88,126 +92,131 @@ static void insert(p_queue *p_queueImp, double newNum, int newIndex)
 {
   if (p_queueImp->size == 0) // First time we insert an element in the tree
   {
+    p_queueImp->size = 1;
     p_queueImp->queue_vals[0] = newNum;
     p_queueImp->queue_index[0] = newIndex;
-    p_queueImp->size += 1;
   }
   else // if there were elements in the tree before inserting
   {
-    if ( p_queueImp->size >=16  ) {
+    p_queueImp->size += 1;
+    if ( p_queueImp->size >= p_queueImp->maxSize  ) {
       grow_queue( p_queueImp );
     }
-    p_queueImp->queue_vals[p_queueImp->size] = newNum;
-    p_queueImp->queue_index[p_queueImp->size] = newIndex;
-    p_queueImp->size += 1;
-    for (int i = p_queueImp->size / 2 - 1; i >= 0; i--)
+    p_queueImp->queue_vals[p_queueImp->size -1 ] = newNum;
+    p_queueImp->queue_index[p_queueImp->size -1 ] = newIndex;
+    for (int i = p_queueImp->size / 2 ; i >= 0; i--)
     {
       heapify(p_queueImp, i);
     }
   }
 }
 
-/*
+
 
 static void insert_end(p_queue *p_queueImp, double newNum, int newIndex)
 {
-    p_queueImp->queue_vals[   ]
-    eik_queue[size] = newNum;
-    index_queue[size] = newIndex;
-    size += 1;
+    p_queueImp->size += 1;
+    p_queueImp->queue_vals[p_queueImp->size -1 ] = newNum;
+    p_queueImp->queue_index[p_queueImp->size -1] = newIndex;
 }
 
 
 
-static void delete_findValue(double eik_queue[], int index_queue[], double num)
+static void delete_findValue(p_queue *p_queueImp, double num)
 {
   int i;
   for (i = 0; i < size; i++)
   {
-    if (num == eik_queue[i]) // find the value
+    if (num == p_queueImp->queue_vals[i] ) // find the value
       break;
   }
 
-  swap_double(&eik_queue[i], &eik_queue[size - 1]);
-  swap_int(&index_queue[i], &index_queue[size - 1]);
-  size -= 1;
-  for (int i = size / 2 - 1; i >= 0; i--)
+  swap_double(&p_queueImp->queue_vals[i], &p_queueImp->queue_vals[p_queueImp->size - 1]); 
+  swap_int(&p_queueImp->queue_index[i], &p_queueImp->queue_index[p_queueImp->size - 1]); 
+
+  p_queueImp->size -= 1; // make it "forget", after size-1 everything is ignored
+  for (int i = size / 2 ; i >= 0; i--)
   {
-    heapify(eik_queue, index_queue, size, i);
+    heapify(p_queueImp, i);
   }
 }
 
-static void delete_findIndex(double eik_queue[], int index_queue[], int ind)
+static void delete_findIndex(p_queue *p_queueImp, int ind)
 {
   int i;
-  for (i = 0; i < size; i++)
+  for (i = 0; i < p_queueImp->size; i++)
   {
-    if (ind == index_queue[i])
+    if (ind == p_queueImp->queue_index[i])
       break;
   }
 
-  swap_double(&eik_queue[i], &eik_queue[size - 1]);
-  swap_int(&index_queue[i], &index_queue[size - 1]);
-  size -= 1;
-  for (int i = size / 2 - 1; i >= 0; i--)
+  swap_double(&p_queueImp->queue_vals[i], &p_queueImp->queue_vals[p_queueImp->size - 1]); 
+  swap_int(&p_queueImp->queue_index[i], &p_queueImp->queue_index[p_queueImp->size - 1]); 
+
+  p_queueImp->size -= 1; // make it "forget", after size-1 everything is ignored
+  for (int i = size / 2 ; i >= 0; i--)
   {
-    heapify(eik_queue, index_queue, size, i);
+    heapify(p_queueImp, i);
   }
 }
 
-static void deleteRoot(double eik_queue[], int index_queue[])
+
+static void deleteRoot(p_queue *p_queueImp)
 {
-
-  swap_double(&eik_queue[0], &eik_queue[size - 1]);
-  swap_int(&index_queue[0], &index_queue[size - 1]);
-  size -= 1;
-  for (int i = size / 2 - 1; i >= 0; i--)
+  // we dont need to look for the index, we know its on the 0th position
+  swap_double(&p_queueImp->queue_vals[0], &p_queueImp->queue_vals[p_queueImp->size - 1]); 
+  swap_int(&p_queueImp->queue_index[0], &p_queueImp->queue_index[p_queueImp->size - 1]); 
+  p_queueImp->size -= 1; 
+  for (int i = size / 2; i >= 0; i--)
   {
-    heapify(eik_queue, index_queue, size, i);
+    heapify(p_queueImp, i);
   }
 }
 
-static void printeik_queue(double eik_queue[], int index_queue[], int size)
+
+static void printeik_queue(p_queue *p_queueImp)
 {
   printf("Eikonal values:");
-  for (int i = 0; i < size; ++i)
-    printf("%lf ", eik_queue[i]);
+  for (int i = 0; i < p_queueImp->size; ++i)
+    printf("%lf ", p_queueImp->queue_vals[i]);
   printf("\n");
   printf("Indices:");
-  for (int i = 0; i < size; ++i)
-    printf("%d ", index_queue[i]);
+  for (int i = 0; i < p_queueImp->size; ++i)
+    printf("%d ", p_queueImp->queue_index[i]);
   printf("\n");
+  printf("Current size: %d", p_queueImp->size);
 }
 
-static void update(double eik_queue[], int index_queue[], double new_valConsidered, int index)
+static void update(p_queue *p_queueImp, double new_valConsidered, int index)
 {
     // First find the current value associated with index
     int i;
     for (i = 0; i < size; i++)
     {
-        if (index == index_queue[i])
+        if (index == p_queueImp->queue_index[i])
         break;
     }
     // Then, if the new value considered is smaller than the current value
-    if ( eik_queue[i] > new_valConsidered  )
+    if ( p_queueImp->queue_vals[i] > new_valConsidered  )
     {
-        eik_queue[i] = new_valConsidered;
-        for (int j = size / 2 - 1; j >= 0; j--)
+        p_queueImp->queue_vals[i] = new_valConsidered;
+        for (int j = size / 2 ; j >= 0; j--)
         {
-            heapify(eik_queue, index_queue, size, j);
+            heapify(p_queueImp, j);
         }
     }
 }
 
-static double get_valueAtIndex(double eik_queue[], int index_queue[], int index, int size)
+
+
+static double get_valueAtIndex(p_queue *p_queueImp, int index)
 {
     int i;
-    for (i = 0; i < size; i ++)
+    for (i = 0; i < p_queueImp->size; i ++)
     {
-        if (index == index_queue[i])
+        if (index == p_queueImp->queue_index[i])
         break;
     }
-    return eik_queue[i];
+    return p_queueImp->queue_vals[i];
 }
 
-*/
