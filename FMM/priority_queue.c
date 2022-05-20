@@ -13,13 +13,13 @@ Here is the implementation of the prioriry queue for the 2D FMM. Explanaition
 #include <stdlib.h>
 #include <assert.h>
 
-typedef struct Priority_queue 
+struct Priority_queue 
 {
   double *queue_vals; // if we need more we'll add more
   int *queue_index; // same here
   int size; // current occupied size occupied
   int maxSize; // max sized of queue_vals and queue_index currently allowed
-} p_queue;
+} ;
 
 void priority_queue_init( p_queue *p_queueImp  ) 
 {
@@ -91,6 +91,7 @@ static void heapify(p_queue *p_queueImp, int i)
 
 static void insert(p_queue *p_queueImp, double newNum, int newIndex)
 {
+  int i;
   if (p_queueImp->size == 0) // First time we insert an element in the tree
   {
     p_queueImp->size = 1;
@@ -105,7 +106,7 @@ static void insert(p_queue *p_queueImp, double newNum, int newIndex)
     }
     p_queueImp->queue_vals[p_queueImp->size -1 ] = newNum;
     p_queueImp->queue_index[p_queueImp->size -1 ] = newIndex;
-    for (int i = p_queueImp->size / 2 ; i >= 0; i--)
+    for (i = p_queueImp->size / 2 ; i >= 0; i--)
     {
       heapify(p_queueImp, i);
     }
@@ -125,7 +126,8 @@ static void insert_end(p_queue *p_queueImp, double newNum, int newIndex)
 
 static void delete_findValue(p_queue *p_queueImp, double num)
 {
-  for (int i = 0; i < size; i++)
+  int i;
+  for (i = 0; i < p_queueImp->size; i++)
   {
     if (num == p_queueImp->queue_vals[i] ) // find the value
       break;
@@ -135,7 +137,7 @@ static void delete_findValue(p_queue *p_queueImp, double num)
   swap_int(&p_queueImp->queue_index[i], &p_queueImp->queue_index[p_queueImp->size - 1]); 
 
   p_queueImp->size -= 1; // make it "forget", after size-1 everything is ignored
-  for (int i = size / 2 ; i >= 0; i--)
+  for (i = p_queueImp->size / 2 ; i >= 0; i--)
   {
     heapify(p_queueImp, i);
   }
@@ -143,7 +145,8 @@ static void delete_findValue(p_queue *p_queueImp, double num)
 
 static void delete_findIndex(p_queue *p_queueImp, int ind)
 {
-  for (int i = 0; i < p_queueImp->size; i++)
+  int i;
+  for (i = 0; i < p_queueImp->size; i++)
   {
     if (ind == p_queueImp->queue_index[i])
       break;
@@ -153,7 +156,7 @@ static void delete_findIndex(p_queue *p_queueImp, int ind)
   swap_int(&p_queueImp->queue_index[i], &p_queueImp->queue_index[p_queueImp->size - 1]); 
 
   p_queueImp->size -= 1; // make it "forget", after size-1 everything is ignored
-  for (int i = size / 2 ; i >= 0; i--)
+  for (i = p_queueImp->size / 2 ; i >= 0; i--)
   {
     heapify(p_queueImp, i);
   }
@@ -162,11 +165,12 @@ static void delete_findIndex(p_queue *p_queueImp, int ind)
 
 static void deleteRoot(p_queue *p_queueImp)
 {
+  int i;
   // we dont need to look for the index, we know its on the 0th position
   swap_double(&p_queueImp->queue_vals[0], &p_queueImp->queue_vals[p_queueImp->size - 1]); 
   swap_int(&p_queueImp->queue_index[0], &p_queueImp->queue_index[p_queueImp->size - 1]); 
   p_queueImp->size -= 1; 
-  for (int i = size / 2; i >= 0; i--)
+  for (i = p_queueImp->size / 2; i >= 0; i--)
   {
     heapify(p_queueImp, i);
   }
@@ -175,8 +179,9 @@ static void deleteRoot(p_queue *p_queueImp)
 
 static void printeik_queue(p_queue *p_queueImp)
 {
+  int i;
   printf("Eikonal values:");
-  for (int i = 0; i < p_queueImp->size; ++i)
+  for (i = 0; i < p_queueImp->size; ++i)
     printf("%lf ", p_queueImp->queue_vals[i]);
   printf("\n");
   printf("Indices:");
@@ -188,8 +193,9 @@ static void printeik_queue(p_queue *p_queueImp)
 
 static void update(p_queue *p_queueImp, double new_valConsidered, int index)
 {
+    int i, j;
     // First find the current value associated with index
-    for (int i = 0; i < size; i++)
+    for (i = 0; i < p_queueImp->size; i++)
     {
         if (index == p_queueImp->queue_index[i])
         break;
@@ -198,7 +204,7 @@ static void update(p_queue *p_queueImp, double new_valConsidered, int index)
     if ( p_queueImp->queue_vals[i] > new_valConsidered  )
     {
         p_queueImp->queue_vals[i] = new_valConsidered;
-        for (int j = size / 2 ; j >= 0; j--)
+        for (j = p_queueImp->size / 2 ; j >= 0; j--)
         {
             heapify(p_queueImp, j);
         }

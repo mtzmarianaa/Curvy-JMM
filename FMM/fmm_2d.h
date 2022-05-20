@@ -1,14 +1,14 @@
 #pragma once
 
+#include "eik_grid.h"
 
-static void FMM_2D( double x_min, double y_min, int start[2], double *distance, double *eik_queue, int *index_queue, int *current_states, int M, int N, double h);
+
+void FMM_2D( eik_gridS *eikonal_g );
 
 static double speed(double x, double y);
 
 static void ActualSolution(double x_min, double y_min, int start[2], double *trueSolution, int M, int N, double h);
 
-static void printQGridFromQueue(int *Q, int M, int N);
-
-static void printGridFromDistance(double *distance, int M, int N);
+static double onePointUpdate(  eik_gridS *eikonal_g, int coordinate  );
 
 static void generateDataForPlot(double *x, int M, int N, char data_name[10]);
