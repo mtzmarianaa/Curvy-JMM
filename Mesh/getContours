@@ -1,0 +1,19 @@
+import numpy as np
+import cv2 as cv
+import os
+
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+im = cv.imread('ommatidium_diagram.jpg')
+cv.imshow('image',im)
+imgray = cv.cvtColor(im, cv.COLOR_BGR2GRAY)
+ret, thresh = cv.threshold(imgray, 127, 255, 0)
+contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+cnt_vec = np.arange(-212,0)
+for cnt_i in cnt_vec:
+    cnt = contours[cnt_i]
+    cv.drawContours(im, [cnt], 0, (0,255,0), 3)
+cv.imshow('img', im)
+cv.imwrite('contours.jpg', im) 
+cv.waitKey()
