@@ -1,0 +1,3 @@
+/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/Mesh/CMakeFiles/star_conflict_zone.dir
+/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/Mesh/CMakeFiles/edit_cache.dir
+/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/Mesh/CMakeFiles/rebuild_cache.dir

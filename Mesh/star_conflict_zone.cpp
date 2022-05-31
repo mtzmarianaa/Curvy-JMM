@@ -18,11 +18,11 @@ int main( )
 {
   Dt2 dt2;
 
-  dt2.insert(Point_2(0,0));
+  dt2.insert(Point_2(1,0));
   dt2.insert(Point_2(10,0));
-  dt2.insert(Point_2(0,10));
+  dt2.insert(Point_2(1,10));
 
-  std::array<Point_2,3> points = { Point_2(2,2), Point_2(1,0), Point_2(2,2) };
+  std::array<Point_2,3> points = { Point_2(2,2), Point_2(1.5,0), Point_2(2,2) };
 
   CGAL::spatial_sort(points.begin(), points.end());
 
