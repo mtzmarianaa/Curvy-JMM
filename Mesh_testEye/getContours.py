@@ -25,7 +25,8 @@ contours, hierarchy = cv.findContours(thresh, cv.RETR_CCOMP, cv.CHAIN_APPROX_NON
 # Get the list of points
 x_coord = []
 y_coord = []
-levels_to_use = [0,1,2,3,4,5,6,7,9]
+#levels_to_use = [0,1,2,3,4,5,6,7,9]
+levels_to_use = [4]
 for c in levels_to_use:
     n_contour = contours[c]
     for d in range(len(n_contour)):
@@ -43,6 +44,6 @@ plt.show()
 
 # Saving such list
 
-points_df.to_csv('EdgesData.csv', index=False, header = False)
+points_df.to_csv('EdgesData_4.csv', index=False, header = False)
 
 

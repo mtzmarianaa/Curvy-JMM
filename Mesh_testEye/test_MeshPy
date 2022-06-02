@@ -1,0 +1,54 @@
+import meshpy.triangle as triangle
+import numpy as np
+import pandas as pd
+import numpy.linalg as la
+import os
+import matplotlib.pyplot as pt
+
+
+
+def round_trip_connect(start, end):
+    return [(i, i + 1) for i in range(start, end)] + [(end, start)]
+
+
+def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    # First we read our data and make sure it is written as a list of tuples
+    points_df = pd.read_csv("EdgesData_4.csv")
+    points = list(points_df.itertuples(index=False, name=None))
+    # points.append( (0, 0))
+    # points.append((0, -3507))
+    # points.append((2480, -3507))
+    # points.append((2490, 0))
+
+    #points = [(1, 1), (-1, 1), (-1, -1), (1, -1)]
+
+    # for pt in np.random.randn(100, 2):
+    #     points.append(pt * 0.1)
+
+    def round_trip_connect(start, end):
+        result = []
+        for i in range(start, end):
+            result.append((i, i + 1))
+        result.append((end, start))
+        return result
+
+    info = triangle.MeshInfo()
+    info.set_points(points)
+    info.set_holes([(0, 0)])
+    info.set_facets(round_trip_connect(0, len(points) - 1 ))
+
+    mesh = triangle.build(
+        info
+    )
+    
+    import matplotlib.pyplot as pt
+    
+    mesh_points = np.array(mesh.points)
+    mesh_tris = np.array(mesh.elements)
+    pt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris,lw=0.8, c = "#5953b2")
+    pt.show()
+
+
+if __name__ == "__main__":
+    main()
