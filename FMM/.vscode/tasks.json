@@ -8,7 +8,6 @@
 			"args": [
 				"-fdiagnostics-color=always",
 				"-g",
-				"-std=c++14",
 				"-Wall",
 				"${file}",
 				"-o",
@@ -37,48 +36,6 @@
 				"$gcc"
 			],
 			"detail": "compiler: /usr/bin/gcc"
-		},
-		{
-			"type": "cppbuild",
-			"label": "C/C++: clang++ build active file",
-			"command": "/usr/bin/clang++",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"-std=c++14",
-				"${file}",
-				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}"
-			],
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
-			"detail": "compiler: /usr/bin/clang++"
-		},
-		{
-			"type": "cppbuild",
-			"label": "C/C++: g++-17 build active file",
-			"command": "/usr/local/bin/g++-17",
-			"args": [
-				"-fdiagnostics-color=always",
-				"-g",
-				"-std=c++14",
-				"${file}",
-				"-o",
-				"${fileDirname}/${fileBasenameNoExtension}"
-			],
-			"options": {
-				"cwd": "${fileDirname}"
-			},
-			"problemMatcher": [
-				"$gcc"
-			],
-			"group": "build",
-			"detail": "compiler: /usr/local/bin/g++-17"
 		}
 	]
 }

@@ -1,19 +1,23 @@
 /*
 TESTS FOR THE PRIORITY QUEUE
 */
+#include <stdio.h>
+#include <stdlib.h>
 
-#include "priority_queue.c"
+#include "priority_queue.h"
 
 int main()
 {
   
-  p_queue *p_queueImp = malloc(sizeof(p_queue));
+  p_queue *p_queueImp;
 
-  priority_queue_init( p_queueImp  );
+  priority_queue_alloc(&p_queueImp);
+
+  priority_queue_init( p_queueImp );
 
   printeik_queue(p_queueImp);
 
-  printf("%d", p_queueImp->size);
+ // printf("%d", p_queueImp->size);
 
   printf("\n--------");
 
@@ -81,38 +85,23 @@ int main()
 
   printf("\n--------");
 
-  printf("\n Delete fourth element inserted, %fl \n", get_valueAtIndex(p_queueImp, 4));
+  // printf("\n Delete fourth element inserted, %fl \n", get_valueAtIndex(p_queueImp, 4));
 
-  delete_findIndex(p_queueImp, 4);
+  // delete_findIndex(p_queueImp, 4);
 
-  printeik_queue(p_queueImp);
+  // printeik_queue(p_queueImp);
 
-  printf("\n--------");
+  // printf("\n--------");
 
-  printf("\n Delete root \n");
+  // printf("\n Delete root \n");
 
-  deleteRoot(p_queueImp);
+  // deleteRoot(p_queueImp);
 
-  printeik_queue(p_queueImp);
+  // printeik_queue(p_queueImp);
 
-  printf("\n--------");
 
-  printf("\n Memory allocation of the whole struct \n");
+  // priority_queue_deinit(p_queueImp);
 
-  printf("%d", &p_queueImp);
-
-  printf("\n--------");
-
-  printf("\n Memory allocation of the list of values of the struct \n");
-
-  printf("%d", &p_queueImp->queue_vals);
-
-  printf("\n--------");
-
-  printf("\n Memory allocation of the list of indices of the struct \n");
-
-  printf("%d", &p_queueImp->queue_index);
-
-  priority_queue_deinit(p_queueImp);
+  return 1;
 
 }
