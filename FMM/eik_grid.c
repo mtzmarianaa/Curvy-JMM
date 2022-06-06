@@ -125,7 +125,7 @@ void add_toPriorityQueue(eik_gridS *eik_g, int index, double new_value)
   insert_end(eik_g->p_queueG, new_value, index); // hence we insert it at the end (faster)
 }
 
-int getCoordinatesFromIndex(eik_gridS *eik_g, int index)
+int *getCoordinatesFromIndex(eik_gridS *eik_g, int index)
 {
   int coord[2];
   coord[0] = index%eik_g->M;
@@ -136,6 +136,50 @@ int getCoordinatesFromIndex(eik_gridS *eik_g, int index)
 int getIndexFromCoordinates(eik_gridS *eik_g, int coord[2])
 {
   return eik_g->M*coord[1] + coord[0];
+}
+
+int *neighboursBool(eik_gridS *eik_g, int index)
+{
+  // returns an array of size 4 with 0 and 1. Position 0 is the southern neighbour, 1 is the western neighbour,
+  // 2 is the eastern neighbour, 3 is the northern neighbour. If set to 0 then no neighbour found, if set to 1 neighbour found
+  int neighbours_found[4];
+  if( index > eik_g->N )
+  {
+    neighbours_found[0] = 1;
+  }
+  else
+  {
+    neighbours_found[0] = 0;
+  }
+
+  if( index%eik_g->N != 0 )
+  {
+    neighbours_found[1] = 1;
+  }
+  else
+  {
+    neighbours_found[1] = 0;
+  }
+
+  if( index%eik_g->N != eik_g->N -1 )
+  {
+    neighbours_found[2] = 1;
+  }
+  else
+  {
+    neighbours_found[2] = 0;
+  }
+
+  if( index/eik_g->N < eik_g->M - 1 )
+  {
+    neighbours_found[3] = 1;
+  }
+  else
+  {
+    neighbours_found[3] = 0;
+  }
+
+  return neighbours_found;
 }
 
 

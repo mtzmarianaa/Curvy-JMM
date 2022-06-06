@@ -18,6 +18,8 @@ void setValue(eik_gridS *eik_g, int index, double new_value);
 
 void add_toPriorityQueue(eik_gridS *eik_g, int index, double new_value);
 
-int getCoordinatesFromIndex(eik_gridS *eik_g, int index);
+int *getCoordinatesFromIndex(eik_gridS *eik_g, int index);
 
 int getIndexFromCoordinates(eik_gridS *eik_g, int coord[2]);
+
+int *neighboursBool(eik_gridS *eik_g, int index);

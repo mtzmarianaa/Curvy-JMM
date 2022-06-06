@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "__tuple": "c",
-        "array": "c"
+        "array": "c",
+        "chrono": "c",
+        "variant": "c"
     }
 }
