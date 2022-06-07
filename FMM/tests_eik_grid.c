@@ -21,13 +21,42 @@ int main()
   setValue(eikonal_g, start[0]*8 + start[1], 0);
   print_eikonal_grid(eikonal_g);
   print_currentStates(eikonal_g);
+
   // testing all the functions
-  int neighbours_found[4];
-  neighbours_found = neighboursBool(eikonal_g, 5);
-  printf( "%d /n", neighbours_found[0] );
-  printf( "%d /n", neighbours_found[1] );
-  printf( "%d /n", neighbours_found[2] );
-  printf( "%d /n", neighbours_found[3] );
+  int southN, westN, eastN, northN, index;
+  // no southern or western neighbors
+  index = 0;
+  southN = neighborSouthB(eikonal_g, index);
+  westN = neighborWestB(eikonal_g, index);
+  eastN = neighborEastB(eikonal_g, index);
+  northN = neighborNorthB(eikonal_g, index);
+  printf(" no southern or western neighbors \n");
+  printf( "%d \n", southN );
+  printf( "%d \n", westN );
+  printf( "%d \n", eastN );
+  printf( "%d \n", northN  );
+  // no northern or eastern
+  index = 63;
+  southN = neighborSouthB(eikonal_g, index);
+  westN = neighborWestB(eikonal_g, index);
+  eastN = neighborEastB(eikonal_g, index);
+  northN = neighborNorthB(eikonal_g, index);
+  printf(" no northern or eastern \n");
+  printf( "%d \n", southN );
+  printf( "%d \n", westN );
+  printf( "%d \n", eastN );
+  printf( "%d \n", northN  );
+  // all neighbours
+  index = 10;
+  southN = neighborSouthB(eikonal_g, index);
+  westN = neighborWestB(eikonal_g, index);
+  eastN = neighborEastB(eikonal_g, index);
+  northN = neighborNorthB(eikonal_g, index);
+  printf(" all neighbours \n");
+  printf( "%d \n", southN );
+  printf( "%d \n", westN );
+  printf( "%d \n", eastN );
+  printf( "%d \n", northN  );
 
 
   

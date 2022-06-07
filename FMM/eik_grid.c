@@ -6,6 +6,7 @@ This is the Eikonal grid with different specifications
 
 #include "eik_grid.h"
 #include "priority_queue.h"
+#include "SoSFunction.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,12 +126,23 @@ void add_toPriorityQueue(eik_gridS *eik_g, int index, double new_value)
   insert_end(eik_g->p_queueG, new_value, index); // hence we insert it at the end (faster)
 }
 
-int *getCoordinatesFromIndex(eik_gridS *eik_g, int index)
+double onePointUpdate( eik_gridS *eik_g, int index, int targetIndex )
 {
-  int coord[2];
-  coord[0] = index%eik_g->M;
-  coord[1] = index/eik_g->M;
-  return coord;
+  double x, y, update;
+  x = eik_g->x_linspace( getXCoordFromIndex(targetIndex) );
+  y = eik_g->y_linspace( getYCoordFromIndex(targetIndex)  );
+  update = eik_g->eik_gridVals[index] + eik_g->h*s_function( x, y ) ;
+  return update;
+}
+
+int getXCoordFromIndex(eik_gridS *eik_g, int index)
+{
+  return index%eik_g->M;
+}
+
+int getYCoordFromIndex(eik_gridS *eik_g, int index)
+{
+  return index/eik_g->M;
 }
 
 int getIndexFromCoordinates(eik_gridS *eik_g, int coord[2])
@@ -138,49 +150,102 @@ int getIndexFromCoordinates(eik_gridS *eik_g, int coord[2])
   return eik_g->M*coord[1] + coord[0];
 }
 
-int *neighboursBool(eik_gridS *eik_g, int index)
+int neighborSouthB(eik_gridS *eik_g, int index)
 {
-  // returns an array of size 4 with 0 and 1. Position 0 is the southern neighbour, 1 is the western neighbour,
-  // 2 is the eastern neighbour, 3 is the northern neighbour. If set to 0 then no neighbour found, if set to 1 neighbour found
-  int neighbours_found[4];
+  // 1 if the current index has a southern neighbor, 0 if not
+  int bool_south;
   if( index > eik_g->N )
   {
-    neighbours_found[0] = 1;
+    bool_south = 1;
   }
   else
   {
-    neighbours_found[0] = 0;
+    bool_south = 0;
   }
-
-  if( index%eik_g->N != 0 )
-  {
-    neighbours_found[1] = 1;
-  }
-  else
-  {
-    neighbours_found[1] = 0;
-  }
-
-  if( index%eik_g->N != eik_g->N -1 )
-  {
-    neighbours_found[2] = 1;
-  }
-  else
-  {
-    neighbours_found[2] = 0;
-  }
-
-  if( index/eik_g->N < eik_g->M - 1 )
-  {
-    neighbours_found[3] = 1;
-  }
-  else
-  {
-    neighbours_found[3] = 0;
-  }
-
-  return neighbours_found;
+  return bool_south;
 }
 
+int indexNeighborSouth(eik_gridS *eik_g, int index)
+{
+  return index-eik_g->M;
+}
 
+int neighborWestB(eik_gridS *eik_g, int index)
+{
+  // 1 if the current index has a western neighbor, 0 if not
+  int bool_west;
+  if( index%eik_g->N != 0 )
+  {
+    bool_west = 1;
+  }
+  else
+  {
+    bool_west = 0;
+  }
+  return bool_west;
+}
 
+int indexNeighborWest(eik_gridS *eik_g, int index)
+{
+  return index-1;
+}
+
+int neighborEastB(eik_gridS *eik_g, int index)
+{
+  // 1 if the current index has a eastern neighbor, 0 if not
+  int bool_east;
+  if( index%eik_g->N != eik_g->N -1 )
+  {
+    bool_east = 1;
+  }
+  else
+  {
+    bool_east = 0;
+  }
+  return bool_east;
+}
+
+int indexNeighborWest(eik_gridS *eik_g, int index)
+{
+  return index+1;
+}
+
+int neighborNorthB(eik_gridS *eik_g, int index)
+{
+  // 1 if the current index has a northern neighbor, 0 if not
+  int bool_north;
+  if( index/eik_g->N < eik_g->M - 1 )
+  {
+    bool_north = 1;
+  }
+  else
+  {
+    bool_north = 0;
+  }
+  return bool_north;
+}
+
+int indexNeighborWest(eik_gridS *eik_g, int index)
+{
+  return index+eik_g->M;
+}
+
+void addNeighbors(eik_gridS *eik_g, int index)
+{
+  double update;
+  // Given an index, add its (at most) 4 neighbors to the prioriry queue and update their current states
+  // If it has a southern neighbor and is set as far, add it to the priority queue or update its current value
+  if( neighborSouthB(eik_g, index) == 1 && eik_g->current_states[indexNeighborSouth(eik_g, index)] == 0 )
+  {
+    // southern neighbor wasn't in the priority queue
+    update = s_function( getXCoordFromIndex(eik_g, index), getYCoordFromIndex(eik_g, index) );
+    insert_end(eik_g->p_queueG, update, indexNeighborSouth(eik_g, index));
+  }
+  
+  if( neighborWestB(eik_g, index) == 1 && eik_g->current_states[indexNeighborWest(eik_g, index)] == 0  )
+  {
+    // western neighbor wasn't in the priority queue
+    update = 1;
+  }
+
+}
