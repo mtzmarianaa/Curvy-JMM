@@ -1,0 +1,171 @@
+# Generation of test geometry and producing its triangular mesh
+# I also generated a triangular mesh in a square because I'm going to 
+# first test my fmm method here (very naivly)
+import matplotlib.pyplot as plt
+import numpy as np
+from math import pi, sqrt
+import meshpy.triangle as triangle
+
+############# Generate the two circles
+
+def circ_base(t):
+    '''
+    Parametrization of the base cirlce (base of the snowman) for the test geometry.
+    t can be a number or an array or numbers. If t is a number the output are the
+    coordinates [x, y]. If t is an array the output is a n, 2 array, the first 
+    column corresponds to the coordinates of x, the second to the coordinates of y.
+    '''
+    points = np.zeros((len(t), 2))
+    points[:, 0] = 10*np.cos(t)
+    points[:, 1] = 10*np.sin(t)
+    return points
+
+def circ_top(s):
+    '''
+    Parametrization of the top circle (head of the snowman) for the test geometry.
+    '''
+    points = np.zeros((len(s), 2))
+    points[:, 0] = 5*sqrt(2)*np.cos(s)
+    points[:, 1] = 5*sqrt(2) + 5*sqrt(2)*np.sin(s)
+    return points
+
+t = np.linspace(0, 2, num = 40 + 1)
+s = np.linspace(0, 1, num = 20)
+t = np.multiply(t, pi)
+s = np.multiply(s, pi)
+
+t_r = np.linspace(0, 2, num = 4000 + 1)
+s_r = np.linspace(0, 1, num = 2000)
+t_r = np.multiply(t_r, pi)
+s_r = np.multiply(s_r, pi)
+
+points_base = circ_base(t)
+points_top = circ_top(s)
+points_base_r = circ_base(t_r)
+points_top_r = circ_top(s_r)
+# plt.figure(1)
+# plt.plot( points_base[:, 0], points_base[:, 1] )
+# plt.plot(points_top[:, 0], points_top[:, 1])
+# plt.show(block=False)
+
+
+
+############# Generate the triangular mesh
+
+def round_trip_connect(start, end):
+    return [(i, i + 1) for i in range(start, end)] + [(end, start)]
+
+points = [ (points_base[i, 0], points_base[i, 1]) for i in range(40) ]
+facets = round_trip_connect(0, len(points) - 1) # First we include the facets/edges from the base circle
+
+points.extend(  [ (points_top[i, 0], points_top[i, 1]) for i in range(20) ]   )
+facets.extend( round_trip_connect(40, len(points) - 1)  ) # Then we include the facets/edges from the top circle
+
+# Set the information for the triangle mesh
+info = triangle.MeshInfo()
+info.set_points(points)
+info.set_facets(facets)
+
+# Build the mesh
+
+mesh = triangle.build(info,volume_constraints= True, generate_faces=True, max_volume=1)
+
+mesh_points = np.array(mesh.points) # These are the points we want to export
+mesh_tris = np.array(mesh.elements) # These are thee faces we want to export
+
+#Plot
+plt.figure(1)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+plt.plot( points_base_r[:, 0], points_base_r[:, 1], c = "#110036", alpha = 0.4 )
+plt.plot(points_top_r[:, 0], points_top_r[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.show(block=False)
+
+r = 5*sqrt(2)
+# # Zoom in 1
+h1 = 1
+
+plt.figure(2)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, lw=0.5, c='#6800ff')
+plt.plot( points_base[:, 0], points_base[:, 1], c = "#110036", alpha = 0.4)
+plt.plot(points_top[:, 0], points_top[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.xlim((r - h1, r+h1))
+plt.ylim((r - h1, r+h1))
+plt.show(block=False)
+
+# # Zoom in 2
+h2 = 0.25
+
+plt.figure(3)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, lw=0.5, c='#6800ff')
+plt.plot( points_base[:, 0], points_base[:, 1], c = "#110036", alpha = 0.4)
+plt.plot(points_top[:, 0], points_top[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.xlim((r - h2, r+h2))
+plt.ylim((r - h2, r+h2))
+plt.show(block=False)
+
+# # Zoom in 3
+h3 = 0.0001
+
+plt.figure(3)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, lw=0.5, c='#6800ff')
+plt.plot( points_base[:, 0], points_base[:, 1], c = "#110036", alpha = 0.4)
+plt.plot(points_top[:, 0], points_top[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.xlim((r - h3, r+h3))
+plt.ylim((r - h3, r+h3))
+plt.show(block=False)
+
+
+# # Zoom in 4
+h4 = 1e-5
+
+plt.figure(4)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, lw=0.5, c='#6800ff')
+plt.plot( points_base[:, 0], points_base[:, 1], c = "#110036", alpha = 0.4)
+plt.plot(points_top[:, 0], points_top[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.xlim((r - h4, r+h4))
+plt.ylim((r - h4, r+h4))
+plt.show(block=False)
+
+# # Zoom in 5
+h5 = 1e-11
+
+plt.figure(5)
+plt.gca().set_aspect('equal')
+plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, lw=0.5, c='#6800ff')
+plt.plot( points_base[:, 0], points_base[:, 1], c = "#110036", alpha = 0.4)
+plt.plot(points_top[:, 0], points_top[:, 1], c = "#000536", alpha = 0.4)
+plt.title('Delaunay triangulation of test geometry, 40 (top) and 20 (bottom) points')
+plt.xlim((r - h5, r+h5))
+plt.ylim((r - h5, r+h5))
+plt.show(block=False)
+
+
+plt.show()
+
+
+# # Now we save this triangulation to a bin file so that we can read it later from C
+
+# np.savetxt('BoundaryPoints.txt', np.array(points), delimiter =', ' )
+
+# facets_arr = np.array(facets)
+# np.savetxt('Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+
+# np.savetxt('MeshPoints.txt', mesh_points, delimiter =', ' )
+
+# np.savetxt('Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+
+
+
+###### SQUARE
+
+# zero_to_one = np.linspace()
