@@ -199,7 +199,7 @@ np.savetxt('MeshInfo/MeshPoints.txt', mesh_points, delimiter =', ' )
 
 np.savetxt('MeshInfo/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/Neigh.txt', mesh_neig, delimiter =', ')
+np.savetxt('MeshInfo/Neigh.txt', mesh_neig.astype(int), delimiter =', ', fmt ='%.0f')
 
 ##############################################################################
 ##############################################################################
@@ -249,7 +249,7 @@ np.savetxt('MeshInfo/MeshPoints_Sq.txt', mesh_square_points, delimiter =', ' )
 
 np.savetxt('MeshInfo/Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/Neigh_Sq.txt', mesh_square_neig, delimiter =', ')
+np.savetxt('MeshInfo/Neigh_Sq.txt', mesh_square_neig.astype(int), delimiter =', ', fmt ='%.0f')
 
 
 plt.show()
