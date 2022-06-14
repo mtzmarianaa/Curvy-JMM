@@ -14,8 +14,8 @@ int main(){
     xHat[0] = 1;
     xHat[1] = 1;
     tol = 0.001;
-    maxIter = 5;
+    maxIter = 10;
     secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-    printf("\f", lambda1);
-    printf("\f", lambda0);
+    printf("Lamba 1: %f \n", lambda1);
+    printf("Lamba 2: %f \n", lambda0);
 }

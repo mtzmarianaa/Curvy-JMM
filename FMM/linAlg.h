@@ -6,11 +6,17 @@ USEFUL LINEAR ALGEBRA COMPUTATIONS
 
 double l2norm(double x[])
 {
-    return sqrt( pow(x[0], 2) + pow(x[1], 2)  );
+    double result;
+    result = 0.0;
+    result += sqrt( pow(x[0], 2) + pow(x[1], 2)  );
+    return result;
 }
 
 double dotProd(double x[], double y[])
 {
+    double result;
+    result = 0.0;
+    result += x[0]*y[0] + x[1]*y[1];
     return x[0]*y[0] + x[1]*y[1];
 }
 
