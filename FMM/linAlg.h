@@ -4,13 +4,30 @@ USEFUL LINEAR ALGEBRA COMPUTATIONS
 #pragma once
 #include <math.h>
 
-double l2norm(double x0, double x1)
+double l2norm(double x[])
 {
-    return sqrt( pow(x0, 2) + pow(x1, 2)  );
+    return sqrt( pow(x[0], 2) + pow(x[1], 2)  );
 }
 
-double dotProd(double x0, double x1, double y0, double y1)
+double dotProd(double x[], double y[])
 {
-    return x0*y0 + x1*y1;
+    return x[0]*y[0] + x[1]*y[1];
 }
 
+void scalar_times_2vec(double alpha, double x[], double output[])
+{
+    output[0] = alpha*x[0];
+    output[1] = alpha*x[1];
+}
+
+void vec2_addition(double x[], double y[], double output[])
+{
+    output[0] = x[0] - y[0];
+    output[1] = x[1] - y[1];
+}
+
+void vec2_substraction(double x[], double y[], double output[])
+{
+    output[0] = x[0] - y[0];
+    output[1] = x[1] - y[1];
+}

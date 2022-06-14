@@ -3,6 +3,7 @@
         "__tuple": "c",
         "array": "c",
         "chrono": "c",
-        "variant": "c"
+        "variant": "c",
+        "opti_method.h": "c"
     }
 }
