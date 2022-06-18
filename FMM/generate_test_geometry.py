@@ -91,7 +91,23 @@ mesh = triangle.build(info,volume_constraints= True, refinement_func=needs_refin
 
 mesh_points = np.array(mesh.points) # These are the points we want to export
 mesh_tris = np.array(mesh.elements) # These are thee faces we want to export
-mesh_neig = np.array(mesh.neighbors)
+mesh_neigTriangles = np.array(mesh.neighbors)
+# Now we want to create an np array where the rows are the #of the point, the columns each one of its neighbours
+# This is the most naive way of creating such thing, might be useful to optimize it later (?)
+# We look in the row of the mesh.elements file
+N_points = len(mesh_points)
+mesh_neigh = []
+MaxN = 0
+# Create the list of lists
+for p in range(N_points):
+    list_p = []
+    for t in range(len(mesh_tris)):
+        list_p += [point for point in mesh_tris[t, :] if p in mesh_tris[t, :] and point != p and point not in list_p]
+    mesh_neigh.append( list_p )
+    if MaxN < len(list_p): # to pad the lists so that we can save them as a np.array and have them as a 2d array in C
+        MaxN = len(list_p)
+
+
 
 # # #Plot
 plt.figure(2)
@@ -199,7 +215,15 @@ np.savetxt('MeshInfo/MeshPoints.txt', mesh_points, delimiter =', ' )
 
 np.savetxt('MeshInfo/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/Neigh.txt', mesh_neig.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('MeshInfo/NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+
+# Save the list of lists into a txt file
+separator = "," 
+
+with open("MeshInfo/Neigh.txt", "w") as out_file:
+    for l in mesh_neigh:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
 
 ##############################################################################
 ##############################################################################
@@ -223,7 +247,24 @@ mesh_square = triangle.build(info_square,volume_constraints= True, refinement_fu
 
 mesh_square_points = np.array(mesh_square.points) # These are the points we want to export
 mesh_square_tris = np.array(mesh_square.elements) # These are thee faces we want to export
-mesh_square_neig = np.array(mesh_square.neighbors) # These are the neighbors we want to export
+mesh_square_neigTriangles = np.array(mesh_square.neighbors) # These are the neighbors we want to export
+# Now we want to create an np array where the rows are the #of the point, the columns each one of its neighbours
+# This is the most naive way of creating such thing, might be useful to optimize it later (?)
+# We look in the row of the mesh.elements file
+N_points_square = len(mesh_square_points)
+mesh_square_neigh = []
+MaxN_square = 0
+# Create the list of lists
+for p in range(N_points_square):
+    list_p = []
+    for t in range(len(mesh_square_tris)):
+        list_p += [point for point in mesh_square_tris[t, :] if p in mesh_square_tris[t, :] and point != p and point not in list_p]
+    mesh_square_neigh.append( list_p )
+    if MaxN < len(list_p): # to pad the lists so that we can save them as a np.array and have them as a 2d array in C
+        MaxN = len(list_p)
+
+
+
 
 # # #Plot
 plt.figure(8)
@@ -249,7 +290,13 @@ np.savetxt('MeshInfo/MeshPoints_Sq.txt', mesh_square_points, delimiter =', ' )
 
 np.savetxt('MeshInfo/Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/Neigh_Sq.txt', mesh_square_neig.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('MeshInfo/NeighTriangles_Sq.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
+separator = "," 
+
+with open("MeshInfo/Neigh_Sq.txt", "w") as out_file:
+    for l in mesh_square_neigh:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
 
 plt.show()
