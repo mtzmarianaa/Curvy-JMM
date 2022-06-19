@@ -6,6 +6,7 @@ meshpy is given
 */
 
 #include "triMesh_2D.h"
+#include "coord.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +14,7 @@ meshpy is given
 #include <math.h>
 
 struct triMesh_2D {
-  int nPoints; // number of points in the triangle mesh
+  coordS *points; // these are the coordinates + number of points in the mesh
   int nFaces; // number of faces in the triangle mesh
   double *mesh_points; // nPoints x 2 array with the coordinates of the points in the mesh
   int *faces; // M x 3 array with the faces in the mesh (a face is characterized by 3 points, their indeces)
