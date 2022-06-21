@@ -1,12 +1,17 @@
 #pragma once
 
-typedef struct neighborsR neighborsRS;
+typedef struct{
+    int len;
+    int* neis_i;
+} neighborsRS;
 
-void neigborsRSalloc(neighborsRS **neighbors);
+void neighborsRSalloc(neighborsRS **neighbors);
+
+void neighborsRSalloc_n(neighborsRS **neighbors, int N);
 
 void neighborsRSdealloc(neighborsRS **neighbors);
 
-void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors);
+void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N);
 
 int numberNeighborsFound(char *line, int nCharInLine);
 
@@ -14,4 +19,6 @@ void separateARow(char *line, int nNei, int *neighborsRow);
 
 void printThisLinesNeighbors(int *neighborsRow, int SizeRow);
 
-void printAllNeighbors(neighborsRS *neighbors);
+void printAllNeighbors(neighborsRS *neighbors, int N);
+
+int numLinesInFile(const char *pathNeighbors);

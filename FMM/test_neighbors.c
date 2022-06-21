@@ -1,8 +1,8 @@
+#include "neighbors.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "neighbors.h"
 
 // int numberNeighborsFound(char *line, int nCharInLine);
 
@@ -12,16 +12,29 @@
 
 int main(){
 
-    neighborsRS *neighbors;
+    int N;
     char const *pathNeighbors;
 
-    neigborsRSalloc(&neighbors);
-
     pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Neigh.txt";
+    N = numLinesInFile(pathNeighbors);
 
-    neighbors_init(neighbors, pathNeighbors);
+    neighborsRS *neighbors;
 
-    printf("%d", neighbors[0].len)
+    neighborsRSalloc_n(&neighbors, N); // allocate those N lines of organized information
+
+
+    printf("\n Size 1 %p", &neighbors);
+    printf("\n Size 2%lu", sizeof(neighbors));
+    
+
+    neighbors_init(neighbors, pathNeighbors, N);
+
+    printf("\n Size 1 %p", &neighbors);
+    printf("\n Size 2%lu", sizeof(neighbors));
+    printf("\n Size 3%lu", sizeof(*neighbors));
+
+    printf("\n Printing all the neighbors found: \n");
+    printAllNeighbors(neighbors, N);
 
 
 //    FILE *fp;

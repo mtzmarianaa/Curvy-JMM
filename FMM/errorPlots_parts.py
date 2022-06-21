@@ -33,10 +33,11 @@ plt.title("Convergence of secant method")
 
 # Log plot of the absolute error
 plt.figure(2)
-plt.plot(iteration_n, 1+abs(lambdas_secant - exact_lambda), color = colormap2(75), linewidth = 0.8 )
+plt.plot(iteration_n, abs(lambdas_secant - exact_lambda), color = colormap2(75), linewidth = 0.8 )
 plt.xlabel('Iteration number')
 plt.ylabel('Absolute error')
 plt.yscale('log')
+plt.xscale('log')
 plt.show(block = False)
 plt.title('Absolute error of secant method')
 
