@@ -20,6 +20,24 @@ void separateARowInt(char *line, int nElementsRow, int *row) {
     }
 }
 
+void separateARowDb(char *line, int nElementsRow, double row[nElementsRow]) {
+    // In this method given a line of text read from a file 
+    // indices of neighbors we separate them and put it in row.
+    const char sep[2] = ", ";
+    char *token;
+    int i;
+    token = strtok(line, sep); //first double found in the line
+    //printf("First token %s\n", token);
+    row[0] = atof(token);
+    //printf("First token saved %fl\n", row[0]);
+    for (i = 1; i<nElementsRow; i++){
+        token = strtok(NULL, sep);
+        //printf("Token %d: %s\n",i, token);
+        row[i] = atof(token);
+        //printf("Token saved %d: %fl\n",i, row[i]);
+    }
+}
+
 int numberElementsInRow(char *line, int nCharInLine) {
     int i, count;
     count = 0;
