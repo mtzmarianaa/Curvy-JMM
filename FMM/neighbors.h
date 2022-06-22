@@ -1,5 +1,7 @@
 #pragma once
 
+#include "files_methods.h"
+
 typedef struct{
     int len;
     int* neis_i;
@@ -13,12 +15,7 @@ void neighborsRSdealloc(neighborsRS **neighbors);
 
 void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N);
 
-int numberNeighborsFound(char *line, int nCharInLine);
-
-void separateARow(char *line, int nNei, int *neighborsRow);
-
 void printThisLinesNeighbors(int *neighborsRow, int SizeRow);
 
 void printAllNeighbors(neighborsRS *neighbors, int N);
 
-int numLinesInFile(const char *pathNeighbors);

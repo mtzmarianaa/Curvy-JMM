@@ -1,6 +1,10 @@
 #pragma once
 
-typedef struct coord coordS;
+typedef struct {
+  double *x;
+  double *y;
+  int nPoints;
+} coordS;
 
 void coord_alloc(coordS **coordinates );
 

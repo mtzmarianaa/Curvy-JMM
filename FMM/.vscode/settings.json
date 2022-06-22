@@ -17,6 +17,7 @@
         "string_view": "c",
         "unordered_map": "c",
         "vector": "c",
-        "sstream": "c"
+        "sstream": "c",
+        "files_methods.h": "c"
     }
 }

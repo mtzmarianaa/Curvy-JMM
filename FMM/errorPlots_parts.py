@@ -41,4 +41,12 @@ plt.xscale('log')
 plt.show(block = False)
 plt.title('Absolute error of secant method')
 
+# plot of the absolute error
+plt.figure(3)
+plt.plot(iteration_n, abs(lambdas_secant - exact_lambda), color = colormap2(75), linewidth = 0.8 )
+plt.xlabel('Iteration number')
+plt.ylabel('Absolute error')
+plt.show(block = False)
+plt.title('Absolute error of secant method')
+
 plt.show()

@@ -17,4 +17,6 @@ int main(){
 
     printf("Size of xn: %lu", sizeof(xn)/sizeof(double));
 
+    printf("\nNumber of points: %d", coord1->nPoints);
+
 }

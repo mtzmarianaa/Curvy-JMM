@@ -4,6 +4,7 @@ we have to build a struct so that it mimics this "2d array with varying sizes of
 */
 
 #include "neighbors.h"
+#include "files_methods.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,6 +62,7 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
         }
     }
     assert(nPoints == N); //they should match, if not then either the file is wrong or something is off
+    
     fp = fopen(pathNeighbors, "r");
     // now we read each line and get the indices for each neighbor
     while ((read = getline(&line, &len, fp)) != -1) {
@@ -72,12 +74,12 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
         // printf("Memory allocation of line: %p \n", &line);
         i ++;
         // printf("Temporary line: %s", line);
-        nNei = numberNeighborsFound(line, nCharInLine);
+        nNei = numberElementsInRow(line, nCharInLine);
         neighbors[k].len = nNei;
         // printf("Number of indices found in curreny line: %d :\n", nNei);
         // printf("\n");
         neighbors[k].neis_i = malloc(nNei*sizeof(int));
-        separateARow(line, nNei, neighbors[k].neis_i);
+        separateARowInt(line, nNei, neighbors[k].neis_i);
         // printThisLinesNeighbors(neighbors[k].neis_i, nNei);
         // printf("\n\n");
         k++;
@@ -88,34 +90,6 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
 
 }
 
-int numberNeighborsFound(char *line, int nCharInLine) {
-    int i, count;
-    count = 0;
-    //printf("%s  \n", line);
-    for (i=0; i<nCharInLine; i++){
-        if ((char) line[i] == ','){
-            count+= 1;
-        }
-    }
-    count += 1; // plus 1 because in theory we're counting the ,
-    return count;
-}
-
-void separateARow(char *line, int nNei, int *neighborsRow) {
-    // In this method given a line of text read from a file 
-    // indices of neighbors we separate them and put it in neighborsRow.
-    char *char_part;
-    int int_part;
-    int_part = strtol(line, &char_part, 10);
-    neighborsRow[0] = int_part;
-    char *end = char_part;
-    char_part = char_part + 1;
-    for (int i = 1; i<nNei; i++){
-        int_part = strtol(char_part++, &end , 10);
-        neighborsRow[i] = int_part;
-        char_part = end + 1;
-    }
-}
 
 void printThisLinesNeighbors(int *neighborsRow, int SizeRow) {
     printf("Number of neighbors: %d \n ", SizeRow);
@@ -140,22 +114,3 @@ void printAllNeighbors(neighborsRS *neighbors, int N) {
     }
 }
 
-int numLinesInFile(const char *pathNeighbors){
-    int nPoints = 0;
-    FILE *fp; // the file were going to read
-    char c;
-
-    fp = fopen(pathNeighbors, "r");
-    // if the file doesnt exist or for some reason it can't be opened:
-    if (fp == NULL) {
-        printf("No such file");
-        exit(EXIT_FAILURE);
-    }
-
-    for (c = getc(fp); c != EOF; c = getc(fp)){
-        if (c == '\n'){
-            nPoints ++;
-        }
-    }
-    return nPoints;
-}
