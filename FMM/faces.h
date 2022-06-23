@@ -5,11 +5,11 @@ typedef struct {
   int nFaces;
 } facesS;
 
-void faces_alloc(facesS **faces );
+void faces_alloc(facesS **faces);
 
 void faces_dealloc(facesS **faces);
 
-void faces_init(facesS *faces, int *from, int *to, int nFaces);
+void faces_init(facesS *faces, int (*points)[3], int nFaces);
 
 void print_faces(facesS *faces);
 

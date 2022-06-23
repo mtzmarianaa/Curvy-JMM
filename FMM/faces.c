@@ -11,7 +11,7 @@ A triangle is defined by 3 points, i.e. by 3 indeces that represent those points
 #include <assert.h>
 
 
-void faces_alloc(facesS **faces ) {
+void faces_alloc(facesS **faces) {
   *faces = malloc(sizeof(facesS));
   assert(*faces != NULL);
 }
@@ -29,8 +29,8 @@ void faces_init(facesS *faces, int (*points)[3], int nFaces) {
 void print_faces(facesS *faces) {
     printf("Number of faces: %d \n", faces->nFaces);
     for(int i = 0; i< faces->nFaces; i ++) {
-        printf("Face % number has:    ", i);
-        printf("%d  |%d  |%d", faces->points[i][0], faces->points[i][1], faces->points[i][2]);
+        printf("Face %d number has:    ", i);
+        printf("%d  | %d  | %d  \n", faces->points[i][0], faces->points[i][1], faces->points[i][2]);
     }
 }
 
