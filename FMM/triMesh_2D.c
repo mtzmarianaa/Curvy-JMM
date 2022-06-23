@@ -7,6 +7,7 @@ meshpy is given
 
 #include "triMesh_2D.h"
 #include "coord.h"
+#include "facets.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,13 +15,12 @@ meshpy is given
 #include <math.h>
 
 struct triMesh_2D {
-  coordS *points; // these are the coordinates + number of points in the mesh
+    // ask if everything in here is usefull/necessary or if its too much
+    // inspiration: what we might need + what might be useful to plot the mesh using triplot in Python
+  coordS *points; // these are ALL the coordinates + number of points in the mesh
+  coordS *boundaryPoints;  // these are just the coordinates of the boundary points + number of boundary points
+  facetsS *facets; // these are the "instructions on how to connect indexed dots"
   int nFaces; // number of faces in the triangle mesh
-  double *mesh_points; // nPoints x 2 array with the coordinates of the points in the mesh
-  int *faces; // M x 3 array with the faces in the mesh (a face is characterized by 3 points, their indeces)
-  int *neighbors; // M x 3 array with the neighbor information per triangle (each triangle has 3 triangle neighbours)
-  double *boundary_points; // N x 2 array with the coordinates of the points in the mesh on the border
-  int *facets; // Nf x 3 array with the facets in the mesh, the faces that correspond to the boundaries
 } ;
 
 void triMesh_2Dalloc(triMesh_2Ds **triM_2D) {
