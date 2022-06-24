@@ -18,6 +18,8 @@
         "unordered_map": "c",
         "vector": "c",
         "sstream": "c",
-        "files_methods.h": "c"
+        "files_methods.h": "c",
+        "neighbors.h": "c",
+        "coord.h": "c"
     }
 }

@@ -67,17 +67,17 @@ void faces_initFromFile(facesS *faces, char const *pathFaces) {
     // scan such file
 
         while ((read = getline(&line, &len, fp)) != -1) {
-        printf("Iteration %d \n", i);
-        printf("%s", line);
-        printf("\n");
+        // printf("Iteration %d \n", i);
+        // printf("%s", line);
+        // printf("\n");
         separateARowInt(line, 3, row);
-        printf("First element found: %d\n", row[0]);
-        printf("Second element found: %d\n", row[1]);
-        printf("Third element found: %d\n", row[2]);
+        // printf("First element found: %d\n", row[0]);
+        // printf("Second element found: %d\n", row[1]);
+        // printf("Third element found: %d\n", row[2]);
         faces->points[i][0] = row[0];
         faces->points[i][1] = row[1];
         faces->points[i][2] = row[2];
-        printf("\n\n");
+        // printf("\n\n");
         i ++;
     }
     fclose(fp);
