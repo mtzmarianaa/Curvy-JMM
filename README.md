@@ -17,5 +17,10 @@ Since I've never done something like this, the strategy to follow is to implemen
    - Added a file to plot the "solutions" I get using Python
    - Implemented the priority queue as a binary tree with a "parallel" array that has the information about the indices
 
+### Third stage: building everything in order to have a working method in a triangular mesh structure + optimiation pov
+   - Built the test geometry in python with meshpy and export it
+   - Built structs coords, neighbors, facets, faces
+   - Built the mesh structure
+   - Built the secant method in C for this particular use
 
-Playlist: https://open.spotify.com/artist/12Chz98pHFMPJEknJQMWvI?si=aKJtT9jXS_qNeDneMQfZqQ
+
