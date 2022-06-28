@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 int main(){
+
     double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt;
     int maxIter;
     lambda0 = 0.0;
@@ -67,12 +68,22 @@ int main(){
         printf("%f \n", conv[i]);
     }
 
-    FILE *fp;
-    fp = fopen("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/Outputs/convSec.bin", "wb");
-    fwrite(conv, sizeof(double), N, fp);
-    fclose(fp);
+    // Now something that is not sqrt(2)/2 (in this case it should be one)
 
-    free(conv);
+    x0[0] = 1;
+    x0[1] = 0;
+    x1[0] = 1;
+    x1[1] = 1;
+    xHat[0] = 2;
+    xHat[1] = 0;
+    tol = 0.0000001;
+    maxIter = 10;
+    lamb_opt = secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
+    printf("\nx0: %f, %f", x0[0], x0[1]);
+    printf("\nx1: %f, %f", x1[0], x1[1]);
+    printf("Lamba 1: %f \n", lambda1);
+    printf("Lamba 2: %f \n", lambda0);
+    printf("Optimum lambda: %f \n", lamb_opt);
 
 }
 
