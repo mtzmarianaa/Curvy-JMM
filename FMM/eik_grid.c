@@ -7,6 +7,7 @@ This is the Eikonal grid with different specifications
 #include "eik_grid.h"
 #include "priority_queue.h"
 #include "SoSFunction.h"
+#include "triMesh_2D.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,15 +15,9 @@ This is the Eikonal grid with different specifications
 #include <math.h>
 
 struct eik_grid {
-  double x0;
-  double y0;
-  int start[2];
-  int M;
-  int N;
-  double h;
-  double *x_linspace; // x coordinates of the nodes (length N)
-  double *y_linspace; // y coordinates of the nodes (length M)
-  double *eik_gridVals;
+  int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
+  triMesh_2Ds *triM_2D; // mesh structure that includes coordinates, neighbors, etc.
+  double *eik_vals; // the current Eikonal values for each indexed point in the mesh
   p_queue *p_queueG; // priority queue struct
   int *current_states;
 } ;

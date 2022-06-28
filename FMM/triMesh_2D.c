@@ -13,6 +13,7 @@ meshpy is given
 
 struct triMesh_2D {
     // ask if everything in here is usefull/necessary or if its too much
+    // ask if this should be an opaque type (according to me it shouldn't)
     // inspiration: what we might need + what might be useful to plot the mesh using triplot in Python
   coordS *points; // these are ALL the coordinates + number of points in the mesh
   neighborsRS *neighbors; // for each point i, its neighbors (i.e. there is a face that includes both points)
