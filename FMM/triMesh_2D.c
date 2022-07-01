@@ -11,17 +11,6 @@ meshpy is given
 #include <stdlib.h>
 #include <assert.h>
 
-struct triMesh_2D {
-    // ask if everything in here is usefull/necessary or if its too much
-    // ask if this should be an opaque type (according to me it shouldn't)
-    // inspiration: what we might need + what might be useful to plot the mesh using triplot in Python
-  coordS *points; // these are ALL the coordinates + number of points in the mesh
-  neighborsRS *neighbors; // for each point i, its neighbors (i.e. there is a face that includes both points)
-  coordS *boundaryPoints;  // these are just the coordinates of the boundary points + number of boundary points
-  facetsS *facets; // these are the "instructions on how to connect indexed dots"
-  facesS *faces; // these are the faces, the triangles in the mesh
-  int nPoints;
-} ;
 
 void triMesh_2Dalloc(triMesh_2Ds **triM_2D) {
     *triM_2D = malloc(sizeof(triMesh_2Ds));

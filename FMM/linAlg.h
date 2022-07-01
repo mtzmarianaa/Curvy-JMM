@@ -28,8 +28,8 @@ void scalar_times_2vec(double alpha, double x[], double output[])
 
 void vec2_addition(double x[], double y[], double output[])
 {
-    output[0] = x[0] - y[0];
-    output[1] = x[1] - y[1];
+    output[0] = x[0] + y[0];
+    output[1] = x[1] + y[1];
 }
 
 void vec2_substraction(double x[], double y[], double output[])

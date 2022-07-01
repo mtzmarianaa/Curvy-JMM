@@ -20,6 +20,7 @@
         "sstream": "c",
         "files_methods.h": "c",
         "neighbors.h": "c",
-        "coord.h": "c"
+        "coord.h": "c",
+        "random": "c"
     }
 }

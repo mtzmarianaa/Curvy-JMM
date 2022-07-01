@@ -1,89 +1,70 @@
 #include "opti_method.h"
 
 #include <stdio.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 int main(){
 
-    double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt;
+
+    double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt, T0, T1;
     int maxIter;
+    lambda0 = 0.1;
+    lambda1 = 0.8;
+
+    x0[0] = 1;
+    x0[1] = 0;
+    T0 = 1;
+
+    x1[0] = 0;
+    x1[1] = 1;
+    T1 = 1;
+
+    xHat[0] = 1;
+    xHat[1] = 1;
+
+    tol = 0.001;
+    maxIter = 25 ;
+    lamb_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
+    printf("The optimum lambda should be 0.5 (middle point of the base of the triangle)\n");
+    printf("x0: %f, %f \n", x0[0], x0[1]);
+    printf("T(x0): %f \n", T0);
+    printf("x1: %f, %f \n", x1[0], x1[1]);
+    printf("T(x0): %f \n", T0);
+    printf("Lambda 1: %f \n", lambda1);
+    printf("Lambda 2: %f \n", lambda0);
+    printf("Optimum lambda: %f \n", lamb_opt);
+
+    printf("\n\n\n");
+
     lambda0 = 0.0;
     lambda1 = 1.0;
 
-    x0[0] = 0;
-    x0[1] = 1;
-    x1[0] = 1;
-    x1[1] = 0;
-    xHat[0] = 1;
-    xHat[1] = 1;
-    tol = 0.001;
-    maxIter = 10;
-    lamb_opt = secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-    printf("\nx0: %f, %f", x0[0], x0[1]);
-    printf("\nx1: %f, %f", x1[0], x1[1]);
-    printf("Lamba 1: %f \n", lambda1);
-    printf("Lamba 2: %f \n", lambda0);
-    printf("Optimum lambda: %f \n", lamb_opt);
-
     x0[0] = 1;
-    x0[1] = 2;
+    x0[1] = 0;
+    T0 = 1;
+
     x1[0] = 2;
     x1[1] = 1;
-    xHat[0] = 1;
-    xHat[1] = 1;
-    tol = 0.001;
-    maxIter = 10;
-    lamb_opt = secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-    printf("\nx0: %f, %f", x0[0], x0[1]);
-    printf("\nx1: %f, %f", x1[0], x1[1]);
-    printf("Lamba 1: %f \n", lambda1);
-    printf("Lamba 2: %f \n", lambda0);
-    printf("Optimum lambda: %f \n", lamb_opt);
+    T1 = sqrt(5);
 
-
-    x0[0] = 1;
-    x0[1] = 0;
-    x1[0] = 0;
-    x1[1] = 1;
-    xHat[0] = 1;
-    xHat[1] = 1;
-    tol = 0.0000001;
-    maxIter = 10;
-    lamb_opt = secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-    printf("\nx0: %f, %f", x0[0], x0[1]);
-    printf("\nx1: %f, %f", x1[0], x1[1]);
-    printf("Lamba 1: %f \n", lambda1);
-    printf("Lamba 2: %f \n", lambda0);
-    printf("Optimum lambda: %f \n", lamb_opt);
-
-    // To test that it has the right convergence rate
-    int N = 25;
-    double *conv;
-    conv = malloc(N*sizeof(double));
-
-    for(int i=0; i<N; i++){
-        maxIter = 1 + i;
-        conv[i] = (double)secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-        printf("%f \n", conv[i]);
-    }
-
-    // Now something that is not sqrt(2)/2 (in this case it should be one)
-
-    x0[0] = 1;
-    x0[1] = 0;
-    x1[0] = 1;
-    x1[1] = 1;
     xHat[0] = 2;
     xHat[1] = 0;
-    tol = 0.0000001;
-    maxIter = 10;
-    lamb_opt = secant_2D(lambda0, lambda1, x0, x1, xHat, tol, maxIter);
-    printf("\nx0: %f, %f", x0[0], x0[1]);
-    printf("\nx1: %f, %f", x1[0], x1[1]);
-    printf("Lamba 1: %f \n", lambda1);
-    printf("Lamba 2: %f \n", lambda0);
+    tol = 0.001;
+    maxIter = 25 ;
+    lamb_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
+    printf("The optimum lambda should be 0\n");
+    printf("x0: %f, %f \n", x0[0], x0[1]);
+    printf("T(x0): %f \n", T0);
+    printf("x1: %f, %f \n", x1[0], x1[1]);
+    printf("T(x1): %f \n", T1);
+    printf("Lambda 1: %f \n", lambda1);
+    printf("Lambda 2: %f \n", lambda0);
     printf("Optimum lambda: %f \n", lamb_opt);
+
+
+
+
 
 }
 

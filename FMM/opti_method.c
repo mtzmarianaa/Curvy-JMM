@@ -7,51 +7,69 @@ Optimization methods for the 2D FMM
 #include "SoSFunction.h"
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-double secant_2D(double lambda0, double lambda1, double x0[], double x1[], double xHat[], double tol, int maxIter){
+double gPrime(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2]){
+    // auxiliary function to compute the function gPrime
+    double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], dotProduct, normAux, gPrim;
+
+    x0Minx1[0] = 0;
+    x0Minx1[1] = 0;
+
+    xHatMinx0[0] = 0;
+    xHatMinx0[1] = 0;
+
+    lamx0Minx1[0] = 0;
+    lamx0Minx1[1] = 0;
+
+    vecAux[0] = 0;
+    vecAux[1] = 0;
+
+    dotProduct = 0;
+    normAux= 0;
+
+    vec2_substraction(x0, x1, x0Minx1);
+    vec2_substraction(xHat, x0, xHatMinx0);
+    scalar_times_2vec(lambda, x0Minx1, lamx0Minx1);
+    vec2_addition(xHatMinx0, lamx0Minx1, vecAux);
+    dotProduct = dotProd(x0Minx1, vecAux);
+    normAux = l2norm(vecAux);
+
+    gPrim = T1 - T0 + s_function(xHat)*dotProduct/normAux;
+
+    return gPrim;
+
+}
+
+double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0[2], double x1[2], double xHat[2], double tol, int maxIter){
     // This method is the implementation of the secant method for the 2D fmm using the
     // function defined in SoSFunction.h as the speed of sound
-    int k;
-    k = 1;
-    double g_prime, temp1[2], temp2[2], temp3[2], temp4[2], temp5[2], temp6[2], temp7[2], norm1, norm2, lam;
-    temp1[0] = 0; // xHat - x1
-    temp1[1] = 0;
-    temp2[0] = 0; // x1 - x0
-    temp2[1] = 0;
-    temp3[0] = 0; // lambda1*(x1-x0)
-    temp3[1] = 0;
-    temp4[0] = 0; // lambda0*(x1-x0)
-    temp4[1] = 0;
-    temp5[0] = 0; // xHat - x1 + lambda1*(x1-x0) = temp1 + temp3;
-    temp5[1] = 0;
-    temp6[0] = 0; // xHat - x1 + lambda0*(x1 - x0) = temp1 + temp4;
-    temp6[1] = 0;
-    temp7[0] = 0;
-    temp7[1] = 0;
-    vec2_substraction(xHat, x1, temp1);
-    vec2_substraction(x1, x0, temp2);
-    scalar_times_2vec(lambda1, temp2, temp3);
-    scalar_times_2vec(lambda0, temp2, temp4);
-    vec2_addition(temp1, temp3, temp5);
-    vec2_addition(temp1, temp4, temp6);
-    norm1 = l2norm(temp5);
-    norm2 = l2norm(temp6);
-    g_prime = 1*dotProd(temp2, temp5); // numerator of g_prime is enough to know if g_prime is zero or not
-    while(k < maxIter & g_prime!=0){
-        vec2_addition(temp1, temp3, temp7);
-        lam = lambda1 - s_function(xHat)*dotProd(temp7, temp2)*(lambda1-lambda0)/(norm2*dotProd(temp2, temp5) + norm1*dotProd(temp2, temp6) );
-        vec2_substraction(xHat, x1, temp1);
-        vec2_substraction(x1, x0, temp2);
-        scalar_times_2vec(lambda1, temp2, temp3);
-        scalar_times_2vec(lambda0, temp2, temp4);
-        vec2_addition(temp1, temp3, temp5);
-        vec2_addition(temp1, temp4, temp6);
-        norm1 = l2norm(temp5);
-        norm2 = l2norm(temp6);
-        g_prime = 1*dotProd(temp2, temp5);
+    int k = 1;
+    double lam, gPrime0, gPrime1;
+
+    gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);
+    
+    while(k < maxIter & gPrime1!=0){
+        // u
+        gPrime0 = gPrime(T1, T0, lambda0, x0, x1, xHat);
+        gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);
+        lam = lambda1 - gPrime1*(lambda1 - lambda0)/( gPrime1 - gPrime0 );
         lambda0 = lambda1;
         lambda1 = lam;
         k ++;
+        printf("\n");
+        printf("Iteration %d\n", k);
+        printf("gPrime1 %fl\n", gPrime1);
+        printf("Lambda1 %fl\n", lambda1);
+        printf("Lambda0 %fl\n", lambda0);
+    }
+    // check that lambda1 stays in the interval [0, 1]
+    if(lambda1<0){
+        lambda1 = 0;
+    }
+    if(lambda1 > 1){
+        lambda1 = 1;
     }
     return lambda1;
 }
