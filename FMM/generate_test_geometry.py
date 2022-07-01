@@ -97,15 +97,22 @@ mesh_neigTriangles = np.array(mesh.neighbors)
 # We look in the row of the mesh.elements file
 N_points = len(mesh_points)
 mesh_neigh = []
-MaxN = 0
 # Create the list of lists
 for p in range(N_points):
     list_p = []
     for t in range(len(mesh_tris)):
         list_p += [point for point in mesh_tris[t, :] if p in mesh_tris[t, :] and point != p and point not in list_p]
     mesh_neigh.append( list_p )
-    if MaxN < len(list_p): # to pad the lists so that we can save them as a np.array and have them as a 2d array in C
-        MaxN = len(list_p)
+        
+# Now we want an array which has a list of the indices of the faces that are incident on each vertex
+
+mesh_IncidentFaces = []
+for p in range(N_points):
+    list_faces = []
+    for t in range(len(mesh_tris)):
+        if (p in mesh_tris[t, :]):
+            list_faces += [t]
+    mesh_IncidentFaces.append(list_faces)
 
 
 
@@ -225,6 +232,11 @@ with open("MeshInfo/Neigh.txt", "w") as out_file:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
 
+with open("MeshInfo/IncidentFaces.txt", "w") as out_file:
+    for l in mesh_IncidentFaces:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
+
 ##############################################################################
 ##############################################################################
 ##############################################################################
@@ -260,8 +272,16 @@ for p in range(N_points_square):
     for t in range(len(mesh_square_tris)):
         list_p += [point for point in mesh_square_tris[t, :] if p in mesh_square_tris[t, :] and point != p and point not in list_p]
     mesh_square_neigh.append( list_p )
-    if MaxN < len(list_p): # to pad the lists so that we can save them as a np.array and have them as a 2d array in C
-        MaxN = len(list_p)
+
+# Create the list for the incident faces
+
+mesh_IncidentFaces_sq = []
+for p in range(N_points_square):
+    list_faces = []
+    for t in range(len(mesh_square_tris)):
+        if (p in mesh_square_tris[t, :]):
+            list_faces += [t]
+    mesh_IncidentFaces_sq.append(list_faces)
 
 
 
@@ -298,5 +318,11 @@ with open("MeshInfo/Neigh_Sq.txt", "w") as out_file:
     for l in mesh_square_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
+        
+with open("MeshInfo/IncidentFaces_Sq.txt", "w") as out_file:
+    for l in mesh_IncidentFaces_sq:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
+        
 
 plt.show()

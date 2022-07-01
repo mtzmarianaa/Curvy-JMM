@@ -1,8 +1,7 @@
-/* TRIANGLE 2D MESH STRUCTURE
 
+/* TRIANGLE 2D MESH STRUCTURE
 This is the 2d triangle mesh structure. It assumes that an output from 
 meshpy is given
-
 */
 
 #include "triMesh_2D.h"

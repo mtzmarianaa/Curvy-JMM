@@ -42,8 +42,16 @@ for p in range(N_points):
     for t in range(len(mesh_tris)):
         list_p += [point for point in mesh_tris[t, :] if p in mesh_tris[t, :] and point != p and point not in list_p]
     mesh_neigh.append( list_p )
-    if MaxN < len(list_p): # to pad the lists so that we can save them as a np.array and have them as a 2d array in C
-        MaxN = len(list_p)
+    
+# Now we want an array which has a list of the indices of the faces that are incident on each vertex
+
+mesh_IncidentFaces = []
+for p in range(N_points):
+    list_faces = []
+    for t in range(len(mesh_tris)):
+        if (p in mesh_tris[t, :]):
+            list_faces += [t]
+    mesh_IncidentFaces.append(list_faces)
 
 plt.figure(1)
 fig = plt.gcf()
@@ -73,5 +81,10 @@ separator = ","
 
 with open("TestSquare/Neigh.txt", "w") as out_file:
     for l in mesh_neigh:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
+        
+with open("TestSquare/IncidentFaces.txt", "w") as out_file:
+    for l in mesh_IncidentFaces:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)

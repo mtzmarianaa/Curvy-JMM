@@ -1,3 +1,4 @@
+
 #pragma once
 
 
@@ -17,4 +18,5 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N);
 void printThisLinesNeighbors(int *neighborsRow, int SizeRow);
 
 void printAllNeighbors(neighborsRS *neighbors, int N);
+
 
