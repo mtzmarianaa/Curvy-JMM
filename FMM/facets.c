@@ -33,6 +33,10 @@ void print_facets(facetsS *facets) {
     }
 }
 
+void print_generalFacets(facetsS *facets) {
+    printf("Number of facets: %d \n", facets->nFacets);
+}
+
 void facets_initFromFile(facetsS *facets, char const *pathFacets) {
   // This method is going to store what is found un the pathFacets text file 
     FILE *fp; // the file were going to read

@@ -14,4 +14,6 @@ void facets_init(facetsS *facets, int *from, int *to, int nFacets);
 
 void print_facets(facetsS *facets);
 
+void print_generalFacets(facetsS *facets);
+
 void facets_initFromFile(facetsS *facets, char const *pathFacets);

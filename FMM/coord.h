@@ -15,4 +15,6 @@ void coord_init(coordS *coordinates, double *x, double *y, int nPoints);
 
 void print_coord(coordS *coordinates);
 
+void print_generalCoord(coordS *coordinates);
+
 void coord_initFromFile(coordS *coordinates, char const *pathPoints);

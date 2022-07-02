@@ -34,6 +34,10 @@ void print_faces(facesS *faces) {
     }
 }
 
+void print_generalFaces(facesS *faces){
+    printf("Number of faces: %d \n", faces->nFaces);
+}
+
 void faces_initFromFile(facesS *faces, char const *pathFaces) {
   // This method is going to store what is found un the pathFaces text file 
     FILE *fp; // the file were going to read

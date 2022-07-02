@@ -21,16 +21,17 @@ void triMesh_2Ddalloc(triMesh_2Ds **triM_2D) {
     *triM_2D = NULL;
 }
 
-void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints){
+void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints){
+    triM_2D->nPoints = nPoints;
     triM_2D->points = points;
     triM_2D->neighbors = neighbors;
+    triM_2D->incidentFaces = incidentFaces;
     triM_2D->boundaryPoints = boundaryPoints;
     triM_2D->facets = facets;
     triM_2D->faces = faces;
-    triM_2D->nPoints = nPoints;
 }
 
-void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces){
+void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces){
     // there are a lot of files needed to be opened
 
     int nPoints;
@@ -42,6 +43,9 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
 
     neighborsRS *neighbors;
     neighborsRSalloc_n(&neighbors, nPoints);
+
+    neighborsRS *incidentFaces;
+    neighborsRSalloc_n(&incidentFaces, nPoints);
 
     coordS *boundaryPoints;
     coord_alloc(&boundaryPoints);
@@ -61,9 +65,11 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
     coord_initFromFile(boundaryPoints, pathBoundaryPoints);
     triM_2D->boundaryPoints = boundaryPoints;
 
-    // For the neighborsRS struct
+    // For the neighborsRS structs
     neighbors_init(neighbors, pathNeighbors, nPoints);
     triM_2D->neighbors = neighbors;
+    neighbors_init(incidentFaces, pathIncidentFaces, nPoints);
+    triM_2D->incidentFaces = incidentFaces;
 
     // For the facetsS struct
     facets_initFromFile(facets, pathFacets);
@@ -95,6 +101,10 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
     printf("NEIGHBORS\n");
     printf("The neighbors for each indexed point in this mesh are the following: \n");
     printAllNeighbors(triM_2D->neighbors, triM_2D->nPoints);
+    printf("\n\n---------------------------------------\n");
+    printf("INCIDENT FACES\n");
+    printf("The incident faces for each indexed point in this mesh: \n");
+    printAllNeighbors(triM_2D->incidentFaces, triM_2D->nPoints);
     printf("\n\n---------------------------------------\n");
     printf("BOUNDARY POINTS\n");
     printf("Number of points that conform the boundary:  %d.\n", triM_2D->boundaryPoints->nPoints);

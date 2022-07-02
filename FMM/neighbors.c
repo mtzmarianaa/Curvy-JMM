@@ -55,13 +55,9 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
     }
     // If we can indeed open such file we read it line by line because each line has different amount of elements
     // we need the number of lines in the file first thing
-    nPoints = 0;
-    for (c = getc(fp); c != EOF; c = getc(fp)){
-        if (c == '\n'){
-            nPoints ++;
-        }
-    }
-    assert(nPoints == N); //they should match, if not then either the file is wrong or something is off
+    // nPoints = numLinesInFile(pathNeighbors);
+    // assert(nPoints == N); //they should match, if not then either the file is wrong or something is off
+
     
     fp = fopen(pathNeighbors, "r");
     // now we read each line and get the indices for each neighbor

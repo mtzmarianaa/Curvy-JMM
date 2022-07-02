@@ -32,6 +32,10 @@ void print_coord(coordS *coordinates) {
     }
 }
 
+void print_generalCoord(coordS *coordinates){
+    printf("Number of coordinates: %d \n", coordinates->nPoints);
+}
+
 void coord_initFromFile(coordS *coordinates, char const *pathPoints) {
   // This method is going to store what is found un the pathPoints text file 
     FILE *fp; // the file were going to read

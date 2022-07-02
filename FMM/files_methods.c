@@ -68,5 +68,6 @@ int numLinesInFile(const char *pathFile){
             nLines ++;
         }
     }
+    fclose(fp);
     return nLines;
 }

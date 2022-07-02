@@ -25,6 +25,7 @@ int main(){
     const char *pathPoints;
     pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/MeshPoints.txt";
     coord_initFromFile(points, pathPoints);
+
     // neighbors
     int nPoints;
     char const *pathNeighbors;
@@ -33,18 +34,30 @@ int main(){
     neighborsRS *neighbors;
     neighborsRSalloc_n(&neighbors, nPoints);
     neighbors_init(neighbors, pathNeighbors, nPoints);
+
+    // incident faces
+    char const *pathIncidentFaces;
+    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/IncidentFaces.txt";
+    neighborsRS *incidentFaces;
+    neighborsRSalloc_n(&incidentFaces, nPoints);
+    neighbors_init(incidentFaces, pathIncidentFaces, nPoints);
+    printAllNeighbors(incidentFaces, nPoints);
+    printf("nPoints after initializing incidentFaces, %d \n", nPoints);
+
     //boundaryPoints
     coordS *boundaryPoints;
     coord_alloc(&boundaryPoints);
     const char *pathBoundaryPoints;
     pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/BoundaryPoints.txt";
     coord_initFromFile(boundaryPoints, pathBoundaryPoints);
+
     // facets
     facetsS *facets;
     facets_alloc(&facets);
     const char *pathFacets;
     pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Facets.txt";
     facets_initFromFile(facets, pathFacets);
+
     // faces
     facesS *faces;
     faces_alloc(&faces);
@@ -55,44 +68,44 @@ int main(){
     // init the triMesh_2Ds with all these structs we've already built
     triMesh_2Ds *triM_2D_1;
     triMesh_2Dalloc(&triM_2D_1);
-    triMesh2_init(triM_2D_1, points, neighbors, boundaryPoints, facets, faces, nPoints);
+    triMesh2_init(triM_2D_1, points, neighbors, incidentFaces, boundaryPoints, facets, faces, nPoints);
     // print to see what's in there
     printGeneralInfoMesh(triM_2D_1);
     // print EVERYTHING
     printEverythingInMesh(triM_2D_1);
 
 
-    // TESTING FROM FILE
+    // // TESTING FROM FILE
     printf("\n------------------------------------");
     printf("\n------------------------------------");
     printf("\n------------------------------------");
     printf("\n\n\n TESTING FROM FILES \n\n\n\n");
     triMesh_2Ds *triM_2D_2;
     triMesh_2Dalloc(&triM_2D_2);
-    triMesh2_init_from_meshpy(triM_2D_2, pathPoints, pathNeighbors, pathBoundaryPoints, pathFacets, pathFaces);
+    triMesh2_init_from_meshpy(triM_2D_2, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces);
     // print to see what's in there
     printGeneralInfoMesh(triM_2D_2);
     // print EVERYTHING
     printEverythingInMesh(triM_2D_2);
 
-    // TESTING FROM FILES BUT IN THE MESH THAT ALSO INCLUDES A RECTANGLE
-    printf("\n------------------------------------");
-    printf("\n------------------------------------");
-    printf("\n------------------------------------");
-    printf("\n\n\n TESTING FROM FILES WITH RECTANGLE INCLUDED IN MESH \n\n\n\n");
-    triMesh_2Ds *triM_2D_3;
-    triMesh_2Dalloc(&triM_2D_3);
-    const char *pathPoints_sq, *pathNeighbors_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq;
-    pathPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/MeshPoints_Sq.txt";
-    pathNeighbors_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Neigh_Sq.txt";
-    pathBoundaryPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/BoundaryPoints_Sq.txt";
-    pathFacets_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Facets_Sq.txt";
-    pathFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Faces_Sq.txt";
-    triMesh2_init_from_meshpy(triM_2D_3, pathPoints_sq, pathNeighbors_sq, pathBoundaryPoints_sq, pathFacets_sq, pathFaces_sq);
-    // print to see what's in there
-    printGeneralInfoMesh(triM_2D_3);
-    // print EVERYTHING
-    printEverythingInMesh(triM_2D_3);
+    // // TESTING FROM FILES BUT IN THE MESH THAT ALSO INCLUDES A RECTANGLE
+    // printf("\n------------------------------------");
+    // printf("\n------------------------------------");
+    // printf("\n------------------------------------");
+    // printf("\n\n\n TESTING FROM FILES WITH RECTANGLE INCLUDED IN MESH \n\n\n\n");
+    // triMesh_2Ds *triM_2D_3;
+    // triMesh_2Dalloc(&triM_2D_3);
+    // const char *pathPoints_sq, *pathNeighbors_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq;
+    // pathPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/MeshPoints_Sq.txt";
+    // pathNeighbors_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Neigh_Sq.txt";
+    // pathBoundaryPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/BoundaryPoints_Sq.txt";
+    // pathFacets_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Facets_Sq.txt";
+    // pathFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Faces_Sq.txt";
+    // triMesh2_init_from_meshpy(triM_2D_3, pathPoints_sq, pathNeighbors_sq, pathBoundaryPoints_sq, pathFacets_sq, pathFaces_sq);
+    // // print to see what's in there
+    // printGeneralInfoMesh(triM_2D_3);
+    // // print EVERYTHING
+    // printEverythingInMesh(triM_2D_3);
 
 
 

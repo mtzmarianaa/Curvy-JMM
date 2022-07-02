@@ -14,6 +14,7 @@ typedef struct {
   neighborsRS *neighbors; // for each point i, its neighbors (i.e. there is a face that includes both points)
   coordS *boundaryPoints;  // these are just the coordinates of the boundary points + number of boundary points
   facetsS *facets; // these are the "instructions on how to connect indexed dots"
+  neighborsRS *incidentFaces; // for each point i, its incident faces
   facesS *faces; // these are the faces, the triangles in the mesh
   int nPoints;
 } triMesh_2Ds;
@@ -22,9 +23,9 @@ void triMesh_2Dalloc(triMesh_2Ds **triM_2D);
 
 void triMesh_2Ddalloc(triMesh_2Ds **triM_2D);
 
-void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints);
+void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints);
 
-void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces);
+void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces);
 
 void printGeneralInfoMesh(triMesh_2Ds *triM_2D);
 
