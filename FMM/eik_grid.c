@@ -7,7 +7,6 @@ This is the Eikonal grid with different specifications
 #include "eik_grid.h"
 #include "priority_queue.h"
 #include "SoSFunction.h"
-#include "triMesh_2D.h"
 
 
 #include <stdio.h>
@@ -41,7 +40,7 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   eik_g->nStart = nStart;
   eik_g->triM_2D = triM_2D;
 
-  // we first set all the current eik_vals to infinity, set all the current_states to 
+  // we first set all the current eik_vals to infinity, set all the current_states to 0 (far)
   double *eik_vals;
   int *current_states;
   eik_vals = malloc(triM_2D->nPoints*sizeof(double)); 
@@ -60,17 +59,29 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   priority_queue_init(p_queueG); // initiate
   for(int i = 0; i<nStart; i++){
     insert(p_queueG, 0, start[i]); // insert all the starting points with eikonal value 0
+    eik_vals[start[i]] = 0; // the final eikonal values of the starting points are zero
   }
   eik_g->p_queueG = p_queueG;
   assert(&eik_g != NULL); // eik_g should not be null
 }
 
+void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces) {
+  // the only difference between this and the previous method is that in here we do need to initialize the Mesh structure
+  triMesh_2Ds *triM_2D;
+  triMesh_2Dalloc(&triM_2D);
+  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces);
+  // and then we can use the previous method
+  eik_grid_init( eik_g, start, nStart, triM_2D); // voila
+}
+
 void printGeneralInfo(eik_gridS *eik_g) {
-  printf("\n\n\n\n     GENERAL INFORMATION ON THIS EIKONAL STRUCT\n\n");
+  printf("\n\n\n\n     GENERAL INFORMATION ON THIS EIKONAL STRUCT     \n\n");
   printf("Number of starting points: %d \n", eik_g->nStart);
   printf("The starting points are: \n");
   for(int i = 0; i<eik_g->nStart; i++) {
     printf("|   %d   |", eik_g->start[i]);
   }
   printGeneralInfoMesh(eik_g->triM_2D);
+  printf("Current state of priority queue: \n");
+  printeik_queue(eik_g->p_queueG);
 }
