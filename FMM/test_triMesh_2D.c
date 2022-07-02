@@ -88,24 +88,25 @@ int main(){
     // print EVERYTHING
     printEverythingInMesh(triM_2D_2);
 
-    // // TESTING FROM FILES BUT IN THE MESH THAT ALSO INCLUDES A RECTANGLE
-    // printf("\n------------------------------------");
-    // printf("\n------------------------------------");
-    // printf("\n------------------------------------");
-    // printf("\n\n\n TESTING FROM FILES WITH RECTANGLE INCLUDED IN MESH \n\n\n\n");
-    // triMesh_2Ds *triM_2D_3;
-    // triMesh_2Dalloc(&triM_2D_3);
-    // const char *pathPoints_sq, *pathNeighbors_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq;
-    // pathPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/MeshPoints_Sq.txt";
-    // pathNeighbors_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Neigh_Sq.txt";
-    // pathBoundaryPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/BoundaryPoints_Sq.txt";
-    // pathFacets_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Facets_Sq.txt";
-    // pathFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Faces_Sq.txt";
-    // triMesh2_init_from_meshpy(triM_2D_3, pathPoints_sq, pathNeighbors_sq, pathBoundaryPoints_sq, pathFacets_sq, pathFaces_sq);
-    // // print to see what's in there
-    // printGeneralInfoMesh(triM_2D_3);
-    // // print EVERYTHING
-    // printEverythingInMesh(triM_2D_3);
+    // // TESTING FROM FILES BUT IN THE MESH THAT IS JUST A SQUARE (THE ONE THAT I'M GOING TO TEST MY METHOD AND IS VERY SIMPLE)
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR A SIMPLE SQUARE \n\n\n\n");
+    triMesh_2Ds *triM_2D_3;
+    triMesh_2Dalloc(&triM_2D_3);
+    const char *pathPoints_sq, *pathNeighbors_sq, *pathIncidentFaces_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq;
+    pathPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/MeshPoints.txt";
+    pathNeighbors_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Neigh.txt";
+    pathIncidentFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/IncidentFaces.txt";
+    pathBoundaryPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/BoundaryPoints.txt";
+    pathFacets_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Facets.txt";
+    pathFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Faces.txt";
+    triMesh2_init_from_meshpy(triM_2D_3, pathPoints_sq, pathNeighbors_sq, pathIncidentFaces_sq, pathBoundaryPoints_sq, pathFacets_sq, pathFaces_sq);
+    // print to see what's in there
+    printGeneralInfoMesh(triM_2D_3);
+    // print EVERYTHING
+    printEverythingInMesh(triM_2D_3);
 
 
 
