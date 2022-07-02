@@ -66,18 +66,18 @@ void coord_initFromFile(coordS *coordinates, char const *pathPoints) {
     }
 
     // scan such file
-
-        while ((read = getline(&line, &len, fp)) != -1) {
-        //printf("Iteration %d \n", i);
-        //printf("%s", line);
-        i ++;
-        //printf("\n");
-        separateARowDb(line, 2, row);
-        //printf("First element found: %lf\n", row[0]);
-        //printf("Second element found: %lf\n", row[1]);
-        coordinates->x[i] = row[0];
-        coordinates->y[i] = row[1];
-        //printf("\n\n");
+    fp = fopen(pathPoints, "r");
+    while ((read = getline(&line, &len, fp)) != -1) {
+    //printf("Iteration %d \n", i);
+    //printf("%s", line);
+    //printf("\n");
+    separateARowDb(line, 2, row);
+    //printf("First element found: %lf\n", row[0]);
+    //printf("Second element found: %lf\n", row[1]);
+    coordinates->x[i] = row[0];
+    coordinates->y[i] = row[1];
+    //printf("\n\n");
+    i ++;
     }
     fclose(fp);
     if (line)

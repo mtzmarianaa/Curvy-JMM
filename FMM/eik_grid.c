@@ -7,6 +7,7 @@ This is the Eikonal grid with different specifications
 #include "eik_grid.h"
 #include "priority_queue.h"
 #include "SoSFunction.h"
+#include "linAlg.h"
 
 
 #include <stdio.h>
@@ -84,4 +85,42 @@ void printGeneralInfo(eik_gridS *eik_g) {
   printGeneralInfoMesh(eik_g->triM_2D);
   printf("Current state of priority queue: \n");
   printeik_queue(eik_g->p_queueG);
+}
+
+// same principle as one point updates from square grid just that the length of the "arch" is not h, is not the same everywhere
+double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
+  double That1, dist;
+  double x1Minx0[2], x0[2], x1[0];
+  // since we don't have a uniform square grid, we need to know how to handle these one point updates
+  x0[0] = eik_g->triM_2D->points->x[indexFrom];
+  x0[1] = eik_g->triM_2D->points->y[indexFrom];
+  x1[0] = eik_g->triM_2D->points->x[indexTo];
+  x1[1] = eik_g->triM_2D->points->y[indexTo];
+  vec2_substraction(x0, x1, x1Minx0);
+  dist = l2norm(x1Minx0);
+  That1 = s_function(x0)*dist;
+  return That1;
+}
+
+double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind){
+  // this is where we use the optimization problem (we find lambda and then update it)
+}
+
+
+// once accepted a node (i.e. we deleated the root from the priority queue)
+// we need to add its un taged neighbors to the priority queue
+// WE JUST ADD THEM IF THEY ARE CURRENTLY FAR
+// ADD TO QUEUE != UPDATE (which might include a 2 node update)
+void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
+  // we iterate through its neighbors and those with current state = 0 we add them to the priority queue
+  int neighborsIndex, nNei;
+  int *listNeighbors;
+  nNei = eik_g->triM_2D->neighbors[index_accepted].len;
+  for(int i = 0; i<nNei; i++){
+    neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // a neighbor
+    if(eik_g->current_states[neighborsIndex] == 0) {
+      insert(eik_g->p_queueG, onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex) , neighborsIndex); // insert this one point update to the priority queue
+      eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
+    }
+  }
 }

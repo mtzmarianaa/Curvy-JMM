@@ -65,12 +65,12 @@ plt.show()
 
 # # Now we save this triangulation to a bin file so that we can read it later from C
 
-np.savetxt('TestSquare/BoundaryPoints.txt', np.array(edges_square), delimiter =', ' )
+np.savetxt('TestSquare/BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets)
 np.savetxt('TestSquare/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestSquare/MeshPoints.txt', mesh_points, delimiter =', ' )
+np.savetxt('TestSquare/MeshPoints.txt', mesh_points, delimiter =', ', fmt = '%.8f' )
 
 np.savetxt('TestSquare/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
