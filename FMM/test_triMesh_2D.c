@@ -108,6 +108,10 @@ int main(){
     // print EVERYTHING
     printEverythingInMesh(triM_2D_3);
 
+    triMesh_2Ddalloc(&triM_2D_1);
+    triMesh_2Ddalloc(&triM_2D_2);
+    triMesh_2Ddalloc(&triM_2D_3);
+
 
 
 }

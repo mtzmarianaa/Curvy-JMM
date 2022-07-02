@@ -18,7 +18,7 @@ This is the Eikonal grid with different specifications
 struct eik_grid {
   int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
   int nStart; // number of points in start
-  triMesh_2Ds *triM_2D; // mesh structure that includes coordinates, neighbors, etc.
+  triMesh_2Ds *triM_2D; // mesh structure that includes coordinates, neighbors, incident faces, etc.
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
   p_queue *p_queueG; // priority queue struct
   int *current_states; // 0 far, 1 trial, 2 valid
