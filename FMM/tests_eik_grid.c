@@ -3,6 +3,7 @@ TESTS FOR THE GRID
 */
 #include "eik_grid.h"
 #include "triMesh_2D.h"
+#include "priority_queue.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -57,9 +58,9 @@ int main()
 
     // now we test the one point update + insertion to the priority queue
 
-    printf("\nWe add the neighbors of the starting point and perform ONE one point update \n");
+    printf("\nWe delete the starting point from the queue \n");
 
-    addNeighbors_fromAccepted(eik_g1, *start); // add the neighbors of the starting point
+    popAddNeighbors(eik_g1);
     printGeneralInfo(eik_g1);
 
     eik_grid_dealloc(&eik_g1);

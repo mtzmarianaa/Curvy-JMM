@@ -7,7 +7,7 @@
 int main(){
 
 
-    double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt, T0, T1;
+    double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt, T0, T1, twoOpt1, twoOpt2;
     int maxIter;
     lambda0 = 0.1;
     lambda1 = 0.8;
@@ -34,6 +34,8 @@ int main(){
     printf("Lambda 1: %f \n", lambda1);
     printf("Lambda 2: %f \n", lambda0);
     printf("Optimum lambda: %f \n", lamb_opt);
+    twoOpt1 = eikApproxLin(T1, T0, lamb_opt, x0, x1, xHat);
+    printf("Two point update would be: %fl  (should be sqrt(2) ~= 1.4142)\n", twoOpt1);
 
     printf("\n\n\n");
 
@@ -61,6 +63,8 @@ int main(){
     printf("Lambda 1: %f \n", lambda1);
     printf("Lambda 2: %f \n", lambda0);
     printf("Optimum lambda: %f \n", lamb_opt);
+    twoOpt2 = eikApproxLin(T1, T0, lamb_opt, x0, x1, xHat);
+    printf("Two point update would be: %fl  (should be 2)\n", twoOpt2);
 
 
 

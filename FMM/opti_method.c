@@ -10,6 +10,36 @@ Optimization methods for the 2D FMM
 #include <stdio.h>
 #include <stdlib.h>
 
+
+double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2]) {
+    // this is the approximation to the eikonal solution using local approximations everywhere
+    double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], normAux, gApprox;
+
+    x0Minx1[0] = 0;
+    x0Minx1[1] = 0;
+
+    xHatMinx0[0] = 0;
+    xHatMinx0[1] = 0;
+
+    lamx0Minx1[0] = 0;
+    lamx0Minx1[1] = 0;
+
+    vecAux[0] = 0;
+    vecAux[1] = 0;
+
+    normAux= 0;
+
+    vec2_substraction(x0, x1, x0Minx1);
+    vec2_substraction(xHat, x0, xHatMinx0);
+    scalar_times_2vec(lambda, x0Minx1, lamx0Minx1);
+    vec2_addition(xHatMinx0, lamx0Minx1, vecAux);
+    normAux = l2norm(vecAux);
+
+    gApprox = lambda*(T1 - T0) + T0 + s_function(xHat)*normAux;
+
+    return gApprox;
+}
+
 double gPrime(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2]){
     // auxiliary function to compute the function gPrime
     double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], dotProduct, normAux, gPrim;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "triMesh_2D.h"
+#include "linAlg.h"
 
 typedef struct eik_grid eik_gridS;
 
@@ -19,3 +20,7 @@ double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo);
 double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
+
+void update_afterAccepted(eik_gridS *eik_g, int index_accepted);
+
+void popAddNeighbors(eik_gridS *eik_g);

@@ -162,6 +162,13 @@ void delete_findIndex(p_queue *Priority_queue, int ind)
   }
 }
 
+int indexRoot(p_queue *Priority_queue){
+  return Priority_queue->queue_index[0];
+}
+
+double valueRoot(p_queue *Priority_queue){
+  return Priority_queue->queue_vals[0];
+}
 
 void deleteRoot(p_queue *Priority_queue)
 {
@@ -231,5 +238,5 @@ int getSize(p_queue *Priority_queue)
 
 int getIndicesInQueue(p_queue *Priority_queue)
 {
-  return Priority_queue->queue_index;
+  return *Priority_queue->queue_index;
 }

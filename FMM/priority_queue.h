@@ -24,7 +24,11 @@ void delete_findValue(p_queue *p_queueImp, double num);
 
 void delete_findIndex(p_queue *p_queueImp, int ind);
 
-void deleteRoot(p_queue *p_queueImp);
+int indexRoot(p_queue *Priority_queue);
+
+double valueRoot(p_queue *Priority_queue);
+
+void deleteRoot(p_queue *Priority_queue);
 
 void printeik_queue(p_queue *p_queueImp);
 

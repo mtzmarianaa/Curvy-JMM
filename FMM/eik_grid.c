@@ -7,7 +7,7 @@ This is the Eikonal grid with different specifications
 #include "eik_grid.h"
 #include "priority_queue.h"
 #include "SoSFunction.h"
-#include "linAlg.h"
+#include "opti_method.h"
 
 
 #include <stdio.h>
@@ -60,7 +60,6 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   priority_queue_init(p_queueG); // initiate
   for(int i = 0; i<nStart; i++){
     insert(p_queueG, 0, start[i]); // insert all the starting points with eikonal value 0
-    eik_vals[start[i]] = 0; // the final eikonal values of the starting points are zero
   }
   eik_g->p_queueG = p_queueG;
   assert(&eik_g != NULL); // eik_g should not be null
@@ -85,6 +84,10 @@ void printGeneralInfo(eik_gridS *eik_g) {
   printGeneralInfoMesh(eik_g->triM_2D);
   printf("Current state of priority queue: \n");
   printeik_queue(eik_g->p_queueG);
+  printf("\nCurrent Eikonal values: \n");
+  for(int i = 0; i<eik_g->triM_2D->nPoints; i++){
+    printf("Index   %d    ||  Eikonal value:   %fl    ||  Current state:   %d \n", i, eik_g->eik_vals[i], eik_g->current_states[i]);
+  }
 }
 
 // same principle as one point updates from square grid just that the length of the "arch" is not h, is not the same everywhere
@@ -104,6 +107,25 @@ double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
 
 double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind){
   // this is where we use the optimization problem (we find lambda and then update it)
+  double lambda_opt, lambda0, lambda1, T0, T1, tol, That2;
+  double x0[2], x1[2], xHat[2];
+  int maxIter;
+  lambda0 = 0.0;
+  lambda1 = 1.0;
+  maxIter = 25;
+  tol = 0.001; // ask if these parameters are ok
+  // get the coordinates of the points x0, x1, xHat
+  x0[0] = eik_g->triM_2D->points->x[x0_ind];
+  x0[1] = eik_g->triM_2D->points->y[x0_ind];
+  x1[0] = eik_g->triM_2D->points->x[x1_ind];
+  x1[1] = eik_g->triM_2D->points->y[x1_ind];
+  xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
+  xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
+  // compute the optimum lambda from  the linear model
+  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
+  // get the possible eikonal value for this two point update
+  That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat);
+  return That2;
 }
 
 
@@ -123,4 +145,53 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
       eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
     }
   }
+}
+
+// after accepting the neighboring nodes and putting them into the priority queue (their updates were all computed with
+// either a one point update (if they were previously far) or stayed with their pre computed eikonal value)
+// now we need to update those nodes that can be updated via a two point update
+void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
+  // we need to first find the incident faces to the index_accepted point, then we iterate through those
+  // faces to find the 2 other points that belong to the same face, if one of them is set as valid then we might consider performing
+  // a two point update
+  int nFaces, faceIndex, k;
+  int neis[2];
+  double twoPointVal;
+  k = 0;
+  nFaces = eik_g->triM_2D->incidentFaces[index_accepted].len; // get the number of incident faces to the newly accepted point
+  // we iterate through those faces
+  for (int i = 0; i<nFaces; i++){
+    faceIndex = eik_g->triM_2D->incidentFaces[index_accepted].neis_i[i]; // i-th incident face 
+    // now we get the two other points that belong to that face
+    for (int j = 0; j<3; j++) {
+      if( eik_g->triM_2D->faces->points[faceIndex][j] != index_accepted ) { // we want the point in the face that are not index_accepted
+        neis[k] = eik_g->triM_2D->faces->points[faceIndex][j];
+        k++;
+      }
+    }
+    // once we have the other two points that form part of that face (and should at least be trial)
+    // if one of them is valid and the other one is trial we consider doing a two point update
+    if( eik_g->current_states[neis[0]] == 2 &  eik_g->current_states[neis[1]] == 1 ) {
+      // neis[0] is valid, neis[1] is trial
+      // two point update considered
+      twoPointVal = twoPointUpdate_eikValue(eik_g, index_accepted, neis[0], neis[1]);
+      update(eik_g->p_queueG, twoPointVal, neis[1]); // this function takes care, if its smaller it will update the new value
+    }
+    if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
+      // neis[0] is trial, neis[1] is valid
+      // two point update considered
+      twoPointVal = twoPointUpdate_eikValue(eik_g, index_accepted, neis[1], neis[0]);
+      update(eik_g->p_queueG, twoPointVal, neis[0]);
+    }
+    // if both of them are trial it means that they were recently added as the neighbors of index_accepted, no two point update can be done in this case
+  }
+}
+
+void popAddNeighbors(eik_gridS *eik_g){
+  int minIndex = indexRoot(eik_g->p_queueG);
+  double minEikVal = valueRoot(eik_g->p_queueG);
+  deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
+  eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
+  eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
+  addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
 }
