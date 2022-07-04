@@ -58,10 +58,30 @@ int main()
 
     // now we test the one point update + insertion to the priority queue
 
+    int currentMinInd;
     printf("\nWe delete the starting point from the queue \n");
-
-    popAddNeighbors(eik_g1);
+    currentMinInd = currentMinIndex(eik_g1);
+    printf("Current index with minimum value in the queue: %d\n", currentMinInd);
+    popAddNeighbors(eik_g1); // first find minimum and add its neighbors if classified before as FAR
     printGeneralInfo(eik_g1);
+    printf("\nIf necessary we perform two point updates\n");
+    update_afterAccepted(eik_g1, currentMinInd);
+    printGeneralInfo(eik_g1);
+
+    printf("\n\n\n-------- SECOND ITERATION --------\n");
+
+    printf("\nWe delete the starting point from the queue \n");
+    currentMinInd = currentMinIndex(eik_g1);
+    printf("Current index with minimum value in the queue: %d\n", currentMinInd);
+    popAddNeighbors(eik_g1); // first find minimum and add its neighbors if classified before as FAR
+    printGeneralInfo(eik_g1);
+    printf("\nIf necessary we perform two point updates\n");
+    update_afterAccepted(eik_g1, currentMinInd);
+    printGeneralInfo(eik_g1);
+
+
+    // we delete the current root of the priority queue (the trial node with minimum Eikonal value)
+    
 
     eik_grid_dealloc(&eik_g1);
 }

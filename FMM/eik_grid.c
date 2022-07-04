@@ -157,12 +157,12 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
   int nFaces, faceIndex, k;
   int neis[2];
   double twoPointVal;
-  k = 0;
   nFaces = eik_g->triM_2D->incidentFaces[index_accepted].len; // get the number of incident faces to the newly accepted point
   // we iterate through those faces
   for (int i = 0; i<nFaces; i++){
     faceIndex = eik_g->triM_2D->incidentFaces[index_accepted].neis_i[i]; // i-th incident face 
     // now we get the two other points that belong to that face
+    k = 0;
     for (int j = 0; j<3; j++) {
       if( eik_g->triM_2D->faces->points[faceIndex][j] != index_accepted ) { // we want the point in the face that are not index_accepted
         neis[k] = eik_g->triM_2D->faces->points[faceIndex][j];
@@ -194,4 +194,8 @@ void popAddNeighbors(eik_gridS *eik_g){
   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
   eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
+}
+
+int currentMinIndex(eik_gridS *eik_g) {
+  return indexRoot(eik_g->p_queueG);
 }

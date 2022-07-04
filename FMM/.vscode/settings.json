@@ -21,6 +21,7 @@
         "files_methods.h": "c",
         "neighbors.h": "c",
         "coord.h": "c",
-        "random": "c"
+        "random": "c",
+        "linalg.h": "c"
     }
 }

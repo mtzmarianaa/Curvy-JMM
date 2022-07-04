@@ -88,11 +88,6 @@ double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0
         lambda0 = lambda1;
         lambda1 = lam;
         k ++;
-        printf("\n");
-        printf("Iteration %d\n", k);
-        printf("gPrime1 %fl\n", gPrime1);
-        printf("Lambda1 %fl\n", lambda1);
-        printf("Lambda0 %fl\n", lambda0);
     }
     // check that lambda1 stays in the interval [0, 1]
     if(lambda1<0){
@@ -101,6 +96,7 @@ double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0
     if(lambda1 > 1){
         lambda1 = 1;
     }
+    printf("Optimum lambda found %fl\n", lambda1);
     return lambda1;
 }
 
