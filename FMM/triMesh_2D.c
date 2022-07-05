@@ -21,8 +21,9 @@ void triMesh_2Ddalloc(triMesh_2Ds **triM_2D) {
     *triM_2D = NULL;
 }
 
-void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints){
+void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints, int *indexRegions){
     triM_2D->nPoints = nPoints;
+    triM_2D->indexRegions = indexRegions;
     triM_2D->points = points;
     triM_2D->neighbors = neighbors;
     triM_2D->incidentFaces = incidentFaces;
@@ -31,7 +32,7 @@ void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors,
     triM_2D->faces = faces;
 }
 
-void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces){
+void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions){
     // there are a lot of files needed to be opened
 
     int nPoints;
@@ -78,6 +79,11 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
     // For the facesS struct
     faces_initFromFile(faces, pathFaces);
     triM_2D->faces = faces;
+
+    // for the index Regions
+    int *indexRegions;
+    indexRegions = malloc(faces->nFaces*sizeof(int));
+
 
 }
 

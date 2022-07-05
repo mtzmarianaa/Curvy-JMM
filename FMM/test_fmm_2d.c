@@ -45,5 +45,7 @@ int main()
     // we use the fmm olim method
     FMM_2D( eik_g1 );
 
+    
+
     eik_grid_dealloc(&eik_g1);
 }

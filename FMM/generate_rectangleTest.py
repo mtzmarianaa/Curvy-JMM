@@ -52,6 +52,12 @@ for p in range(N_points):
         if (p in mesh_tris[t, :]):
             list_faces += [t]
     mesh_IncidentFaces.append(list_faces)
+    
+# We add the label for the indicator function to see in which region each face is in
+
+faces_label = []
+for fi in range(len(mesh_tris)):
+    faces_label += [1]
 
 plt.figure(1)
 fig = plt.gcf()
@@ -87,4 +93,9 @@ with open("TestSquare/Neigh.txt", "w") as out_file:
 with open("TestSquare/IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces:
         out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
+        
+with open("TestSquare/FacesLabel.txt", "w") as out_file:
+    for l in faces_label:
+        out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)
