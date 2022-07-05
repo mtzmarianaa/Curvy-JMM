@@ -80,7 +80,7 @@ double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0
 
     gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);
     
-    while(k < maxIter & gPrime1!=0){
+    while(k < maxIter & gPrime1>tol){
         // u
         gPrime0 = gPrime(T1, T0, lambda0, x0, x1, xHat);
         gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);

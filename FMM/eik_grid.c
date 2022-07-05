@@ -8,6 +8,7 @@ This is the Eikonal grid with different specifications
 #include "priority_queue.h"
 #include "SoSFunction.h"
 #include "opti_method.h"
+#include "linAlg.h"
 
 
 #include <stdio.h>
@@ -86,7 +87,10 @@ void printGeneralInfo(eik_gridS *eik_g) {
   printeik_queue(eik_g->p_queueG);
   printf("\nCurrent Eikonal values: \n");
   for(int i = 0; i<eik_g->triM_2D->nPoints; i++){
-    printf("Index   %d    ||  Eikonal value:   %fl    ||  Current state:   %d \n", i, eik_g->eik_vals[i], eik_g->current_states[i]);
+    double x[2];
+    x[0] = eik_g->triM_2D->points->x[i];
+    x[1] = eik_g->triM_2D->points->y[i];
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Real Eikonal:   %fl    ||  Current state:   %d \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i]);
   }
 }
 
@@ -101,7 +105,7 @@ double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
   x1[1] = eik_g->triM_2D->points->y[indexTo];
   vec2_substraction(x0, x1, x1Minx0);
   dist = l2norm(x1Minx0);
-  That1 = s_function(x0)*dist;
+  That1 = eik_g->eik_vals[indexFrom] + s_function(x0)*dist; // THIS JUST CHANGED ASKKKKK
   return That1;
 }
 
@@ -114,17 +118,29 @@ double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHa
   lambda1 = 1.0;
   maxIter = 25;
   tol = 0.001; // ask if these parameters are ok
+  T0 = eik_g->eik_vals[x0_ind];
+  T1 = eik_g->eik_vals[x1_ind];
   // get the coordinates of the points x0, x1, xHat
   x0[0] = eik_g->triM_2D->points->x[x0_ind];
+  printf("\n");
+  printf("\nx0 %fl\n", x0[0]);
   x0[1] = eik_g->triM_2D->points->y[x0_ind];
+  printf("\ny0 %fl\n", x0[1]);
   x1[0] = eik_g->triM_2D->points->x[x1_ind];
+  printf("\nx1 %fl\n", x1[0]);
   x1[1] = eik_g->triM_2D->points->y[x1_ind];
+  printf("\ny1 %fl\n", x1[1]);
   xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
+  printf("\nxHat %fl\n", xHat[0]);
   xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
+  printf("\nyHat %fl\n", xHat[1]);
   // compute the optimum lambda from  the linear model
   lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
+  printf("Lambda found %fl\n", lambda_opt);
   // get the possible eikonal value for this two point update
   That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat);
+  printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
+  printf("Eikonal value with two point update %fl\n", That2);
   return That2;
 }
 
@@ -198,4 +214,8 @@ void popAddNeighbors(eik_gridS *eik_g){
 
 int currentMinIndex(eik_gridS *eik_g) {
   return indexRoot(eik_g->p_queueG);
+}
+
+int nStillInQueue(eik_gridS *eik_g) {
+  return getSize(eik_g->p_queueG);
 }

@@ -26,3 +26,5 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted);
 void popAddNeighbors(eik_gridS *eik_g);
 
 int currentMinIndex(eik_gridS *eik_g);
+
+int nStillInQueue(eik_gridS *eik_g);
