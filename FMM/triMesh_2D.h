@@ -31,3 +31,5 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
 void printGeneralInfoMesh(triMesh_2Ds *triM_2D);
 
 void printEverythingInMesh(triMesh_2Ds *triM_2D);
+
+int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to);

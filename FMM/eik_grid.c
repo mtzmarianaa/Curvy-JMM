@@ -66,11 +66,11 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   assert(&eik_g != NULL); // eik_g should not be null
 }
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces) {
+void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions) {
   // the only difference between this and the previous method is that in here we do need to initialize the Mesh structure
   triMesh_2Ds *triM_2D;
   triMesh_2Dalloc(&triM_2D);
-  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces);
+  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces, pathIndexRegions);
   // and then we can use the previous method
   eik_grid_init( eik_g, start, nStart, triM_2D); // voila
 }
@@ -98,6 +98,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
 double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
   double That1, dist;
   double x1Minx0[2], x0[2], x1[0];
+  int region;
   // since we don't have a uniform square grid, we need to know how to handle these one point updates
   x0[0] = eik_g->triM_2D->points->x[indexFrom];
   x0[1] = eik_g->triM_2D->points->y[indexFrom];
@@ -105,7 +106,9 @@ double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
   x1[1] = eik_g->triM_2D->points->y[indexTo];
   vec2_substraction(x0, x1, x1Minx0);
   dist = l2norm(x1Minx0);
-  That1 = eik_g->eik_vals[indexFrom] + s_function(x0)*dist; // THIS JUST CHANGED ASKKKKK
+  region = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
+  printf("\n Region %d \n", region);
+  That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, region)*dist; // THIS JUST CHANGED ASKKKKK
   return That1;
 }
 

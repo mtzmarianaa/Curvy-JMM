@@ -126,3 +126,20 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
     printf("Such faces or triangles are defined as follows: \n");
     print_faces(triM_2D->faces);
 }
+
+int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
+    // we look in the incidentFaces, both points must share two faces
+    int current_face, i, region, region_test;
+    region = triM_2D->indexRegions[ triM_2D->incidentFaces[index_from].neis_i[0] ]; // index corresponding to the first incident face of from
+    for (i = 1; i<triM_2D->incidentFaces[index_from].len; i++){
+        current_face = triM_2D->incidentFaces[index_from].neis_i[i];
+        region_test = triM_2D->indexRegions[ current_face ];
+        if ( region != region_test & region_test > region ){
+            // if there is an incident face with different index region and that index is greater
+            if (  triM_2D->faces->points[current_face][0] == index_to |  triM_2D->faces->points[current_face][1] == index_to | triM_2D->faces->points[current_face][2] == index_to ){
+                region = region_test;
+            }
+        }
+    }
+    return region;
+}
