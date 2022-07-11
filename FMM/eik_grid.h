@@ -28,3 +28,5 @@ void popAddNeighbors(eik_gridS *eik_g);
 int currentMinIndex(eik_gridS *eik_g);
 
 int nStillInQueue(eik_gridS *eik_g);
+
+void saveComputedValues(eik_gridS *eik_g, const char *pathFile);

@@ -17,7 +17,7 @@ int main()
     // printf("\n\n\n TESTING FROM A TRIANGULAR MESH FOR A SIMPLE SQUARE \n\n\n\n");
     // triMesh_2Ds *triM_2D;
     // triMesh_2Dalloc(&triM_2D);
-    const char *pathPoints_sq, *pathNeighbors_sq, *pathIncidentFaces_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq, *pathIndexRegions;
+    const char *pathPoints_sq, *pathNeighbors_sq, *pathIncidentFaces_sq, *pathBoundaryPoints_sq, *pathFacets_sq, *pathFaces_sq, *pathIndexRegions, *pathToSave;
     pathPoints_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/MeshPoints.txt";
     pathNeighbors_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Neigh.txt";
     pathIncidentFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/IncidentFaces.txt";
@@ -25,6 +25,8 @@ int main()
     pathFacets_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Facets.txt";
     pathFaces_sq = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/Faces.txt";
     pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/FacesLabel.txt";
+
+    pathToSave = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/ComputedValues.bin";
  
     int *start;
     int nStart, s;
@@ -46,7 +48,7 @@ int main()
     // we use the fmm olim method
     FMM_2D( eik_g1 );
 
-    
+    saveComputedValues(eik_g1, pathToSave);
 
     eik_grid_dealloc(&eik_g1);
 }

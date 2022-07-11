@@ -224,3 +224,10 @@ int currentMinIndex(eik_gridS *eik_g) {
 int nStillInQueue(eik_gridS *eik_g) {
   return getSize(eik_g->p_queueG);
 }
+
+void saveComputedValues(eik_gridS *eik_g, const char *pathFile){
+  FILE *fp;
+  fp = fopen(pathFile, "wb");
+  fwrite(eik_g->eik_vals, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fclose(fp);
+}
