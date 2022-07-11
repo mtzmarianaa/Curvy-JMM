@@ -116,34 +116,36 @@ double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHa
   // this is where we use the optimization problem (we find lambda and then update it)
   double lambda_opt, lambda0, lambda1, T0, T1, tol, That2;
   double x0[2], x1[2], xHat[2];
-  int maxIter;
+  int maxIter, regionIndex, faceBetweenPoints;
   lambda0 = 0.0;
   lambda1 = 1.0;
   maxIter = 25;
   tol = 0.001; // ask if these parameters are ok
   T0 = eik_g->eik_vals[x0_ind];
   T1 = eik_g->eik_vals[x1_ind];
+  faceBetweenPoints = faceBetween3Points(eik_g->triM_2D, x0_ind, x1_ind, xHat_ind ); // get the face that is defined by these 3 points
+  regionIndex = eik_g->triM_2D->indexRegions[ faceBetweenPoints ]; // get the region where this face belongs to
   // get the coordinates of the points x0, x1, xHat
   x0[0] = eik_g->triM_2D->points->x[x0_ind];
-  printf("\n");
-  printf("\nx0 %fl\n", x0[0]);
+  // printf("\n");
+  // printf("\nx0 %fl\n", x0[0]);
   x0[1] = eik_g->triM_2D->points->y[x0_ind];
-  printf("\ny0 %fl\n", x0[1]);
+  // printf("\ny0 %fl\n", x0[1]);
   x1[0] = eik_g->triM_2D->points->x[x1_ind];
-  printf("\nx1 %fl\n", x1[0]);
+  // printf("\nx1 %fl\n", x1[0]);
   x1[1] = eik_g->triM_2D->points->y[x1_ind];
-  printf("\ny1 %fl\n", x1[1]);
+  // printf("\ny1 %fl\n", x1[1]);
   xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
-  printf("\nxHat %fl\n", xHat[0]);
+  // printf("\nxHat %fl\n", xHat[0]);
   xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
-  printf("\nyHat %fl\n", xHat[1]);
+  // printf("\nyHat %fl\n", xHat[1]);
   // compute the optimum lambda from  the linear model
-  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
-  printf("Lambda found %fl\n", lambda_opt);
+  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, regionIndex);
+  // printf("Lambda found %fl\n", lambda_opt);
   // get the possible eikonal value for this two point update
-  That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat);
-  printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
-  printf("Eikonal value with two point update %fl\n", That2);
+  That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, regionIndex);
+  // printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
+  // printf("Eikonal value with two point update %fl\n", That2);
   return That2;
 }
 

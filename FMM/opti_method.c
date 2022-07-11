@@ -11,7 +11,7 @@ Optimization methods for the 2D FMM
 #include <stdlib.h>
 
 
-double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2]) {
+double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2], int regionIndex) {
     // this is the approximation to the eikonal solution using local approximations everywhere
     double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], normAux, gApprox;
 
@@ -35,12 +35,12 @@ double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1
     vec2_addition(xHatMinx0, lamx0Minx1, vecAux);
     normAux = l2norm(vecAux);
 
-    gApprox = lambda*(T1 - T0) + T0 + s_function(xHat)*normAux;
+    gApprox = lambda*(T1 - T0) + T0 + s_function_threeSections(xHat, regionIndex)*normAux;
 
     return gApprox;
 }
 
-double gPrime(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2]){
+double gPrime(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2], int regionIndex){
     // auxiliary function to compute the function gPrime
     double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], dotProduct, normAux, gPrim;
 
@@ -66,24 +66,24 @@ double gPrime(double T1, double T0, double lambda, double x0[2], double x1[2], d
     dotProduct = dotProd(x0Minx1, vecAux);
     normAux = l2norm(vecAux);
 
-    gPrim = T1 - T0 + s_function(xHat)*dotProduct/normAux;
+    gPrim = T1 - T0 + s_function_threeSections(xHat, regionIndex)*dotProduct/normAux;
 
     return gPrim;
 
 }
 
-double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0[2], double x1[2], double xHat[2], double tol, int maxIter){
+double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0[2], double x1[2], double xHat[2], double tol, int maxIter, int regionIndex){
     // This method is the implementation of the secant method for the 2D fmm using the
     // function defined in SoSFunction.h as the speed of sound
     int k = 1;
     double lam, gPrime0, gPrime1;
 
-    gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);
+    gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat, regionIndex);
     
     while(k < maxIter & gPrime1>tol){
         // u
-        gPrime0 = gPrime(T1, T0, lambda0, x0, x1, xHat);
-        gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat);
+        gPrime0 = gPrime(T1, T0, lambda0, x0, x1, xHat, regionIndex);
+        gPrime1 = gPrime(T1, T0, lambda1, x0, x1, xHat, regionIndex);
         lam = lambda1 - gPrime1*(lambda1 - lambda0)/( gPrime1 - gPrime0 );
         lambda0 = lambda1;
         lambda1 = lam;

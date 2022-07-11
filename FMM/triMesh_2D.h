@@ -33,3 +33,5 @@ void printGeneralInfoMesh(triMesh_2Ds *triM_2D);
 void printEverythingInMesh(triMesh_2Ds *triM_2D);
 
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to);
+
+int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3);

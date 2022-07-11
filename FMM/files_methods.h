@@ -10,3 +10,5 @@ void separateARowDb(char *line, int nElementsRow, double *row);
 int numberElementsInRow(char *line, int nCharInLine);
 
 int numLinesInFile(const char *pathFile);
+
+void readIntColumn(const char *pathFile, int *column);

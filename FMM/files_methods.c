@@ -71,3 +71,36 @@ int numLinesInFile(const char *pathFile){
     fclose(fp);
     return nLines;
 }
+
+void readIntColumn(const char *pathFile, int *column){
+    // this method is going to store what is found on the pathFile text file to a column (should only be a column stored in that file)
+    FILE *fp;
+    char * line = NULL;
+    int i = 0;
+    size_t len = 0;
+    ssize_t read;
+    int row[1];
+    row[0] = 0;
+    printf("\ntrying to open to file\n");
+    fp = fopen(pathFile, "r");
+    // if the file doesnt exists or it cant be opened
+    if(fp == NULL) {
+        printf("No such file");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("\nFile successfully found \n");
+    }
+    // scan the file
+    fp = fopen(pathFile, "r");
+    while( (read = getline(&line, &len, fp)) != -1 ) {
+        separateARowInt(line, 1, row);
+        column[i] = row[0];
+        i++;
+    }
+    fclose(fp);
+    if(line){
+        free(line);
+    }
+}
+

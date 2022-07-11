@@ -1,5 +1,6 @@
 #include "SoSFunction.h"
 #include <math.h>
+#include <stdio.h>
 
 double s_function(double x[])
 {
@@ -8,10 +9,10 @@ double s_function(double x[])
 
 double s_function_twoSections(double x[], int region){
     double SpoS;
-    if(region == 0){
+    if(region == 1){
         SpoS = 1.0;
     }
-    if( region == 1 ){
+    if( region == 2 ){
         SpoS = 1.2;
     }
     else{
@@ -22,13 +23,13 @@ double s_function_twoSections(double x[], int region){
 
 double s_function_threeSections(double x[], int region){
     double SpoS;
-    if(region == 0){
+    if(region == 1){
         SpoS = 1.0;
     }
-    if( region == 1 ){
+    else if( region == 2 ){
         SpoS = 1.2;
     }
-    if(region == 2){
+    else if(region == 3){
         SpoS = 1.4;
     }
     else{

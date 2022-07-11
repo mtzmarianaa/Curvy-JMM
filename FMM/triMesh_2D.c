@@ -30,6 +30,7 @@ void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors,
     triM_2D->boundaryPoints = boundaryPoints;
     triM_2D->facets = facets;
     triM_2D->faces = faces;
+    triM_2D->indexRegions = indexRegions;
 }
 
 void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions){
@@ -83,7 +84,8 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
     // for the index Regions
     int *indexRegions;
     indexRegions = malloc(faces->nFaces*sizeof(int));
-
+    readIntColumn(pathIndexRegions, indexRegions);
+    triM_2D->indexRegions = indexRegions;
 
 }
 
@@ -125,6 +127,11 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
     printf("Number of faces or triangles in the mesh:  %d.\n", triM_2D->faces->nFaces);
     printf("Such faces or triangles are defined as follows: \n");
     print_faces(triM_2D->faces);
+    printf("\n\n---------------------------------------\n");
+    printf("FACES INDICES\n");
+    for(int i = 0; i<triM_2D->faces->nFaces; i++){
+        printf("Face %d, index %d\n", i, triM_2D->indexRegions[i]);
+    }
 }
 
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
@@ -137,9 +144,29 @@ int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
         if ( region != region_test & region_test > region ){
             // if there is an incident face with different index region and that index is greater
             if (  triM_2D->faces->points[current_face][0] == index_to |  triM_2D->faces->points[current_face][1] == index_to | triM_2D->faces->points[current_face][2] == index_to ){
+                //printf("From %d to %d we consider the face indexed with %d \n", index_from, index_to, current_face);
                 region = region_test;
             }
         }
     }
     return region;
+}
+
+int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3){
+    // given 3 points that share a face it outputs the index of such face
+    int faceIndex;
+    faceIndex = triM_2D->faces->nFaces;
+    int currentFace;
+    for(int i = 0; i<triM_2D->incidentFaces[index1].len; i++){
+        currentFace = triM_2D->incidentFaces[index1].neis_i[i];
+        if( triM_2D->faces->points[currentFace][0] == index2 | triM_2D->faces->points[currentFace][1] == index2 | triM_2D->faces->points[currentFace][2] == index2  ){
+            if(   triM_2D->faces->points[currentFace][0] == index3 | triM_2D->faces->points[currentFace][1] == index3 | triM_2D->faces->points[currentFace][2] == index3   ){
+                faceIndex = currentFace;
+                //printf("Face between points %d  %d  %d  is  %d", index1, index2, index3, faceIndex);
+                break;
+            }
+        }
+    }
+    assert(faceIndex != triM_2D->faces->nFaces);
+    return faceIndex;
 }
