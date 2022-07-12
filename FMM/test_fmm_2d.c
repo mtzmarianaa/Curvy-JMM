@@ -51,4 +51,70 @@ int main()
     saveComputedValues(eik_g1, pathToSave);
 
     eik_grid_dealloc(&eik_g1);
+
+
+
+    // TEST SQUARE WITH INVERTED TRIANGLE - TWO SECTIONS
+
+    const char *pathPoints_sqTr, *pathNeighbors_sqTr, *pathIncidentFaces_sqTr, *pathBoundaryPoints_sqTr, *pathFacets_sqTr, *pathFaces_sqTr, *pathIndexRegionsTr, *pathToSaveTr;
+    pathPoints_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/MeshPoints.txt";
+    pathNeighbors_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/Neigh.txt";
+    pathIncidentFaces_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/IncidentFaces.txt";
+    pathBoundaryPoints_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/BoundaryPoints.txt";
+    pathFacets_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/Facets.txt";
+    pathFaces_sqTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/Faces.txt";
+    pathIndexRegionsTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/FacesLabel.txt";
+
+    pathToSaveTr = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/ComputedValues.bin";
+
+    int *start2;
+    int nStart2, s2;
+
+    s2 = 5;
+    start2 = &s2;
+    nStart2 = 1;
+    // now we test the init with just the path to the files
+
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR A SQUARE WITH AN INVERTED TRIANGLE - TWO SECTIONS \n\n\n\n");
+    eik_gridS *eik_g2;
+    eik_grid_alloc(&eik_g2);
+    eik_grid_initFromFile(eik_g2, start2, nStart2, pathPoints_sqTr, pathNeighbors_sqTr, pathIncidentFaces_sqTr, pathBoundaryPoints_sqTr, pathFacets_sqTr, pathFaces_sqTr, pathIndexRegionsTr);
+    printGeneralInfo(eik_g2);
+
+    FMM_2D( eik_g2 );
+
+    saveComputedValues(eik_g2, pathToSaveTr);
+
+    eik_grid_dealloc(&eik_g2);
+
+    const char *pathToSaveTr2;
+
+    pathToSaveTr2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/ComputedValues2.bin";
+
+
+    s2 = 432;
+    start2 = &s2;
+    nStart2 = 1;
+    // now we test the init with just the path to the files
+
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR A SQUARE WITH AN INVERTED TRIANGLE - TWO SECTIONS OTHER STARTING POINT\n\n\n\n");
+    eik_gridS *eik_g3;
+    eik_grid_alloc(&eik_g3);
+    eik_grid_initFromFile(eik_g3, start2, nStart2, pathPoints_sqTr, pathNeighbors_sqTr, pathIncidentFaces_sqTr, pathBoundaryPoints_sqTr, pathFacets_sqTr, pathFaces_sqTr, pathIndexRegionsTr);
+    printGeneralInfo(eik_g3);
+
+    FMM_2D( eik_g3 );
+
+    saveComputedValues(eik_g3, pathToSaveTr2);
+
+    eik_grid_dealloc(&eik_g3);
+
+
+
 }

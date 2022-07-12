@@ -27,7 +27,7 @@ double s_function_threeSections(double x[], int region){
         SpoS = 1.0;
     }
     else if( region == 2 ){
-        SpoS = 1.2;
+        SpoS = 2;
     }
     else if(region == 3){
         SpoS = 1.4;

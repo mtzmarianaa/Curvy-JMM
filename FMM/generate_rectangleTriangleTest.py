@@ -13,11 +13,11 @@ def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
 def needs_refinement(vertices, area):
-        bary = np.sum(np.array(vertices), axis=0) /2
-        max_area = 1 + (la.norm(bary, np.inf) - 1) * 0.1
+        bary = np.sum(np.array(vertices), axis=0) /5
+        max_area = 0.5 + (la.norm(bary, np.inf) - 1) * 0.001
         return bool(area > max_area)
 
-edges_square = [(-5, -5), (5, -5), (5, 5), (-5, 5)]
+edges_square = [(-10, -10), (10, -10), (10, 10), (-10, 10)]
 
 facets = round_trip_connect(0, len(edges_square)-1  ) 
 
