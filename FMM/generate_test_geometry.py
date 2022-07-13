@@ -3,10 +3,11 @@
 # first test my fmm method here (very naivly)
 import matplotlib.pyplot as plt
 import numpy as np
-from math import pi, sqrt
+from math import pi, sqrt, floor
 import meshpy.triangle as triangle
 from matplotlib.patches import Arc
 import numpy.linalg as la
+from matplotlib.colors import ListedColormap
 
 ############# Generate the two circles
 
@@ -213,29 +214,29 @@ plt.show(block=False)
 
 # # Now we save this triangulation to a bin file so that we can read it later from C
 
-np.savetxt('MeshInfo/BoundaryPoints.txt', np.array(points), delimiter =', ' )
+# np.savetxt('MeshInfo/BoundaryPoints.txt', np.array(points), delimiter =', ' )
 
-facets_arr = np.array(facets)
-np.savetxt('MeshInfo/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+# facets_arr = np.array(facets)
+# np.savetxt('MeshInfo/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/MeshPoints.txt', mesh_points, delimiter =', ' )
+# np.savetxt('MeshInfo/MeshPoints.txt', mesh_points, delimiter =', ' )
 
-np.savetxt('MeshInfo/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+# np.savetxt('MeshInfo/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+# np.savetxt('MeshInfo/NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
-# Save the list of lists into a txt file
-separator = "," 
+# # Save the list of lists into a txt file
+# separator = "," 
 
-with open("MeshInfo/Neigh.txt", "w") as out_file:
-    for l in mesh_neigh:
-        out_string = separator.join(str(x) for x in l) + "\n"
-        out_file.write(out_string)
+# with open("MeshInfo/Neigh.txt", "w") as out_file:
+#     for l in mesh_neigh:
+#         out_string = separator.join(str(x) for x in l) + "\n"
+#         out_file.write(out_string)
 
-with open("MeshInfo/IncidentFaces.txt", "w") as out_file:
-    for l in mesh_IncidentFaces:
-        out_string = separator.join(str(x) for x in l) + "\n"
-        out_file.write(out_string)
+# with open("MeshInfo/IncidentFaces.txt", "w") as out_file:
+#     for l in mesh_IncidentFaces:
+#         out_string = separator.join(str(x) for x in l) + "\n"
+#         out_file.write(out_string)
 
 ##############################################################################
 ##############################################################################
@@ -243,7 +244,7 @@ with open("MeshInfo/IncidentFaces.txt", "w") as out_file:
 ##############################################################################
 ###### SQUARE ON THE OUTSIDE
 
-edges_square = [(-15, -15), (15, -15), (15, 18), (-15, 18)]
+edges_square = [(-18, -18), (18, -18), (18, 24), (-18, 24)]
 
 # Add them to the points
 points_square = points + edges_square
@@ -282,6 +283,33 @@ for p in range(N_points_square):
         if (p in mesh_square_tris[t, :]):
             list_faces += [t]
     mesh_IncidentFaces_sq.append(list_faces)
+    
+# Create the labels per face
+
+
+faces_label = []
+colors = []
+r = 5*sqrt(2)
+for fi in range(len(mesh_square_tris)):
+    # we need to get the coordinates of the 3 points that define that upper triangle
+    p1 =  mesh_square_points[mesh_square_tris[fi, 0] , :]
+    p2 =  mesh_square_points[mesh_square_tris[fi, 1] , :]
+    p3 =  mesh_square_points[mesh_square_tris[fi, 2] , :]
+    if ( sqrt(p1[0]**2 + p1[1]**2)<= 10 ) and ( sqrt(p2[0]**2 + p2[1]**2)<= 10 ) and (sqrt(p3[0]**2 + p3[1]**2)<= 10):
+        faces_label += [3]
+        colors += [0.3]
+    elif( (sqrt(p1[0]**2 + p1[1]**2) + sqrt(p2[0]**2 + p2[1]**2) + sqrt(p3[0]**2 + p3[1]**2))<= 30  ):
+        faces_label += [3]
+        colors += [0.3]
+    elif( sqrt(p1[0]**2 + (p1[1]-r)**2)<= r  ) and ( sqrt(p2[0]**2 + (p2[1]-r)**2)<= r  ) and ( sqrt(p3[0]**2 + (p3[1]-r)**2)<= r  ):
+        faces_label += [2]
+        colors += [0.2]
+    elif( (sqrt(p1[0]**2 + (p1[1]-r)**2) + sqrt(p2[0]**2 + (p2[1]-r)**2) + sqrt(p3[0]**2 + (p3[1]-r)**2))<= 3*r ):
+        faces_label += [2]
+        colors += [0.2]
+    else:
+        faces_label += [1]
+        colors += [0.1]
 
 
 
@@ -299,14 +327,33 @@ plt.title('Delaunay triangulation of test geometry with rectangle')
 plt.show(block=False)
 
 
+viridis = plt.get_cmap('magma', 256)
+new_colors = viridis(np.linspace(0, 1, 256))
+blue = new_colors[15]
+purple = new_colors[45]
+mid = floor(len(new_colors)/2)
+new_colors = [blue]*mid
+new_colors += [purple]*mid
+newcmp = ListedColormap(new_colors)
+
+
+plt.figure(9)
+fig = plt.gcf()
+plt.gca().set_aspect('equal')
+plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, faces_label, cmap = "magma")
+plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
+plt.title('Delaunay triangulation of test geometry')
+plt.show(block = False)
+
+
 ## Save them as well
 
-np.savetxt('MeshInfo/BoundaryPoints_Sq.txt', np.array(points_square), delimiter =', ' )
+np.savetxt('MeshInfo/BoundaryPoints_Sq.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
-facets_square_arr = np.array(facets)
-np.savetxt('MeshInfo/Facets_Sq.txt', facets_square_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+facets_arr = np.array(facets_square)
+np.savetxt('MeshInfo/Facets_Sq.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/MeshPoints_Sq.txt', mesh_square_points, delimiter =', ' )
+np.savetxt('MeshInfo/MeshPoints_Sq.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
 
 np.savetxt('MeshInfo/Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
@@ -322,6 +369,11 @@ with open("MeshInfo/Neigh_Sq.txt", "w") as out_file:
 with open("MeshInfo/IncidentFaces_Sq.txt", "w") as out_file:
     for l in mesh_IncidentFaces_sq:
         out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
+        
+with open("MeshInfo/FacesLabel_Sq.txt", "w") as out_file:
+    for l in faces_label:
+        out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)
         
 
