@@ -116,5 +116,71 @@ int main()
     eik_grid_dealloc(&eik_g3);
 
 
+    // TEST SQUARE WITH ARCH - TWO SECTIONS
+
+    const char *pathPoints_sqArch, *pathNeighbors_sqArch, *pathIncidentFaces_sqArch, *pathBoundaryPoints_sqArch, *pathFacets_sqArch, *pathFaces_sqArch, *pathIndexRegionsArch, *pathToSaveArch;
+    pathPoints_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/MeshPoints.txt";
+    pathNeighbors_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/Neigh.txt";
+    pathIncidentFaces_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/IncidentFaces.txt";
+    pathBoundaryPoints_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/BoundaryPoints.txt";
+    pathFacets_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/Facets.txt";
+    pathFaces_sqArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/Faces.txt";
+    pathIndexRegionsArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/FacesLabel.txt";
+
+    pathToSaveArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/ComputedValues.bin";
+
+    int *start3;
+    int nStart3, s3;
+
+    s3 = 217;
+    start3 = &s3;
+    nStart3 = 1;
+    // now we test the init with just the path to the files
+
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR A SQUARE WITH AN ARCH - TWO SECTIONS \n\n\n\n");
+    eik_gridS *eik_g4;
+    eik_grid_alloc(&eik_g4);
+    eik_grid_initFromFile(eik_g4, start3, nStart3, pathPoints_sqArch, pathNeighbors_sqArch, pathIncidentFaces_sqArch, pathBoundaryPoints_sqArch, pathFacets_sqArch, pathFaces_sqArch, pathIndexRegionsArch);
+    printGeneralInfo(eik_g4);
+
+    FMM_2D( eik_g4 );
+
+    saveComputedValues(eik_g4, pathToSaveArch);
+
+    eik_grid_dealloc(&eik_g4);
+
+    int s3_2[2];
+    s3_2[0] = 25;
+    s3_2[1] = 10;
+    start3 = &s3;
+    nStart3 = 2;
+
+    pathToSaveArch = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestArch/ComputedValues2.bin";
+
+    // now we test the init with just the path to the files
+
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR A SQUARE WITH AN ARCH - TWO SECTIONS AND TWO STARTING POINTS \n\n\n\n");
+    eik_gridS *eik_g5;
+    eik_grid_alloc(&eik_g5);
+    eik_grid_initFromFile(eik_g5, start3, nStart3, pathPoints_sqArch, pathNeighbors_sqArch, pathIncidentFaces_sqArch, pathBoundaryPoints_sqArch, pathFacets_sqArch, pathFaces_sqArch, pathIndexRegionsArch);
+    printGeneralInfo(eik_g5);
+
+    FMM_2D( eik_g5 );
+
+    saveComputedValues(eik_g5, pathToSaveArch);
+
+    eik_grid_dealloc(&eik_g5);
+
+
+
+
+
+
 
 }
