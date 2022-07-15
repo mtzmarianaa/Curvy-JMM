@@ -7,6 +7,7 @@ import numpy as np
 from mpl_toolkits import mplot3d
 from numpy.linalg import norm 
 from math import sqrt
+import matplotlib.tri as tri
 
 
 colormap1 = plt.cm.get_cmap('cubehelix')
@@ -58,5 +59,21 @@ plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals, cmap = colormap2, 
 #plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
 plt.title("Computed eikonal value, test geometry")
 plt.show(block=False)
+
+# Now we use the linear interpolation thing to plot the contours
+
+xi, yi = np.meshgrid(np.linspace(-18, 18, 500), np.linspace(-18, 24, 500))
+# We need a triangulation object thing
+triang = tri.Triangulation(eik_coords[:, 0], eik_coords[:, 1], triangles)
+# To be able to use LinearTriInterpolator
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
+zi_lin = interp_lin(xi, yi)
+#Now we can plot + plot the triangulation + dots on top
+# This plots the contours (I think it looks horrible)
+plt.figure(4)
+plt.contourf(xi, yi, zi_lin, cmap = colormap2)
+plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals, cmap = colormap2, marker='.')
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
+plt.title("Linear interpolation, test geometry")
 
 plt.show()

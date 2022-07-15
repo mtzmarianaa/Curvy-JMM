@@ -7,6 +7,7 @@ import numpy as np
 from mpl_toolkits import mplot3d
 from numpy.linalg import norm 
 from math import sqrt
+import matplotlib.tri as tri
 
 
 colormap1 = plt.cm.get_cmap('cubehelix')
@@ -59,6 +60,24 @@ plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals, cmap = colormap2, 
 plt.title("Computed eikonal value, square with arch")
 plt.show(block=False)
 
+# Now we use the linear interpolation thing to plot the contours
+
+xi, yi = np.meshgrid(np.linspace(-10, 10, 100), np.linspace(-10, 10, 100))
+# We need a triangulation object thing
+triang = tri.Triangulation(eik_coords[:, 0], eik_coords[:, 1], triangles)
+# To be able to use LinearTriInterpolator
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
+zi_lin = interp_lin(xi, yi)
+#Now we can plot + plot the triangulation + dots on top
+# This plots the contours (I think it looks horrible)
+plt.figure(4)
+plt.contourf(xi, yi, zi_lin, cmap = colormap2)
+plt.plot(xi, yi, 'k-', lw=0.5, alpha=0.3)
+plt.plot(xi.T, yi.T, 'k', lw=0.5, alpha=0.3)
+plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals, cmap = colormap2, marker='.')
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
+plt.title("Linear interpolation, square with arch")
+
 
 #####################################################################################
 #####################################################################################
@@ -71,23 +90,41 @@ averageSolution2 = averageSolutionFace(eik_vals2, triangles)
 
 colors = colormap1(eik_vals2)
 
-plt.figure(4)
+plt.figure(5)
 plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals2, cmap = colormap2)
 plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
 plt.title("Computed eikonal value, square with arch, two initial points")
 plt.show(block=False)
 
-plt.figure(5)
+plt.figure(6)
 ax = plt.axes(projection='3d')
 ax.scatter(eik_coords[:, 0], eik_coords[:, 1], eik_vals2, c= eik_vals, cmap=colormap2)
 plt.title("Computed eikonal values, square with arch, two initial points")
 plt.show(block = False)
 
-plt.figure(6)
+plt.figure(7)
 plt.tripcolor(eik_coords[:, 0], eik_coords[:, 1], triangles, averageSolution2, cmap = colormap2)
 plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals2, cmap = colormap2, marker=".")
 #plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
 plt.title("Computed eikonal value, square with arch, two initial points")
 plt.show(block=False)
+
+# Now we use the linear interpolation thing to plot the contours
+
+xi, yi = np.meshgrid(np.linspace(-10, 10, 100), np.linspace(-10, 10, 100))
+# We need a triangulation object thing
+triang = tri.Triangulation(eik_coords[:, 0], eik_coords[:, 1], triangles)
+# To be able to use LinearTriInterpolator
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals2)
+zi_lin = interp_lin(xi, yi)
+#Now we can plot + plot the triangulation + dots on top
+# This plots the contours (I think it looks horrible)
+plt.figure(8)
+plt.contourf(xi, yi, zi_lin, cmap = colormap2)
+plt.plot(xi, yi, 'k-', lw=0.5, alpha=0.3)
+plt.plot(xi.T, yi.T, 'k', lw=0.5, alpha=0.3)
+plt.scatter(eik_coords[:, 0], eik_coords[:, 1], c = eik_vals2, cmap = colormap2, marker='.')
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles, '-.', lw=0.5, c='#6800ff')
+plt.title("Linear interpolation, square with arch, two initial points")
 
 plt.show()

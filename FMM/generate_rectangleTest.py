@@ -12,12 +12,12 @@ def connect(start, end):
 
 def needs_refinement(vertices, area):
         bary = np.sum(np.array(vertices), axis=0) /2
-        max_area = 1 + (la.norm(bary, np.inf) - 1) * 0.1
+        max_area = 0.0001 + (la.norm(bary, np.inf) - 1) * 0.1
         return bool(area > max_area)
 
 edges_square = [(-5, -5), (5, -5), (5, 5), (-5, 5)]
 
-facets = round_trip_connect(0, len(edges_square)-1  ) 
+facets = [(0, 1), (1, 2), (2, 3), (3, 0)]
 
 edges_square = edges_square + [(0, 0)]
 
