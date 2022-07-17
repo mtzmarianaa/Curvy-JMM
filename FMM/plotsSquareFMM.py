@@ -18,11 +18,6 @@ sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 colormap3 = plt.cm.get_cmap('magma')
 sm3 = plt.cm.ScalarMappable(cmap=colormap3)
 
-def averageSolutionFace(eikvals, faces):
-    avSol = []
-    for i in range(len(faces)):
-        avSol += [( eikvals[int(faces[i, 0])]+ eikvals[int(faces[i, 1])]+eikvals[int(faces[i, 2])]   )/3]
-    return avSol
 
 def average_edge_length(eik_coords, faces):
     #for each edge we calculate its length and then we calculate the average edge length for a triangulation
@@ -50,7 +45,13 @@ def average_edge_length(eik_coords, faces):
         
         
 def exact_solution(xi, yi):
-            
+    lenxi = len(xi)
+    lenyi = len(yi)
+    zi = np.zeros((lenxi, lenyi))
+    for i in range(lenxi):
+        for j in range(lenyi):
+            zi[i,j] = sqrt( xi[i, j]**2 + yi[i, j]**2   )
+    return zi   
         
 n = 0
 averageH = []
@@ -77,43 +78,21 @@ for i in range(len(eik_coords_H1)):
 colors = colormap1(eik_vals_H1)
 
 
-averageSolution = averageSolutionFace(eik_vals_H1, triangles_H1)
 plt.figure(1)
-plt.axis('equal')
-plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
-plt.tripcolor(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, averageSolution, cmap = colormap2)
-plt.title("Computed eikonal value, square")
-plt.show(block=False)
-
-plt.figure(2)
 ax = plt.axes(projection='3d')
 ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_vals_H1, c= eik_vals_H1, cmap=colormap2)
 plt.title("Computed eikonal values, square")
 plt.show(block = False)
 
-plt.figure(3)
-averageSolutionExact = averageSolutionFace(exact_values, triangles_H1)
-plt.axis('equal')
-plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = exact_values, cmap = colormap2)
-plt.tripcolor(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, averageSolutionExact, cmap = colormap2)
-plt.title("Exact solution, square")
-plt.show(block=False)
 
-plt.figure(4)
+plt.figure(2)
 ax = plt.axes(projection='3d')
 ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], exact_values, c= exact_values, cmap=colormap2)
 plt.title("Exact solution, square")
 plt.show(block = False)
 
 
-plt.figure(5)
-plt.axis('equal')
-plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = errors, cmap = colormap2)
-plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#6800ff')
-plt.title("Computed errors per point, square")
-plt.show(block = False)
-
-plt.figure(6)
+plt.figure(3)
 ax = plt.axes(projection='3d')
 ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], errors, c = errors, cmap=colormap2)
 plt.title("Computed errors per point, square")
@@ -134,34 +113,58 @@ interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
 zi_lin = interp_lin(xi, yi)
 
 # Contours of the errors in 3D and 2D
+solution_interpolated = exact_solution(xi, yi)
+errors_abs = abs(zi_lin - solution_interpolated)
 
-plt.figure(7)
+plt.figure(6)
 ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, , 50, cmap=colormap2)
+ax.contour3D(xi, yi, errors_abs , 50, cmap=colormap2)
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 ax.set_zlabel('Errors');
 plt.title("3D point wise errors")
+plt.show(block = False)
 
 
+# Plot the absolute errors in 2D
+
+plt.figure(7)
+plt.axis('equal')
+im7 = plt.imshow( errors_abs, cmap = colormap2, extent=[-5,5,-5,5]  )
+plt.title("Point wise absolute errors, square")
+plt.show(block = False)
+plt.colorbar(im7)
+
+
+# The absolute errors in 2D with the triangulation
+
+plt.figure(8)
+plt.axis('equal')
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#04007e')
+im8 = plt.imshow( errors_abs, cmap = colormap2, extent=[-5,5,-5,5]  )
+plt.title("Point wise absolute errors and triangulation, square")
+plt.show(block = False)
+plt.colorbar(im8)
 
 
 #Now we can plot + plot the triangulation + dots on top
 # This plots the contours (I think it looks horrible)
-plt.figure(7)
+plt.figure(9)
 plt.axis('equal')
-plt.contourf(xi, yi, zi_lin, cmap = colormap2)
-plt.plot(xi, yi, 'k-', lw=0.5, alpha=0.3)
-plt.plot(xi.T, yi.T, 'k', lw=0.5, alpha=0.3)
+im9 = plt.contourf(xi, yi, zi_lin, cmap = colormap2)
 plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
 plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#6800ff')
 plt.title("Linear interpolation, square")
+plt.show(block = False)
+plt.colorbar(im9)
 
 
-plt.figure(8)
+plt.figure(10)
 plt.axis('equal')
-plt.imshow( zi_lin, cmap = colormap2  )
+im10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-5,5,-5,5]  )
 plt.title("Linear interpolation, square")
+plt.show(block = False)
+plt.colorbar(im10)
 
 
 averageH += [average_edge_length(eik_coords_H1, triangles_H1)]

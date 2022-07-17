@@ -10,9 +10,13 @@ def round_trip_connect(start, end):
 def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
+# def needs_refinement(vertices, area):
+#         bary = np.sum(np.array(vertices), axis=0) /2
+#         max_area = 0.0001 + (la.norm(bary, np.inf) - 1) * 0.1
+#         return bool(area > max_area)
+    
 def needs_refinement(vertices, area):
-        bary = np.sum(np.array(vertices), axis=0) /2
-        max_area = 0.0001 + (la.norm(bary, np.inf) - 1) * 0.1
+        max_area = 0.8
         return bool(area > max_area)
 
 edges_square = [(-5, -5), (5, -5), (5, 5), (-5, 5)]

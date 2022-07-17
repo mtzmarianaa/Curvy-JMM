@@ -17,7 +17,7 @@ void printGeneralInfo(eik_gridS *eik_g);
 
 double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo);
 
-double twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind);
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double That2);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
 
