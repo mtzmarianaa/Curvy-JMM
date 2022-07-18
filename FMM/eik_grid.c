@@ -96,15 +96,14 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Real Eikonal:   %fl    ||  Current state:   %d \n||  Coordinates eik gradient:   (%fl, %fl) ", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Real Eikonal:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
   }
 }
 
 // same principle as one point updates from square grid just that the length of the "arch" is not h, is not the same everywhere
-double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
-  double That1, dist;
+void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, double *That1, int *regionIndex){
+  double dist;
   double x1Minx0[2], x0[2], x1[0];
-  int region;
   // since we don't have a uniform square grid, we need to know how to handle these one point updates
   x0[0] = eik_g->triM_2D->points->x[indexFrom];
   x0[1] = eik_g->triM_2D->points->y[indexFrom];
@@ -112,17 +111,16 @@ double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo){
   x1[1] = eik_g->triM_2D->points->y[indexTo];
   vec2_substraction(x0, x1, x1Minx0);
   dist = l2norm(x1Minx0);
-  region = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
-  printf("\n Region %d \n", region);
-  That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, region)*dist; // THIS JUST CHANGED ASKKKKK
-  return That1;
+  *regionIndex = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
+  printf("\n Region %d \n", *regionIndex);
+  *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
 }
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double That2){
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double *That2, int *regionIndex){
   // this is where we use the optimization problem (we find lambda and then update it)
   double lambda_opt, lambda0, lambda1, T0, T1, tol;
   double x0[2], x1[2], xHat[2];
-  int maxIter, regionIndex, faceBetweenPoints;
+  int maxIter, faceBetweenPoints;
   lambda0 = 0.0;
   lambda1 = 1.0;
   maxIter = 25;
@@ -130,7 +128,7 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
   T0 = eik_g->eik_vals[x0_ind];
   T1 = eik_g->eik_vals[x1_ind];
   faceBetweenPoints = faceBetween3Points(eik_g->triM_2D, x0_ind, x1_ind, xHat_ind ); // get the face that is defined by these 3 points
-  regionIndex = eik_g->triM_2D->indexRegions[ faceBetweenPoints ]; // get the region where this face belongs to
+  *regionIndex = eik_g->triM_2D->indexRegions[ faceBetweenPoints ]; // get the region where this face belongs to
   // get the coordinates of the points x0, x1, xHat
   x0[0] = eik_g->triM_2D->points->x[x0_ind];
   // printf("\n");
@@ -146,13 +144,13 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
   xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
   // printf("\nyHat %fl\n", xHat[1]);
   // compute the optimum lambda from  the linear model
-  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, regionIndex);
+  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, *regionIndex);
   // printf("Lambda found %fl\n", lambda_opt);
   // save the xlam 
-  xlam[0] = x0[0] + lambda_opt*x1[0];
-  xlam[1] = x0[1] + lambda_opt*x1[0];
+  xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
+  xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
   // get the possible eikonal value for this two point update
-  That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, regionIndex);
+  *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
   // printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
   // printf("Eikonal value with two point update %fl\n", That2);
 }
@@ -164,26 +162,27 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
 // ADD TO QUEUE != UPDATE (which might include a 2 node update)
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
   // we iterate through its neighbors and those with current state = 0 we add them to the priority queue
-  int neighborsIndex, nNei;
+  int neighborsIndex, nNei, regionIndex;
   int *listNeighbors;
-  double norm_div, temp_substraction[2], xhat[2], xlam[2];
+  double norm_div, That1, temp_substraction[2], xhat[2], xlam[2];
   temp_substraction[0] = 0;
   temp_substraction[1] = 0;
-  xhat[0] = eik_g->triM_2D->points->x[index_accepted];
-  xhat[1] = eik_g->triM_2D->points->y[index_accepted];
+  xlam[0] = eik_g->triM_2D->points->x[index_accepted];
+  xlam[1] = eik_g->triM_2D->points->y[index_accepted];
   nNei = eik_g->triM_2D->neighbors[index_accepted].len;
   for(int i = 0; i<nNei; i++){
     neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // a neighbor
     if(eik_g->current_states[neighborsIndex] == 0) {
-      insert(eik_g->p_queueG, onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex) , neighborsIndex); // insert this one point update to the priority queue
+      onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex, &That1, &regionIndex);
+      insert(eik_g->p_queueG, That1 , neighborsIndex); // insert this one point update to the priority queue
       eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
       // now we add the approximated value of the gradient of the eikonal (this is kind of a trial of such gradient)
-      xlam[0] = eik_g->triM_2D->points->x[neighborsIndex];
-      xlam[1] = eik_g->triM_2D->points->y[neighborsIndex];
+      xhat[0] = eik_g->triM_2D->points->x[neighborsIndex];
+      xhat[1] = eik_g->triM_2D->points->y[neighborsIndex];
       vec2_substraction(xhat, xlam, temp_substraction);
       norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neighborsIndex][0] = temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neighborsIndex][1] = temp_substraction[1]/norm_div;
+      eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
+      eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
     }
   }
 }
@@ -195,17 +194,12 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
   // we need to first find the incident faces to the index_accepted point, then we iterate through those
   // faces to find the 2 other points that belong to the same face, if one of them is set as valid then we might consider performing
   // a two point update
-  int nFaces, faceIndex, k;
+  int nFaces, faceIndex, k, regionIndex;
   int neis[2];
   double twoPointVal;
   double norm_div, temp_substraction[2], xhat[2], xlam[2];
   temp_substraction[0] = 0;
   temp_substraction[1] = 0;
-  xhat[0] = 0;
-  xhat[1] = 0;
-  xlam[0] = 0;
-  xlam[1] = 0;
-  twoPointVal = 0;
   nFaces = eik_g->triM_2D->incidentFaces[index_accepted].len; // get the number of incident faces to the newly accepted point
   // we iterate through those faces
   for (int i = 0; i<nFaces; i++){
@@ -223,22 +217,28 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
     if( eik_g->current_states[neis[0]] == 2 &  eik_g->current_states[neis[1]] == 1 ) {
       // neis[0] is valid, neis[1] is trial
       // two point update considered
-      twoPointUpdate_eikValue(eik_g, index_accepted, neis[0], neis[1], xlam, twoPointVal);
+      xhat[0] = eik_g->triM_2D->points->x[neis[1]];
+      xhat[1] = eik_g->triM_2D->points->y[neis[1]];
+      twoPointUpdate_eikValue(eik_g, index_accepted, neis[0], neis[1], xlam, &twoPointVal, &regionIndex);
       update(eik_g->p_queueG, twoPointVal, neis[1]); // this function takes care, if its smaller it will update the new value
       vec2_substraction(xhat, xlam, temp_substraction);
       norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neis[1]][0] = temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neis[1]][1] = temp_substraction[1]/norm_div;
+      eik_g->eik_grad[neis[1]][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
+      eik_g->eik_grad[neis[1]][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
     }
     if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
       // neis[0] is trial, neis[1] is valid
       // two point update considered
-      twoPointUpdate_eikValue(eik_g, index_accepted, neis[1], neis[0], xlam, twoPointVal);
+      xhat[0] = eik_g->triM_2D->points->x[neis[0]];
+      xhat[1] = eik_g->triM_2D->points->y[neis[0]];
+      twoPointUpdate_eikValue(eik_g, index_accepted, neis[1], neis[0], xlam, &twoPointVal, &regionIndex);
+      printf("\nValue from the two point update %fl \n", twoPointVal);
+      printf("\nCoordinates of xlam (%fl, %fl) \n", xlam[0], xlam[1]);
       update(eik_g->p_queueG, twoPointVal, neis[0]);
       vec2_substraction(xhat, xlam, temp_substraction);
       norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neis[0]][0] = temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neis[0]][1] = temp_substraction[1]/norm_div;
+      eik_g->eik_grad[neis[0]][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
+      eik_g->eik_grad[neis[0]][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
     }
     // if both of them are trial it means that they were recently added as the neighbors of index_accepted, no two point update can be done in this case
   }
@@ -266,4 +266,15 @@ void saveComputedValues(eik_gridS *eik_g, const char *pathFile){
   fp = fopen(pathFile, "wb");
   fwrite(eik_g->eik_vals, sizeof(double), eik_g->triM_2D->nPoints, fp);
   fclose(fp);
+}
+
+void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
+    FILE *fp;
+    fp = fopen(pathFile, "wb");
+    
+    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+      fwrite(eik_g->eik_grad[i], sizeof(double), 2, fp);
+    }
+
+    fclose(fp);
 }

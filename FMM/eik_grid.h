@@ -15,9 +15,9 @@ void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const 
 
 void printGeneralInfo(eik_gridS *eik_g);
 
-double onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo);
+void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, double *That1, int *regionIndex);
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double That2);
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double *That2, int *regionIndex);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
 
@@ -30,3 +30,5 @@ int currentMinIndex(eik_gridS *eik_g);
 int nStillInQueue(eik_gridS *eik_g);
 
 void saveComputedValues(eik_gridS *eik_g, const char *pathFile);
+
+void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);

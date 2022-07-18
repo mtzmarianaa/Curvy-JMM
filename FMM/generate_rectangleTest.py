@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import meshpy.triangle as triangle
 import numpy.linalg as la
+from math import sqrt
 
 def round_trip_connect(start, end):
     return [(i, i + 1) for i in range(start, end)] + [(end, start)]
@@ -11,12 +12,20 @@ def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
 # def needs_refinement(vertices, area):
-#         bary = np.sum(np.array(vertices), axis=0) /2
-#         max_area = 0.0001 + (la.norm(bary, np.inf) - 1) * 0.1
+#         bary = np.sum(np.array(vertices), axis=0) /3
+#         max_area = 0.1 + (la.norm(bary, np.inf)-1) * 0.1
 #         return bool(area > max_area)
+
+# def needs_refinement(vertices, area ):
+#     vert_origin, vert_destination, vert_apex = vertices
+#     bary_x = (vert_origin.x + vert_destination.x + vert_apex.x) / 3
+#     bary_y = (vert_origin.y + vert_destination.y + vert_apex.y) / 3
+#     dist_center = sqrt( (bary_x)**2 + (bary_y)**2 )
+#     max_area = abs( 0.05 * (dist_center-0.5) ) + 0.01
+#     return area > max_area
     
 def needs_refinement(vertices, area):
-        max_area = 0.8
+        max_area = 0.05
         return bool(area > max_area)
 
 edges_square = [(-5, -5), (5, -5), (5, 5), (-5, 5)]
