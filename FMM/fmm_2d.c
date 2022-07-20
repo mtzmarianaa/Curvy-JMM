@@ -13,5 +13,5 @@ void FMM_2D( eik_gridS *eik_g ){
         popAddNeighbors(eik_g); // first find minimum and add its neighbors if classified before as FAR
         update_afterAccepted(eik_g, currentMinInd);
     }
-    printGeneralInfo(eik_g);
+    //printGeneralInfo(eik_g);
 }

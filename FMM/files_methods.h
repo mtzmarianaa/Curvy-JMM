@@ -12,3 +12,5 @@ int numberElementsInRow(char *line, int nCharInLine);
 int numLinesInFile(const char *pathFile);
 
 void readIntColumn(const char *pathFile, int *column);
+
+void saveTimes(double times[5], const char *pathFile);

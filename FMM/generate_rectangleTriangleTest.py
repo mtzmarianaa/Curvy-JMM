@@ -12,9 +12,13 @@ def round_trip_connect(start, end):
 def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
+# def needs_refinement(vertices, area):
+#         bary = np.sum(np.array(vertices), axis=0) /5
+#         max_area = 0.5 + (la.norm(bary, np.inf) - 1) * 0.001
+#         return bool(area > max_area)
+
 def needs_refinement(vertices, area):
-        bary = np.sum(np.array(vertices), axis=0) /5
-        max_area = 0.5 + (la.norm(bary, np.inf) - 1) * 0.001
+        max_area = 0.6
         return bool(area > max_area)
 
 edges_square = [(-10, -10), (10, -10), (10, 10), (-10, 10)]
@@ -25,7 +29,7 @@ edges_square += [(0, 0)]
 
 facets += [(2, 4), (4, 3)]
 
-edges_square = edges_square + [(0, -2)]
+edges_square = edges_square + [(0, -2), (8, 2)] # The points where we want to start (so that for every h we start at the same points)
 
 # We add the inverted triangle part
 
@@ -101,7 +105,7 @@ fig = plt.gcf()
 plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, colors, cmap = newcmp)
 plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#00fffb')
-plt.title('Delaunay triangulation of test square')
+plt.title('Delaunay triangulation of test square, H4')
 plt.show(block = False)
 
 
