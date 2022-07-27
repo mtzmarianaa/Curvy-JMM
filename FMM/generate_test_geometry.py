@@ -11,6 +11,8 @@ from matplotlib.colors import ListedColormap
 
 ############# Generate the two circles
 
+my_dpi=96
+
 def circ_base(t):
     '''
     Parametrization of the base cirlce (base of the snowman) for the test geometry.
@@ -32,8 +34,8 @@ def circ_top(s):
     points[:, 1] = 5*sqrt(2) + 5*sqrt(2)*np.sin(s)
     return points
 
-Nbase = 2**6
-Ntop = 2**5
+Nbase = 2**8
+Ntop = 2**6
 
 t = np.linspace(1/4, 9/4, num = Nbase , endpoint = False)
 s = np.linspace(0, 1, num = Ntop )
@@ -46,10 +48,10 @@ t_arc = np.intersect1d(t_arc1, t_arc2)
 points_base = circ_base(t)
 points_top = circ_top(s)
 
-plt.figure(1)
-plt.plot( points_base[:, 0], points_base[:, 1], '-.', c='#6800ff', alpha = 0.3 )
-plt.plot(points_top[:, 0], points_top[:, 1], '-.', c='#00f3ff', alpha = 0.3)
-plt.show(block=False)
+# plt.figure(1)
+# plt.plot( points_base[:, 0], points_base[:, 1], '-.', c='#6800ff', alpha = 0.3 )
+# plt.plot(points_top[:, 0], points_top[:, 1], '-.', c='#00f3ff', alpha = 0.3)
+# plt.show(block=False)
 
 
 
@@ -61,155 +63,166 @@ def round_trip_connect(start, end):
 def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
+# def needs_refinement(vertices, area):
+#         bary = np.sum(np.array(vertices), axis=0) / 3
+#         max_area = 1 + (la.norm(bary, np.inf) - 1) * 0.1
+#         return bool(area > max_area)
+
 def needs_refinement(vertices, area):
-        bary = np.sum(np.array(vertices), axis=0) / 3
-        max_area = 1 + (la.norm(bary, np.inf) - 1) * 0.1
-        return bool(area > max_area)
+        vertices_arr = np.array(vertices)
+        edge1 = la.norm( np.subtract(vertices_arr[0, :], vertices_arr[1, :]) )
+        edge2 = la.norm( np.subtract(vertices_arr[1, :], vertices_arr[2, :]) )
+        edge3 = la.norm( np.subtract(vertices_arr[0, :], vertices_arr[2, :]) )
+        max_h = 5
+        average_edge_length = (edge1 + edge2 + edge3)/3
+        return bool(average_edge_length > max_h)
 
 points_arch = points_base[t_arc, :  ]
 points_nonArch = np.delete(points_base, t_arc, axis=0)
 
 # The points on the outline of the snowman
-points = [ (points_nonArch[i, 0], points_nonArch[i, 1]) for i in range( len(points_nonArch) ) ]
+points =  [(-15, -10)] # start with x0 so that in each mesh we know its index
+points.extend([ (points_nonArch[i, 0], points_nonArch[i, 1]) for i in range( len(points_nonArch) ) ] )
 points.extend([ (points_top[i, 0], points_top[i, 1]) for i in range( Ntop ) ])
 # Add the facets
-facets = round_trip_connect(0, len(points) -1 ) 
+facets = round_trip_connect(1, len(points) -1 ) # we don't want to connnect x0
 
 # Then we need to add the arch
 points.extend([ (points_arch[i, 0], points_arch[i, 1]) for i in range(1, len(points_arch)-1 ) ])
 
 
+print(len(points)-1)
 
 
-# # # Set the information for the triangle mesh
-info = triangle.MeshInfo()
-info.set_points(points)
-info.set_facets(facets)
+# # # # Set the information for the triangle mesh
+# info = triangle.MeshInfo()
+# info.set_points(points)
+# info.set_facets(facets)
 
-# # # # Build the mesh
+# # # # # Build the mesh
 
-mesh = triangle.build(info,volume_constraints= True, refinement_func=needs_refinement)
+# mesh = triangle.build(info,volume_constraints= True, refinement_func=needs_refinement)
 
-mesh_points = np.array(mesh.points) # These are the points we want to export
-mesh_tris = np.array(mesh.elements) # These are thee faces we want to export
-mesh_neigTriangles = np.array(mesh.neighbors)
-# Now we want to create an np array where the rows are the #of the point, the columns each one of its neighbours
-# This is the most naive way of creating such thing, might be useful to optimize it later (?)
-# We look in the row of the mesh.elements file
-N_points = len(mesh_points)
-mesh_neigh = []
-# Create the list of lists
-for p in range(N_points):
-    list_p = []
-    for t in range(len(mesh_tris)):
-        list_p += [point for point in mesh_tris[t, :] if p in mesh_tris[t, :] and point != p and point not in list_p]
-    mesh_neigh.append( list_p )
+# mesh_points = np.array(mesh.points) # These are the points we want to export
+# mesh_tris = np.array(mesh.elements) # These are thee faces we want to export
+# mesh_neigTriangles = np.array(mesh.neighbors)
+# # Now we want to create an np array where the rows are the #of the point, the columns each one of its neighbours
+# # This is the most naive way of creating such thing, might be useful to optimize it later (?)
+# # We look in the row of the mesh.elements file
+# N_points = len(mesh_points)
+# mesh_neigh = []
+# # Create the list of lists
+# for p in range(N_points):
+#     list_p = []
+#     for t in range(len(mesh_tris)):
+#         list_p += [point for point in mesh_tris[t, :] if p in mesh_tris[t, :] and point != p and point not in list_p]
+#     mesh_neigh.append( list_p )
         
-# Now we want an array which has a list of the indices of the faces that are incident on each vertex
+# # Now we want an array which has a list of the indices of the faces that are incident on each vertex
 
-mesh_IncidentFaces = []
-for p in range(N_points):
-    list_faces = []
-    for t in range(len(mesh_tris)):
-        if (p in mesh_tris[t, :]):
-            list_faces += [t]
-    mesh_IncidentFaces.append(list_faces)
-
-
-
-# # #Plot
-plt.figure(2)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.show(block=False)
-
-r = 5*sqrt(2)
-# # # # Zoom in 1
-h1 = 1
-
-plt.figure(3)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.xlim((r - h1, r+h1))
-plt.ylim((r - h1, r+h1))
-plt.show(block=False)
-
-# # # # Zoom in 2
-h2 = 0.25
-
-plt.figure(4)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.xlim((r - h2, r+h2))
-plt.ylim((r - h2, r+h2))
-plt.show(block=False)
-
-# # # # Zoom in 3
-h3 = 0.01
-
-plt.figure(5)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.xlim((r - h3, r+h3))
-plt.ylim((r - h3, r+h3))
-plt.show(block=False)
+# mesh_IncidentFaces = []
+# for p in range(N_points):
+#     list_faces = []
+#     for t in range(len(mesh_tris)):
+#         if (p in mesh_tris[t, :]):
+#             list_faces += [t]
+#     mesh_IncidentFaces.append(list_faces)
 
 
-# # # # Zoom in 4
-h4 = 1e-3
 
-plt.figure(6)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.xlim((r - h4, r+h4))
-plt.ylim((r - h4, r+h4))
-plt.show(block=False)
+# # # #Plot
+# plt.figure(2)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry, H4')
+# plt.show(block=False)
 
-# # # # Zoom in 5
-h5 = 1e-5
+# r = 5*sqrt(2)
+# # # # # Zoom in 1
+# H4 = 1
 
-plt.figure(7)
-fig = plt.gcf()
-ax = fig.gca()
-plt.gca().set_aspect('equal')
-plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry')
-plt.xlim((r - h5, r+h5))
-plt.ylim((r - h5, r+h5))
-plt.show(block=False)
+# plt.figure(3)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry, H4')
+# plt.xlim((r - H4, r+H4))
+# plt.ylim((r - H4, r+H4))
+# plt.show(block=False)
+
+# # # # # Zoom in 2
+# H4 = 0.25
+
+# plt.figure(4)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry, H4')
+# plt.xlim((r - H4, r+H4))
+# plt.ylim((r - H4, r+H4))
+# plt.show(block=False)
+
+# # # # # Zoom in 3
+# H4 = 0.01
+
+# plt.figure(5)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry')
+# plt.xlim((r - H4, r+H4))
+# plt.ylim((r - H4, r+H4))
+# plt.show(block=False)
+
+
+# # # # # Zoom in 4
+# H4 = 1e-3
+
+# plt.figure(6)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry')
+# plt.xlim((r - H4, r+H4))
+# plt.ylim((r - H4, r+H4))
+# plt.show(block=False)
+
+# # # # # Zoom in 5
+# H4 = 1e-5
+
+# plt.figure(7)
+# fig = plt.gcf()
+# ax = fig.gca()
+# plt.gca().set_aspect('equal')
+# plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
+# circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+# ax.add_patch(circle_b)
+# ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
+# plt.title('Delaunay triangulation of test geometry')
+# plt.xlim((r - H4, r+H4))
+# plt.ylim((r - H4, r+H4))
+# plt.show(block=False)
 
 
 # # Now we save this triangulation to a bin file so that we can read it later from C
@@ -315,7 +328,7 @@ for fi in range(len(mesh_square_tris)):
 
 
 # # #Plot
-plt.figure(8)
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
 ax = fig.gca()
 plt.gca().set_aspect('equal')
@@ -323,7 +336,7 @@ plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
 ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry with rectangle')
+plt.title('Delaunay triangulation of test geometry with rectangle, H4')
 plt.show(block=False)
 
 
@@ -337,44 +350,45 @@ new_colors += [purple]*mid
 newcmp = ListedColormap(new_colors)
 
 
-plt.figure(9)
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
 plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, faces_label, cmap = "magma")
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
-plt.title('Delaunay triangulation of test geometry')
+plt.title('Delaunay triangulation of test geometry, H4')
 plt.show(block = False)
+# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_Triangulation.png', dpi=my_dpi * 10)
 
 
-## Save them as well
+# ## Save them as well
 
-np.savetxt('MeshInfo/BoundaryPoints_Sq.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+# np.savetxt('MeshInfo/H4/H4_BoundaryPoints_Sq.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
-facets_arr = np.array(facets_square)
-np.savetxt('MeshInfo/Facets_Sq.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+# facets_arr = np.array(facets_square)
+# np.savetxt('MeshInfo/H4/H4_Facets_Sq.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/MeshPoints_Sq.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
+# np.savetxt('MeshInfo/H4/H4_MeshPoints_Sq.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
 
-np.savetxt('MeshInfo/Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+# np.savetxt('MeshInfo/H4/H4_Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/NeighTriangles_Sq.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+# np.savetxt('MeshInfo/H4/H4_NeighTriangles_Sq.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
-separator = "," 
+# separator = "," 
 
-with open("MeshInfo/Neigh_Sq.txt", "w") as out_file:
-    for l in mesh_square_neigh:
-        out_string = separator.join(str(x) for x in l) + "\n"
-        out_file.write(out_string)
+# with open("MeshInfo/H4/H4_Neigh_Sq.txt", "w") as out_file:
+#     for l in mesh_square_neigh:
+#         out_string = separator.join(str(x) for x in l) + "\n"
+#         out_file.write(out_string)
         
-with open("MeshInfo/IncidentFaces_Sq.txt", "w") as out_file:
-    for l in mesh_IncidentFaces_sq:
-        out_string = separator.join(str(x) for x in l) + "\n"
-        out_file.write(out_string)
+# with open("MeshInfo/H4/H4_IncidentFaces_Sq.txt", "w") as out_file:
+#     for l in mesh_IncidentFaces_sq:
+#         out_string = separator.join(str(x) for x in l) + "\n"
+#         out_file.write(out_string)
         
-with open("MeshInfo/FacesLabel_Sq.txt", "w") as out_file:
-    for l in faces_label:
-        out_string = separator.join(str(l)) + "\n"
-        out_file.write(out_string)
+# with open("MeshInfo/H4/H4_FacesLabel_Sq.txt", "w") as out_file:
+#     for l in faces_label:
+#         out_string = separator.join(str(l)) + "\n"
+#         out_file.write(out_string)
         
 
 plt.show()
