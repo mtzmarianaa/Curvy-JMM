@@ -32,3 +32,5 @@ int nStillInQueue(eik_gridS *eik_g);
 void saveComputedValues(eik_gridS *eik_g, const char *pathFile);
 
 void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);
+
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile);

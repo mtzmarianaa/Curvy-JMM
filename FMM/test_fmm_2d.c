@@ -28,8 +28,8 @@ int main()
     pathFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Faces.txt";
     pathIndexRegions_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_FacesLabel.txt";
 
-    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_ComputedValues.bin";
-    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_ComputedGradients.bin";
+    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Computed1-3Values.bin";
+    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Computed1-3Gradients.bin";
 
     int *start_H1;
     int nstart_H1, s_H1;
@@ -75,8 +75,8 @@ int main()
     pathFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Faces.txt";
     pathIndexRegions_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_FacesLabel.txt";
 
-    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_ComputedValues.bin";
-    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_ComputedGradients.bin";
+    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Computed1-3Values.bin";
+    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Computed1-3Gradients.bin";
 
     int *start_H2;
     int nstart_H2, s_H2;
@@ -123,8 +123,8 @@ int main()
     pathFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Faces.txt";
     pathIndexRegions_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_FacesLabel.txt";
 
-    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_ComputedValues.bin";
-    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_ComputedGradients.bin";
+    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Computed1-3Values.bin";
+    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Computed1-3Gradients.bin";
 
     int *start_H3;
     int nstart_H3, s_H3;
@@ -170,8 +170,8 @@ int main()
     pathFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Faces.txt";
     pathIndexRegions_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_FacesLabel.txt";
 
-    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_ComputedValues.bin";
-    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_ComputedGradients.bin";
+    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Computed1-3Values.bin";
+    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Computed1-3Gradients.bin";
 
     int *start_H4;
     int nstart_H4, s_H4;
@@ -217,8 +217,8 @@ int main()
     pathFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Faces.txt";
     pathIndexRegions_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_FacesLabel.txt";
 
-    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_ComputedValues.bin";
-    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_ComputedGradients.bin";
+    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Computed1-3Values.bin";
+    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Computed1-3Gradients.bin";
 
     int *start_H5;
     int nstart_H5, s_H5;
@@ -264,8 +264,8 @@ int main()
     pathFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Faces.txt";
     pathIndexRegions_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_FacesLabel.txt";
 
-    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_ComputedValues.bin";
-    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_ComputedGradients.bin";
+    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Computed1-3Values.bin";
+    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Computed1-3Gradients.bin";
 
     int *start_H6;
     int nstart_H6, s_H6;
@@ -311,8 +311,8 @@ int main()
     pathFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Faces.txt";
     pathIndexRegions_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_FacesLabel.txt";
 
-    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_ComputedValues.bin";
-    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_ComputedGradients.bin";
+    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Computed1-3Values.bin";
+    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Computed1-3Gradients.bin";
 
     int *start_H7;
     int nstart_H7, s_H7;

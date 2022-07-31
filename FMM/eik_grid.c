@@ -9,6 +9,7 @@ This is the Eikonal grid with different specifications
 #include "SoSFunction.h"
 #include "opti_method.h"
 #include "linAlg.h"
+#include "path.h"
 
 
 #include <stdio.h>
@@ -24,6 +25,8 @@ struct eik_grid {
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   int *current_states; // 0 far, 1 trial, 2 valid
+  pathS *pathsTaken; // path taken from x0 to each of the nodes
+  int currentUpdate[2]; // 0 is xlambda, 1 is xhat (currently)
 } ;
 
 void eik_grid_alloc(eik_gridS **eik_g ) {
@@ -70,6 +73,12 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   }
   eik_g->p_queueG = p_queueG;
   assert(&eik_g != NULL); // eik_g should not be null
+
+  // We also need to initialize the paths
+  pathS *pathsTaken;
+  path_alloc_n(&pathsTaken, triM_2D->nPoints);
+  path_init(pathsTaken, triM_2D->nPoints);
+  eik_g->pathsTaken = pathsTaken;
 }
 
 void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions) {
@@ -96,7 +105,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Real Eikonal:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  L2:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
   }
 }
 
@@ -274,6 +283,18 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
     
     for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
       fwrite(eik_g->eik_grad[i], sizeof(double), 2, fp);
+    }
+
+    fclose(fp);
+}
+
+
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile){
+    FILE *fp;
+    fp = fopen(pathFile, "wb");
+    
+    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+      fwrite(eik_g->pathsTaken[i].individual_path, sizeof(double), eik_g->pathsTaken[i].len, fp);
     }
 
     fclose(fp);
