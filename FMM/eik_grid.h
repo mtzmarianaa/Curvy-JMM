@@ -21,6 +21,8 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
 
+void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted);
+
 void update_afterAccepted(eik_gridS *eik_g, int index_accepted);
 
 void popAddNeighbors(eik_gridS *eik_g);
@@ -33,4 +35,4 @@ void saveComputedValues(eik_gridS *eik_g, const char *pathFile);
 
 void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);
 
-void savePathsTaken(eik_gridS *eik_g, const char *pathFile);
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile_x, const char *pathFile_y);

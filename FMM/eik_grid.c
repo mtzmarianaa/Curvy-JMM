@@ -16,6 +16,7 @@ This is the Eikonal grid with different specifications
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <string.h>
 
 struct eik_grid {
   int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
@@ -77,7 +78,7 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   // We also need to initialize the paths
   pathS *pathsTaken;
   path_alloc_n(&pathsTaken, triM_2D->nPoints);
-  path_init(pathsTaken, triM_2D->nPoints);
+  path_init(pathsTaken, triM_2D->nPoints, triM_2D->points->x, triM_2D->points->y);
   eik_g->pathsTaken = pathsTaken;
 }
 
@@ -105,7 +106,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  L2:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  L2 xhat:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
   }
 }
 
@@ -192,7 +193,32 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
       norm_div = l2norm(temp_substraction);
       eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
       eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
+      // and we add the path
+      addAllPathFromOneNode(eik_g->pathsTaken, neighborsIndex, index_accepted); // we add all the path from the source to the newly accepted point (this function 
+      // doesn't include the newly accepted point hence we need to add it manually)
+      insertOneToPath(eik_g->pathsTaken, neighborsIndex, xlam);
     }
+  }
+}
+
+void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted){
+  // after accepting a node, if it has a valid neighbor and a trial neighbor we might perform an update in the 
+  // current eikonal value of that trial neighbor using the newly accepted node and the valid neighbor (two point update)
+  int regionIndex;
+  double norm_div, twoPointVal, temp_substraction[2], xlam[2], xhat[2];
+  xhat[0] = eik_g->triM_2D->points->x[neighborTrial];
+  xhat[1] = eik_g->triM_2D->points->y[neighborTrial];
+  twoPointUpdate_eikValue(eik_g, index_accepted, neighborValid, neighborTrial, xlam, &twoPointVal, &regionIndex);
+  update(eik_g->p_queueG, twoPointVal, neighborTrial); // this function takes care, if its smaller it will update the new value
+  if( twoPointVal < eik_g->eik_vals[neighborTrial] ){
+    vec2_substraction(xhat, xlam, temp_substraction);
+    norm_div = l2norm(temp_substraction);
+    eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
+    eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
+    // we add the path if the eikonal value is minimized by taking a two point update
+    addAllPathFromOneNode(eik_g->pathsTaken, neighborTrial, index_accepted); // we add all the path from the source to the newly accepted point (this function 
+    // doesn't include the newly accepted point hence we need to add it manually)
+    insertOneToPath(eik_g->pathsTaken, neighborTrial, xlam);
   }
 }
 
@@ -203,12 +229,9 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
   // we need to first find the incident faces to the index_accepted point, then we iterate through those
   // faces to find the 2 other points that belong to the same face, if one of them is set as valid then we might consider performing
   // a two point update
-  int nFaces, faceIndex, k, regionIndex;
+  int nFaces, faceIndex, k, regionIndex, neighborValid, neighborTrial;
   int neis[2];
   double twoPointVal;
-  double norm_div, temp_substraction[2], xhat[2], xlam[2];
-  temp_substraction[0] = 0;
-  temp_substraction[1] = 0;
   nFaces = eik_g->triM_2D->incidentFaces[index_accepted].len; // get the number of incident faces to the newly accepted point
   // we iterate through those faces
   for (int i = 0; i<nFaces; i++){
@@ -226,28 +249,16 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
     if( eik_g->current_states[neis[0]] == 2 &  eik_g->current_states[neis[1]] == 1 ) {
       // neis[0] is valid, neis[1] is trial
       // two point update considered
-      xhat[0] = eik_g->triM_2D->points->x[neis[1]];
-      xhat[1] = eik_g->triM_2D->points->y[neis[1]];
-      twoPointUpdate_eikValue(eik_g, index_accepted, neis[0], neis[1], xlam, &twoPointVal, &regionIndex);
-      update(eik_g->p_queueG, twoPointVal, neis[1]); // this function takes care, if its smaller it will update the new value
-      vec2_substraction(xhat, xlam, temp_substraction);
-      norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neis[1]][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neis[1]][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
+      neighborValid = neis[0];
+      neighborTrial = neis[1];
+      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
     }
     if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
       // neis[0] is trial, neis[1] is valid
       // two point update considered
-      xhat[0] = eik_g->triM_2D->points->x[neis[0]];
-      xhat[1] = eik_g->triM_2D->points->y[neis[0]];
-      twoPointUpdate_eikValue(eik_g, index_accepted, neis[1], neis[0], xlam, &twoPointVal, &regionIndex);
-      printf("\nValue from the two point update %fl \n", twoPointVal);
-      printf("\nCoordinates of xlam (%fl, %fl) \n", xlam[0], xlam[1]);
-      update(eik_g->p_queueG, twoPointVal, neis[0]);
-      vec2_substraction(xhat, xlam, temp_substraction);
-      norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neis[0]][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neis[0]][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
+      neighborValid = neis[1];
+      neighborTrial = neis[0];
+      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
     }
     // if both of them are trial it means that they were recently added as the neighbors of index_accepted, no two point update can be done in this case
   }
@@ -289,13 +300,19 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
 }
 
 
-void savePathsTaken(eik_gridS *eik_g, const char *pathFile){
-    FILE *fp;
-    fp = fopen(pathFile, "wb");
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile_x, const char *pathFile_y){
+    FILE *fp_x, *fp_y;
+    fp_x = fopen(pathFile_x, "wb");
     
     for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
-      fwrite(eik_g->pathsTaken[i].individual_path, sizeof(double), eik_g->pathsTaken[i].len, fp);
+      fwrite(eik_g->pathsTaken[i].individual_path_x, sizeof(double), eik_g->pathsTaken[i].len, fp_x);
     }
+    fclose(fp_x);
 
-    fclose(fp);
+    fp_y = fopen(pathFile_y, "wb");
+    
+    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+      fwrite(eik_g->pathsTaken[i].individual_path_y, sizeof(double), eik_g->pathsTaken[i].len, fp_y);
+    }
+    fclose(fp_y);
 }

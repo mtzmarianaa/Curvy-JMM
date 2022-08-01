@@ -3,6 +3,7 @@ TESTS FOR THE PRIORITY QUEUE
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "path.h"
 
@@ -10,95 +11,50 @@ int main()
 {
   
    pathS *path_test;
-   int nPoints = 15;
+   double *coord_x, *coord_y, xlam[2];
+   int nPoints = 4;
+   double x[nPoints], y[nPoints];
+   x[0] = 0.0;
+   y[0] = 0.0;
+   x[1] = 1.0;
+   y[1] = 0.0;
+   x[2] = 0.0;
+   y[2] = 1.0;
+   x[3] = 1.0;
+   y[3] = 1.0;
+
+   coord_x = x;
+   coord_y = y;
+
+   xlam[0] = -1.0;
+   xlam[1] = -1.0;
 
    path_alloc_n(&path_test, nPoints);
 
-   path_init(path_test, nPoints);
+   path_init(path_test, nPoints, x, y);
+
+   printf("Initializing paths\n");
 
    printPaths(path_test, nPoints);
 
-   printf("\n\n\n We accept node 1 from node 0\n");
+   insertOneToPath(path_test, 0, xlam);
 
-   insertAfterAcceptedToPath(path_test, 1, 0);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 2 from node 1\n");
-
-   insertAfterAcceptedToPath(path_test, 2, 1);
+   printf("\n\nAdding (-1,-1) to the path of the origin\n");
 
    printPaths(path_test, nPoints);
 
-   printf("\n\n\n We accept node 3 from node 2\n");
+   xlam[0] = -sqrt(2)/2;
+   xlam[1] = -sqrt(2)/2;
 
-   insertAfterAcceptedToPath(path_test, 3, 2);
+   updatePath(path_test, 0, xlam);
 
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 4 from node 3\n");
-
-   insertAfterAcceptedToPath(path_test, 4, 3);
+   printf("\n\nAdding updating the path of the origin with sqr(2)/2\n");
 
    printPaths(path_test, nPoints);
 
-   printf("\n\n\n We accept node 5 from node 4\n");
+   addAllPathFromOneNode(path_test, 1, 0);
 
-   insertAfterAcceptedToPath(path_test, 5, 4);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 6 from node 5\n");
-
-   insertAfterAcceptedToPath(path_test, 6, 5);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 7 from node 6\n");
-
-   insertAfterAcceptedToPath(path_test, 7, 6);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 8 from node 7\n");
-
-   insertAfterAcceptedToPath(path_test, 8, 7);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 9 from node 8\n");
-
-   insertAfterAcceptedToPath(path_test, 9, 8);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 10 from node 9\n");
-
-   insertAfterAcceptedToPath(path_test, 10, 9);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 11 from node 8\n");
-
-   insertAfterAcceptedToPath(path_test, 11, 8);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 12 from node 3\n");
-
-   insertAfterAcceptedToPath(path_test, 12, 3);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 13 from node 0\n");
-
-   insertAfterAcceptedToPath(path_test, 13, 0);
-
-   printPaths(path_test, nPoints);
-
-   printf("\n\n\n We accept node 14 from node 6\n");
-
-   insertAfterAcceptedToPath(path_test, 14, 6);
+   printf("\n\nFrom the origin we add (1, 0)\n");
 
    printPaths(path_test, nPoints);
    

@@ -71,11 +71,12 @@ void updatePath(pathS *path, int indexHat, double xlam[2])
     path[indexHat].individual_path_y[last -1] = xlam[1];
 }
 
-void addPathAfterAddingNeighbors(pathS *path, int indexHat, int xNewAccepted) 
+void addAllPathFromOneNode(pathS *path, int indexHat, int xNewAccepted) 
 {
     // After adding the neighbors of a newly accepted node we must also add 
     // the path that goes from x0 all the way up to the newly accepted node
-    int nInPath, xlam[2];
+    int nInPath;
+    double xlam[2];
     nInPath = path[xNewAccepted].len;
     for (int i=0; i<nInPath; i++){
         // get the coordinates of the ith point in the path from x0 to the newly accepted node
@@ -92,7 +93,7 @@ void printPaths(pathS *path, int nPoints)
         printf("\nFor index: %d. Length of this path: %d. Maximum length allowed in this path: %d\n", i, path[i].len, path[i].maxSize);
         printf("The path taken was:");
         for(int j=0; j<path[i].len; j++){
-            printf("     (%d, %d)     |", path[i].individual_path_x[j], path[i].individual_path_y[j]);
+            printf("     (%fl, %fl)     |", path[i].individual_path_x[j], path[i].individual_path_y[j]);
         }
     }
 }
