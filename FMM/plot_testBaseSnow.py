@@ -1,6 +1,6 @@
 # Script to generate plots from the square with just a circle
 
-# SCRIPT TO VISUALIZE ERRORS (can I say this?)
+# SCRIPT TO VISUALIZE ERRORS 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm 
@@ -17,8 +17,8 @@ sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 
-nx = 36*4
-ny = 42*4
+nx = 36*3
+ny = 42*3
 my_dpi=96
 
 def rotate(angle):
@@ -93,7 +93,7 @@ def consRayIntoCircle(z):
     '''
     x0 = np.array([-15, -10])
     p0 = z[0:2]
-    t0 = sb(x0, p0)
+    t0 = sb(p0, x0)
     return np.dot(t0, p0)
 
 def consRayFromCircle(z, xhat):
@@ -117,19 +117,26 @@ def trueSolution(xi, yi):
         if(regA1Bool(xhat)): # if xhat is directly accesible from x0 just via reg1
             tau = norm(sb(xhat, x0))
         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
-            f_t1 = lambda z: norm(sb(x0, z[0:2])) + 1.348*norm(sb(z[0:2], z[2:4])) + norm(sb(z[2:4], xhat))
+            f_t1 = lambda z: norm(sb(x0, z[0:2])) + 1.452*norm(sb(z[0:2], z[2:4])) + norm(sb(z[2:4], xhat))
             cons1 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, 
                      {'type':'ineq', 'fun': lambda z: consRayFromCircle(z, xhat) },
                      {'type':'eq', 'fun': lambda z: pointOnCircle(z[0:2]) },
                      {'type':'eq', 'fun': lambda z: pointOnCircle(z[2:4]) }]
             t1_opt = minimize( f_t1, [0, -10, 10, 0], constraints = cons1 )
-            tau = f_t1(t1_opt.x)
+            t1_optPrime =  minimize( f_t1, [0, -10, -10, 0], constraints = cons1 )
+            t1_optPrime2 =  minimize( f_t1, [0, -10, 5*sqrt(2), -5*sqrt(2)], constraints = cons1 )
+            t1_optPrime3 =  minimize( f_t1, [0, -10, -5*sqrt(2), -5*sqrt(2)], constraints = cons1 )
+            t1_optPrime4 =  minimize( f_t1, [-5*sqrt(2), -5*sqrt(2), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 )
+            t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 )
+            tau = min(f_t1(t1_opt.x), f_t1(t1_optPrime.x), f_t1(t1_optPrime2.x), f_t1(t1_optPrime3.x), f_t1(t1_optPrime4.x), f_t1(t1_optPrime5.x))
     else: # x0 starts in reg1, goes into reg3 and that's it
-        f_t2 = lambda z: norm(sb(x0, z[0:2])) + 1.348*norm(sb(z[0:2], xhat))
-        cons2 = cons1 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, # segment from x0 to pt0 goes into the circle
+        f_t2 = lambda z: norm(sb(x0, z[0:2])) + 1.452*norm(sb(z[0:2], xhat))
+        cons2 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, # segment from x0 to pt0 goes into the circle
                          {'type':'eq', 'fun': lambda z: pointOnCircle(z) }] 
         t2_opt = minimize(f_t2, [0, -10], constraints = cons2)
-        tau = f_t2(t2_opt.x)
+        t2_opt2 = minimize(f_t2, [-30/sqrt(13), 20/sqrt(13)], constraints = cons2)
+        t2_opt3 = minimize(f_t2, [-3*sqrt(10/13), -2*sqrt(10/13)], constraints = cons2)
+        tau = min( f_t2(t2_opt.x) , f_t2(t2_opt2.x), f_t2(t2_opt3.x))
     return tau
 
 
@@ -168,8 +175,29 @@ fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 surf = ax.plot_surface(xi, yi, true_solGrid, cmap=colormap2, linewidth=0, antialiased=False)
 plt.show(block = False)
 
+# Plot the contours in 2D
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im_bar1 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 25)
+plt.title("Exact solution, test geometry just base")
+plt.show(block = False)
+plt.colorbar(im_bar1)
+figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour.png'
+plt.savefig(figName_Contour, dpi=my_dpi * 10)
+
+# Plot in 3D and save the gif
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+ax = plt.axes(projection='3d')
+ax.scatter(xi, yi, true_solGrid, c= true_solGrid, cmap=colormap2)
+plt.title("Exact solution, test geometry just base")
+plt.show(block = False)
+rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
+rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour.gif', dpi=80, writer='Pillow')
 
 
+# Save the computed values (in case they are useful)
+
+np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/TrueSolutionGrid.txt', true_solGrid, delimiter =', ', fmt = '%.8f' )
 
 
 # ######################################################

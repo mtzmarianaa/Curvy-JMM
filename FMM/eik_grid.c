@@ -26,7 +26,7 @@ struct eik_grid {
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   int *current_states; // 0 far, 1 trial, 2 valid
-  pathS *pathsTaken; // path taken from x0 to each of the nodes
+  int *pathsTaken; // path taken from x0 to each of the nodes
   int currentUpdate[2]; // 0 is xlambda, 1 is xhat (currently)
 } ;
 
@@ -50,15 +50,17 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   // we first set all the current eik_vals to infinity, set all the current_states to 0 (far)
   double *eik_vals;
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
-  int *current_states;
+  int *current_states, *pathsTaken;
   eik_vals = malloc(triM_2D->nPoints*sizeof(double)); 
   current_states = malloc(triM_2D->nPoints*sizeof(int));
   eik_grad = malloc(2*triM_2D->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
+  pathsTaken = malloc(triM_2D->nPoints*sizeof(int)); // initiate the paths taken array
   for(int i = 0; i<triM_2D->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
     eik_grad[i][0] = 0; // initialize all the gradients to zero
     eik_grad[i][1] = 0;
+    pathsTaken[i] = i; // initiate them as themselves
   }
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
@@ -71,15 +73,11 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   priority_queue_init(p_queueG); // initiate
   for(int i = 0; i<nStart; i++){
     insert(p_queueG, 0, start[i]); // insert all the starting points with eikonal value 0
+    pathsTaken[start[i]] = start[i]; // the starting point start at themselves
   }
   eik_g->p_queueG = p_queueG;
-  assert(&eik_g != NULL); // eik_g should not be null
-
-  // We also need to initialize the paths
-  pathS *pathsTaken;
-  path_alloc_n(&pathsTaken, triM_2D->nPoints);
-  path_init(pathsTaken, triM_2D->nPoints, triM_2D->points->x, triM_2D->points->y);
   eik_g->pathsTaken = pathsTaken;
+  assert(&eik_g != NULL); // eik_g should not be null
 }
 
 void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions) {
@@ -106,7 +104,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  L2 xhat:   %fl    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], l2norm(x) , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Comes from:   %d    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], eik_g->pathsTaken[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
   }
 }
 
@@ -122,7 +120,7 @@ void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, doubl
   vec2_substraction(x0, x1, x1Minx0);
   dist = l2norm(x1Minx0);
   *regionIndex = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
-  printf("\n Region %d \n", *regionIndex);
+  //printf("\n Region %d \n", *regionIndex);
   *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
 }
 
@@ -194,9 +192,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
       eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
       eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
       // and we add the path
-      addAllPathFromOneNode(eik_g->pathsTaken, neighborsIndex, index_accepted); // we add all the path from the source to the newly accepted point (this function 
-      // doesn't include the newly accepted point hence we need to add it manually)
-      insertOneToPath(eik_g->pathsTaken, neighborsIndex, xlam);
+      eik_g->pathsTaken[neighborsIndex] = index_accepted;
     }
   }
 }
@@ -216,9 +212,7 @@ void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int ind
     eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
     eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
     // we add the path if the eikonal value is minimized by taking a two point update
-    addAllPathFromOneNode(eik_g->pathsTaken, neighborTrial, index_accepted); // we add all the path from the source to the newly accepted point (this function 
-    // doesn't include the newly accepted point hence we need to add it manually)
-    insertOneToPath(eik_g->pathsTaken, neighborTrial, xlam);
+    eik_g->pathsTaken[neighborTrial] = index_accepted;
   }
 }
 
@@ -300,19 +294,9 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
 }
 
 
-void savePathsTaken(eik_gridS *eik_g, const char *pathFile_x, const char *pathFile_y){
-    FILE *fp_x, *fp_y;
-    fp_x = fopen(pathFile_x, "wb");
-    
-    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
-      fwrite(eik_g->pathsTaken[i].individual_path_x, sizeof(double), eik_g->pathsTaken[i].len, fp_x);
-    }
-    fclose(fp_x);
-
-    fp_y = fopen(pathFile_y, "wb");
-    
-    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
-      fwrite(eik_g->pathsTaken[i].individual_path_y, sizeof(double), eik_g->pathsTaken[i].len, fp_y);
-    }
-    fclose(fp_y);
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile){
+    FILE *fp;
+    fp = fopen(pathFile, "wb");
+    fwrite(eik_g->pathsTaken, sizeof(int), eik_g->triM_2D->nPoints, fp);
+    fclose(fp);
 }

@@ -1,6 +1,6 @@
 # Generate test geometry specifying h
 
-h = 0.25
+h = 0.75
 h_string = str(h)
 
 
@@ -91,10 +91,11 @@ points_nonArch = np.delete(points_base, t_arc, axis=0)
 
 # The points on the outline of the snowman
 points =  [(-15, -10)] # start with x0 so that in each mesh we know its index
+points.extend([(0, 11), (4, 4), (10, 15), (10, 10)]) # we add the points whose path we want to track (on reg2, on reg3, on reg1, on reg1)
 points.extend([ (points_nonArch[i, 0], points_nonArch[i, 1]) for i in range( len(points_nonArch) ) ] )
 points.extend([ (points_top[i, 0], points_top[i, 1]) for i in range( Ntop ) ])
 # Add the facets
-facets = round_trip_connect(1, len(points) -1 ) # we don't want to connnect x0
+facets = round_trip_connect(5, len(points) -1 ) # we don't want to connnect x0
 
 # Then we need to add the arch
 points.extend([ (points_arch[i, 0], points_arch[i, 1]) for i in range(1, len(points_arch)-1 ) ])
@@ -168,12 +169,6 @@ for fi in range(len(mesh_square_tris)):
     elif( (sqrt(p1[0]**2 + p1[1]**2) + sqrt(p2[0]**2 + p2[1]**2) + sqrt(p3[0]**2 + p3[1]**2))<= 30  ):
         faces_label += [3]
         colors += [0.3]
-    elif( sqrt(p1[0]**2 + (p1[1]-r)**2)<= r  ) and ( sqrt(p2[0]**2 + (p2[1]-r)**2)<= r  ) and ( sqrt(p3[0]**2 + (p3[1]-r)**2)<= r  ):
-        faces_label += [2]
-        colors += [0.2]
-    elif( (sqrt(p1[0]**2 + (p1[1]-r)**2) + sqrt(p2[0]**2 + (p2[1]-r)**2) + sqrt(p3[0]**2 + (p3[1]-r)**2))<= 3*r ):
-        faces_label += [2]
-        colors += [0.2]
     else:
         faces_label += [1]
         colors += [0.1]
@@ -211,35 +206,35 @@ plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tr
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
 plt.title('Delaunay triangulation of test geometry, H = '+h_string)
 plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H8/H8_Triangulation.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/Triangulation.png', dpi=my_dpi * 10)
 
 
 ## Save them as well
 
-np.savetxt('MeshInfo/H8/H8_BoundaryPoints_Sq.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('MeshInfo/TestIndex/BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets_square)
-np.savetxt('MeshInfo/H8/H8_Facets_Sq.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('MeshInfo/TestIndex/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/H8/H8_MeshPoints_Sq.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
+np.savetxt('MeshInfo/TestIndex/MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
 
-np.savetxt('MeshInfo/H8/H8_Faces_Sq.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('MeshInfo/TestIndex/Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('MeshInfo/H8/H8_NeighTriangles_Sq.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('MeshInfo/TestIndex/NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
 separator = "," 
 
-with open("MeshInfo/H8/H8_Neigh_Sq.txt", "w") as out_file:
+with open("MeshInfo/TestIndex/Neigh.txt", "w") as out_file:
     for l in mesh_square_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("MeshInfo/H8/H8_IncidentFaces_Sq.txt", "w") as out_file:
+with open("MeshInfo/TestIndex/IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces_sq:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("MeshInfo/H8/H8_FacesLabel_Sq.txt", "w") as out_file:
+with open("MeshInfo/TestIndex/FacesLabel.txt", "w") as out_file:
     for l in faces_label:
         out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)

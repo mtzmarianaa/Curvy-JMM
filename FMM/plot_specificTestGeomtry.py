@@ -1,11 +1,10 @@
 # SCRIPT TO VISUALIZE ERRORS (can I say this?)
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.linalg import norm 
-from math import sqrt
 import matplotlib.tri as tri
-from scipy.optimize import NonlinearConstraint, minimize
 import matplotlib.animation as animation
+import imageio
+import os
 
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
@@ -17,162 +16,104 @@ my_dpi=96
 
 def rotate(angle):
     ax.view_init(azim=angle)
+    
+    
+def buildPath(indexStart, paths):
+    path = [paths[indexStart]] #how it starts
+    previousInPath = paths[indexStart]
+    while(previousInPath != paths[previousInPath]):
+        previousInPath = paths[previousInPath]
+        path.extend(  [previousInPath]  )
+    return path
 
 ######################################################
 ######################################################
 ######################################################
-#### H4
-## 1. Plot of the output
+#### 
 
-eik_vals_H4 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_ComputedValues.bin")
-eik_coords_H4 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_MeshPoints.txt", delimiter=",")
-triangles_H4 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Faces.txt", delimiter=",")
-eik_grads_H4 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_ComputedGradients.bin");
-eik_grads_H4 = eik_grads_H4.reshape(len(eik_coords_H4), 2)
-
-# exact_values_H4 = []
-# errors_H4 = []
-# for i in range(len(eik_coords_H4)):
-#     xi = eik_coords_H4[i, 0]
-#     yi = eik_coords_H4[i, 1]
-#     sol = exact_solution1(xi, yi)
-#     exact_values_H4 += [sol]
-#     errors_H4 += [ abs( sol - eik_vals_H4[i] ) ]
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], eik_vals_H4, c= eik_vals_H4, cmap=colormap2)
-plt.title("Computed eikonal values, test geometry H4")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-#rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-
-
-
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# ax = plt.axes(projection='3d')
-# ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], exact_values_H4, c= exact_values_H4, cmap=colormap2)
-# plt.title("Exact solution, test geometry H4")
-# plt.show(block = False)
-# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# #rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# ax = plt.axes(projection='3d')
-# ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], errors_H4, c = errors_H4, cmap=colormap2)
-# plt.title("Computed errors per point, test geometry H4")
-# plt.show(block = False)
-# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# #rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H4 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
+# Global variables
+eik_coords = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/TestIndex/MeshPoints.txt", delimiter=",")
+triangles = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/TestIndex/Faces.txt", delimiter=",")
 
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
 # We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H4)
-zi_lin = interp_lin(xi, -yi+6)
+triang = tri.Triangulation(eik_coords[:, 0], eik_coords[:, 1], triangles)
 
-# # Contours of the errors_H4 in 3D and 2D
-# solution_interpolated = np.zeros(zi_lin.shape)
-# for i in range(len(xi)):
-#     for j in range(len(yi)):
-#         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
-# errors_H4_abs = abs(zi_lin - solution_interpolated)
+figsContours = []
+figsLinInt = []
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.axis('equal')
-# im_bar44 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-18,18,-18,24]  )
-# plt.title("Exact solution, test geometry H4")
-# plt.show(block = False)
-# plt.colorbar(im_bar44)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_ExactSolution.png', dpi=my_dpi * 10)
+factors = [1/1.452, 1/1.348, 1/1.24, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5]
 
-
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# ax = plt.axes(projection='3d')
-# ax.contour3D(xi, yi, errors_H4_abs , 50, cmap=colormap2)
-# ax.set_xlabel('x')
-# ax.set_ylabel('y')
-# ax.set_zlabel('errors_H4');
-# plt.title("3D point wise errors, test geometry H4")
-# plt.show(block = False)
-# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# #rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H4 in 2D
-
-# fig = plt.figure(46)
-# plt.axis('equal')
-# im_bar46 = plt.imshow( errors_H4_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
-# plt.title("Point wise absolute errors, test geometry H4")
-# plt.show(block = False)
-# plt.colorbar(im_bar46)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# # The absolute errors_H4 in 2D with the triangulation
-
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.axis('equal')
-# plt.triplot(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4, '-.', lw=0.5, c='#04007e')
-# im_bar47 = plt.imshow( errors_H4_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
-# plt.title("Point wise absolute errors and triangulation, test geometry H4")
-# plt.show(block = False)
-# plt.colorbar(im_bar47)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar48 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], c = eik_vals_H4, cmap = colormap2)
-plt.triplot(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, test geometry H4")
-plt.show(block = False)
-plt.colorbar(im_bar48)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_LinearInt_Mesh.png', dpi=my_dpi * 10)
+for i in range(1, 21):
+    # eik_vals = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/TestIndex/ComputedValues_"+ str(i) + ".bin")
+    # eik_paths = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/TestIndex/Paths_20"+ ".bin", dtype=np.uint32)
+    # eik_grads = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/TestIndex/ComputedGradients_"+ str(i) + ".bin");
+    # eik_grads = eik_grads.reshape(len(eik_coords), 2)
+    # # path1 = buildPath(1, eik_paths)
+    # # path2 = buildPath(2, eik_paths)
+    # # path3 = buildPath(3, eik_paths)
+    # # path4 = buildPath(4, eik_paths)
+    # nu1 = 1.348*factors[i-1]
+    # nu2 = 1.452*factors[i-1]
+    
+    # # We plot the computed eikonal values in 3D
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # ax = plt.axes(projection='3d')
+    # ax.scatter(eik_coords[:, 0], eik_coords[:, 1], eik_vals, c= eik_vals, cmap=colormap2)
+    # plt.title("Computed eikonal values, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    # plt.show(block = False)
+    # rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
+    # rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/ComputedValues_'+str(i)+'.gif', dpi=80, writer='Pillow')
+    
+    # # We interpolate the solution 
+    # # To be able to use LinearTriInterpolator
+    # interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
+    # zi_lin = interp_lin(xi, -yi+6)
+    
+    # #Now we can plot according to the computed eikonal values
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # im_bar1 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2, levels = 25)
+    # plt.scatter(eik_coords[:, 0], eik_coords[:, 1], marker = '.' , c = eik_vals, cmap = colormap2)
+    # plt.title("Linear interpolation, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    # plt.show(block = False)
+    # plt.colorbar(im_bar1)
+    figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/LinearInt_Contour_'+str(i)+'.png'
+    figsContours.extend([figName_Contour])
+    # plt.savefig(figName_Contour, dpi=my_dpi * 10)
+    
+    # # We plot it with imshow
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # im_bar2 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
+    # # plt.plot( eik_coords[path1, 0], eik_coords[path1, 1], marker='.',linestyle='dashed', c = '#040072' )
+    # # plt.plot( eik_coords[path2, 0], eik_coords[path2, 1], marker='.',linestyle='dashed', c = '#05009c' )
+    # # plt.plot( eik_coords[path3, 0], eik_coords[path3, 1], marker='.',linestyle='dashed', c = '#0600c6' )
+    # # plt.plot( eik_coords[path4, 0], eik_coords[path4, 1], marker='.',linestyle='dashed', c = '#0700e5' )
+    # plt.title("Linear interpolation, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    # plt.show(block = False)
+    # plt.colorbar(im_bar2)
+    figName_LinInt = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/LinearInt_'+str(i)+'.png'
+    figsLinInt.extend([figName_LinInt])
+    # plt.savefig(figName_LinInt, dpi=my_dpi * 10)
 
 
+# Build GIF of the contours
+print('creating gif\n')
+images = []
+for filename in figsContours:
+    images.append(imageio.imread(filename))
+imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/ContoursChange.gif', images)
 
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar49 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
-plt.title("Linear interpolation, test geometry H4")
-plt.show(block = False)
-plt.colorbar(im_bar49)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_LinearInt.png', dpi=my_dpi * 10)
+    
+# Build GIF of the imshows
+print('creating gif\n')
+images = []
+for filename in figsLinInt:
+    images.append(imageio.imread(filename))
+imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/LinIntChange.gif', images)
+        
 
 
 
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar50 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
-plt.quiver(eik_coords_H4[:, 0], eik_coords_H4[:, 1], eik_grads_H4[:, 0], eik_grads_H4[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, test geometry H4")
-plt.show(block = False)
-plt.colorbar(im_bar50)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/H4/H4_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-# averageH += [average_edge_length(eik_coords_H4, triangles_H4)]
-# errorNorm += [norm( np.subtract(eik_vals_H4, exact_values_H4)  )/norm( exact_values_H4 )]
-# nPointsH += [len(eik_coords_H4)]
-
-plt.show()
+#plt.show()

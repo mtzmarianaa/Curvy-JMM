@@ -35,4 +35,4 @@ void saveComputedValues(eik_gridS *eik_g, const char *pathFile);
 
 void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);
 
-void savePathsTaken(eik_gridS *eik_g, const char *pathFile_x, const char *pathFile_y);
+void savePathsTaken(eik_gridS *eik_g, const char *pathFile);
