@@ -4,9 +4,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm 
-from math import sqrt
-import matplotlib.tri as tri
-from scipy.optimize import NonlinearConstraint, minimize
+from math import sqrt, cos, sin, pi, atan
+from scipy.optimize import minimize, minimize_scalar
 import matplotlib.animation as animation
 import tabulate
 from numpy import subtract as sb
@@ -17,9 +16,13 @@ sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 
-nx = 36*3
-ny = 42*3
+nx = 36*5
+ny = 42*5
 my_dpi=96
+eta1 = 1.0
+eta2 = 1.452
+angleMin = pi - atan( (20/sqrt(13))/(30/sqrt(13)) )
+angleMax = 3*pi/2
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -48,22 +51,6 @@ def average_edge_length(eik_coords, faces):
             sum += sqrt(  (eik_coords[p2, 0] - eik_coords[p3, 0])**2 +  (eik_coords[p2, 1] - eik_coords[p3, 1])**2 )
     return sum/nEdges
 
-def constrainOnBoundary(x):
-    '''
-    function for the constrain |x[0]| = x[1] (i.e. the specification that xlambda is ON the boundary between the two regions)
-    '''
-    return x[1] - abs(x[0])
-
-
-def IndexRefractionRegions(x):
-    '''
-    Slowness function according to the two sections present in this particular domain
-    '''
-    if constrainOnBoundary(x)> 0:
-        s = 1.348
-    else:
-        s = 1
-    return s
         
 
 def whichRegion(xhat):
@@ -98,7 +85,7 @@ def consRayIntoCircle(z):
 
 def consRayFromCircle(z, xhat):
     '''
-    Constrain such that the segment from x0 to p1 is inside the circle
+    Constrain such that the segment from p1 to xhat is inside the circle
     '''
     p1 = z[2:4]
     t1 = sb(xhat, p1)
@@ -106,8 +93,11 @@ def consRayFromCircle(z, xhat):
 
 def pointOnCircle(p):
     return 10 - norm(p)
+
+def paramCircle(theta):
+    return 10*cos(theta), 10*sin(theta)
         
-def trueSolution(xi, yi):
+def trueSolution(xi, yi, path = False):
     '''
     Analytic solution
     '''
@@ -117,7 +107,7 @@ def trueSolution(xi, yi):
         if(regA1Bool(xhat)): # if xhat is directly accesible from x0 just via reg1
             tau = norm(sb(xhat, x0))
         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
-            f_t1 = lambda z: norm(sb(x0, z[0:2])) + 1.452*norm(sb(z[0:2], z[2:4])) + norm(sb(z[2:4], xhat))
+            f_t1 = lambda z: eta1*norm(sb(x0, z[0:2])) + eta2*norm(sb(z[0:2], z[2:4])) + eta1*norm(sb(z[2:4], xhat))
             cons1 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, 
                      {'type':'ineq', 'fun': lambda z: consRayFromCircle(z, xhat) },
                      {'type':'eq', 'fun': lambda z: pointOnCircle(z[0:2]) },
@@ -130,14 +120,15 @@ def trueSolution(xi, yi):
             t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 )
             tau = min(f_t1(t1_opt.x), f_t1(t1_optPrime.x), f_t1(t1_optPrime2.x), f_t1(t1_optPrime3.x), f_t1(t1_optPrime4.x), f_t1(t1_optPrime5.x))
     else: # x0 starts in reg1, goes into reg3 and that's it
-        f_t2 = lambda z: norm(sb(x0, z[0:2])) + 1.452*norm(sb(z[0:2], xhat))
-        cons2 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, # segment from x0 to pt0 goes into the circle
-                         {'type':'eq', 'fun': lambda z: pointOnCircle(z) }] 
-        t2_opt = minimize(f_t2, [0, -10], constraints = cons2)
-        t2_opt2 = minimize(f_t2, [-30/sqrt(13), 20/sqrt(13)], constraints = cons2)
-        t2_opt3 = minimize(f_t2, [-3*sqrt(10/13), -2*sqrt(10/13)], constraints = cons2)
-        tau = min( f_t2(t2_opt.x) , f_t2(t2_opt2.x), f_t2(t2_opt3.x))
-    return tau
+        def f_t2(theta):
+            p_x, p_y = paramCircle(theta)
+            return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xhat[0])**2 + (p_y - xhat[1])**2  )
+        t2_opt = minimize_scalar(f_t2, bounds=(angleMin, angleMax)).x
+        tau = f_t2(t2_opt)
+    if path:
+        return tau, t2_opt
+    else:
+        return tau
 
 
 n = 0
@@ -153,6 +144,19 @@ nPointsH = []
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
 true_solGrid = np.zeros(xi.shape)
 
+x_test = 5
+y_test = 7
+
+eikonal_test, theta_test = trueSolution(x_test, y_test, path = True)
+
+p_x_test, p_y_test = paramCircle(theta_test)
+
+x_test2 = 5*sqrt(2) - 0.01
+y_test2 = 5*sqrt(2) - 0.01
+
+eikonal_test2, theta_test2 = trueSolution(x_test2, y_test2, path = True)
+
+p_x_test2, p_y_test2 = paramCircle(theta_test2)
 
 for i in range(ny):
     for j in range(nx):
@@ -166,7 +170,7 @@ im1 = plt.imshow( true_solGrid, cmap = colormap2, extent=[-18,18,-18,24]  )
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im1)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution3.png', dpi=my_dpi * 10)
 
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -182,7 +186,15 @@ im_bar1 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 25)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im_bar1)
-figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour.png'
+plt.scatter(-15, -10, s=20, c='k', zorder=2)
+plt.scatter(x_test, y_test, s=20, c='k', zorder=2)
+plt.scatter(p_x_test, p_y_test, s=20, c='k', zorder=2)
+plt.plot([-15, p_x_test, x_test], [-10, p_y_test, y_test], c='k', linewidth=1, zorder=2)
+plt.scatter(-15, -10, s=20, c='k', zorder=2)
+plt.scatter(x_test2, y_test2, s=20, c='k', zorder=2)
+plt.scatter(p_x_test2, p_y_test2, s=20, c='k', zorder=2)
+plt.plot([-15, p_x_test2, x_test2], [-10, p_y_test2, y_test], c='k', linewidth=1, zorder=2)
+figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour3.png'
 plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
 # Plot in 3D and save the gif
@@ -192,7 +204,7 @@ ax.scatter(xi, yi, true_solGrid, c= true_solGrid, cmap=colormap2)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour.gif', dpi=80, writer='Pillow')
+rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour3.gif', dpi=80, writer='Pillow')
 
 
 # Save the computed values (in case they are useful)
