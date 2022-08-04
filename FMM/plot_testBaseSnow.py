@@ -16,13 +16,14 @@ sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 
-nx = 36*5
-ny = 42*5
+nx = 36*2
+ny = 42*2
 my_dpi=96
 eta1 = 1.0
 eta2 = 1.452
-angleMin = pi - atan( (20/sqrt(13))/(30/sqrt(13)) )
-angleMax = 3*pi/2
+x0 = np.array([-15, -10])
+center = np.array([0,0])
+R = 10
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -83,6 +84,7 @@ def consRayIntoCircle(z):
     t0 = sb(p0, x0)
     return np.dot(t0, p0)
 
+
 def consRayFromCircle(z, xhat):
     '''
     Constrain such that the segment from p1 to xhat is inside the circle
@@ -95,14 +97,68 @@ def pointOnCircle(p):
     return 10 - norm(p)
 
 def paramCircle(theta):
-    return 10*cos(theta), 10*sin(theta)
-        
+    '''
+    Parametrization of the boundary - the circle with radius R centered at center
+    '''
+    return R*cos(theta) + center[0], R*sin(theta) + center[1]
+
+def pointsTangentFromSource(xSource, ySource, xCenter, yCenter, R):
+    '''
+    Function that returns the coordinates of the two points on the tangent lines of the circle centered at xCenter, yCenter with 
+    radius R that go through xSource, ySouce and the inner angle
+    '''
+    rSource = sqrt( (xSource - xCenter)**2 + (ySource - yCenter)**2  ) # distance from the source point to the center of the circle
+    angle_Source = np.arctan2( ySource - yCenter, xSource - xCenter ) # signed angle from (1, 0) to the source point
+    thtan = np.arccos(R/rSource)
+    zx_1, zy_1 = R*np.cos( angle_Source + thtan  ), R*np.sin( angle_Source + thtan  )
+    zx_2, zy_2 = R*np.cos( angle_Source - thtan  ), R*np.sin( angle_Source - thtan  )
+    inner_angleSource = pi - pi/2 - thtan # Angle between ray from Source to center and the tangents (since the inner angles of a triangle must add up pi)
+    return zx_1, zy_1, zx_2, zy_2, angle_Source,thtan, inner_angleSource
+
+def InsideTwoSegmentLine(xi, yi, angle_Source, thtan):
+    '''
+    Minimization problem. The target is inside the circle, we need to find a point on the boundary that is 
+    directly accessible from the source. The path taken from the source to the target is made up from
+    two segments of straight lines (Snell's law)
+    '''
+    def f_t2(theta):
+        p_x, p_y = paramCircle(theta)
+        return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xi)**2 + (p_y - yi)**2  )
+    t2_opt = minimize_scalar(f_t2, bounds=(angle_Source - thtan, angle_Source + thtan), method='bounded').x
+    tau_opt = f_t2(t2_opt)
+    return tau_opt
+    
+def InsideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan):
+    '''
+    Minimization problem. The target is inside the circle, we need to find a point on the boundary such that
+    the minimum path goes directly to either p1 or p2 (tangent points), then goes AROUND the circle, finally goes inside
+    to reach the target
+    '''
+    n1 = sqrt( (xi - zx_1)**2 + (yi - zy_1)**2 ) # distance from p1 to the target
+    n2 = sqrt( (xi - zx_2)**2 + (yi - zy_2)**2 ) # distance from p2 to the target
+    # From which point its going to go around depends on which is closer (this makes sense because the speed of sound is piecewise constant)
+    if ( n1 <= n2):
+        zx, zy = zx_1, zy_1
+    else:
+        zx, zy = zx_2, zy_2
+    def f_t2(theta):
+        p_x, p_y = paramCircle(theta)
+        centralAngle = 
+        return eta1*sqrt( (xi - zx)**2 + (yi - zy)**2 ) + 
+
 def trueSolution(xi, yi, path = False):
     '''
     Analytic solution
     '''
     xhat = np.array([xi, yi])
-    x0 = np.array([-15, -10])
+    tau = np.inf
+    tau_opt = np.inf
+    zx_1, zy_1, zx_2, zy_2, angle_Source, thtan, inner_angleSource = pointsTangentFromSource(x0[0], x0[1], center[0], center[1], R)
+    if( xi**2 + yi**2 <= R**2 ):
+        # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
+        tau_optOriginal = InsideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
+        
+    
     if(whichRegion(xhat)== 1): 
         if(regA1Bool(xhat)): # if xhat is directly accesible from x0 just via reg1
             tau = norm(sb(xhat, x0))
@@ -112,18 +168,18 @@ def trueSolution(xi, yi, path = False):
                      {'type':'ineq', 'fun': lambda z: consRayFromCircle(z, xhat) },
                      {'type':'eq', 'fun': lambda z: pointOnCircle(z[0:2]) },
                      {'type':'eq', 'fun': lambda z: pointOnCircle(z[2:4]) }]
-            t1_opt = minimize( f_t1, [0, -10, 10, 0], constraints = cons1 )
-            t1_optPrime =  minimize( f_t1, [0, -10, -10, 0], constraints = cons1 )
-            t1_optPrime2 =  minimize( f_t1, [0, -10, 5*sqrt(2), -5*sqrt(2)], constraints = cons1 )
-            t1_optPrime3 =  minimize( f_t1, [0, -10, -5*sqrt(2), -5*sqrt(2)], constraints = cons1 )
-            t1_optPrime4 =  minimize( f_t1, [-5*sqrt(2), -5*sqrt(2), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 )
-            t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 )
-            tau = min(f_t1(t1_opt.x), f_t1(t1_optPrime.x), f_t1(t1_optPrime2.x), f_t1(t1_optPrime3.x), f_t1(t1_optPrime4.x), f_t1(t1_optPrime5.x))
+            t1_opt = minimize( f_t1, [0, -10, 10, 0], constraints = cons1 ).x
+            t1_optPrime =  minimize( f_t1, [0, -10, -10, 0], constraints = cons1 ).x
+            t1_optPrime2 =  minimize( f_t1, [0, -10, 5*sqrt(2), -5*sqrt(2)], constraints = cons1 ).x
+            t1_optPrime3 =  minimize( f_t1, [0, -10, -5*sqrt(2), -5*sqrt(2)], constraints = cons1 ).x
+            t1_optPrime4 =  minimize( f_t1, [-5*sqrt(2), -5*sqrt(2), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
+            t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
+            tau = min(f_t1(t1_opt), f_t1(t1_optPrime), f_t1(t1_optPrime2), f_t1(t1_optPrime3), f_t1(t1_optPrime4), f_t1(t1_optPrime5))
     else: # x0 starts in reg1, goes into reg3 and that's it
         def f_t2(theta):
             p_x, p_y = paramCircle(theta)
             return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xhat[0])**2 + (p_y - xhat[1])**2  )
-        t2_opt = minimize_scalar(f_t2, bounds=(angleMin, angleMax)).x
+        t2_opt = minimize_scalar(f_t2, bounds=(angleMin, angleMax), method='bounded').x
         tau = f_t2(t2_opt)
     if path:
         return tau, t2_opt
@@ -144,6 +200,9 @@ nPointsH = []
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
 true_solGrid = np.zeros(xi.shape)
 
+# We want to see which path these testing points take
+
+# Test point 1
 x_test = 5
 y_test = 7
 
@@ -151,12 +210,22 @@ eikonal_test, theta_test = trueSolution(x_test, y_test, path = True)
 
 p_x_test, p_y_test = paramCircle(theta_test)
 
+# Test point 2
 x_test2 = 5*sqrt(2) - 0.01
 y_test2 = 5*sqrt(2) - 0.01
 
 eikonal_test2, theta_test2 = trueSolution(x_test2, y_test2, path = True)
 
 p_x_test2, p_y_test2 = paramCircle(theta_test2)
+
+# Test point 3
+x_test3 = 15
+y_test3 = 10
+
+eikonal_test3, theta_test3 = trueSolution(x_test3, y_test3, path = True)
+
+p_x_test3, p_y_test3 = paramCircle(theta_test3)
+
 
 for i in range(ny):
     for j in range(nx):
@@ -186,14 +255,19 @@ im_bar1 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 25)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im_bar1)
+# Add test point 1
 plt.scatter(-15, -10, s=20, c='k', zorder=2)
 plt.scatter(x_test, y_test, s=20, c='k', zorder=2)
 plt.scatter(p_x_test, p_y_test, s=20, c='k', zorder=2)
 plt.plot([-15, p_x_test, x_test], [-10, p_y_test, y_test], c='k', linewidth=1, zorder=2)
-plt.scatter(-15, -10, s=20, c='k', zorder=2)
+# Add test point 2
 plt.scatter(x_test2, y_test2, s=20, c='k', zorder=2)
 plt.scatter(p_x_test2, p_y_test2, s=20, c='k', zorder=2)
-plt.plot([-15, p_x_test2, x_test2], [-10, p_y_test2, y_test], c='k', linewidth=1, zorder=2)
+plt.plot([-15, p_x_test2, x_test2], [-10, p_y_test2, y_test2], c='k', linewidth=1, zorder=2)
+# Add test point 3
+plt.scatter(x_test3, y_test3, s=20, c='k', zorder=2)
+plt.scatter(p_x_test3, p_y_test3, s=20, c='k', zorder=2)
+plt.plot([-15, p_x_test3, x_test3], [-10, p_y_test3, y_test3], c='k', linewidth=1, zorder=2)
 figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour3.png'
 plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
