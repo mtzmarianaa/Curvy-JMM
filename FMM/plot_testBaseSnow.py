@@ -1,6 +1,7 @@
 # Script to generate plots from the square with just a circle
 
 # SCRIPT TO VISUALIZE ERRORS 
+from cmath import asin
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm 
@@ -9,6 +10,7 @@ from scipy.optimize import minimize, minimize_scalar
 import matplotlib.animation as animation
 import tabulate
 from numpy import subtract as sb
+from matplotlib.patches import Arc
 
 
 colormap1 = plt.cm.get_cmap('cubehelix')
@@ -24,6 +26,7 @@ eta2 = 1.452
 x0 = np.array([-15, -10])
 center = np.array([0,0])
 R = 10
+eps = np.finfo(np.float64).resolution
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -115,7 +118,7 @@ def pointsTangentFromSource(xSource, ySource, xCenter, yCenter, R):
     inner_angleSource = pi - pi/2 - thtan # Angle between ray from Source to center and the tangents (since the inner angles of a triangle must add up pi)
     return zx_1, zy_1, zx_2, zy_2, angle_Source,thtan, inner_angleSource
 
-def InsideTwoSegmentLine(xi, yi, angle_Source, thtan):
+def insideTwoSegmentLine(xi, yi, angle_Source, thtan):
     '''
     Minimization problem. The target is inside the circle, we need to find a point on the boundary that is 
     directly accessible from the source. The path taken from the source to the target is made up from
@@ -124,15 +127,49 @@ def InsideTwoSegmentLine(xi, yi, angle_Source, thtan):
     def f_t2(theta):
         p_x, p_y = paramCircle(theta)
         return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xi)**2 + (p_y - yi)**2  )
-    t2_opt = minimize_scalar(f_t2, bounds=(angle_Source - thtan, angle_Source + thtan), method='bounded').x
-    tau_opt = f_t2(t2_opt)
-    return tau_opt
+    bounds = (angle_Source - thtan, angle_Source + thtan)
+    opt_theta = minimize_scalar(f_t2, None, bounds, method='bounded', tol=eps).x 
+    tau_opt = f_t2(opt_theta)
+    return tau_opt, opt_theta
     
-def InsideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan):
+def insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
     '''
-    Minimization problem. The target is inside the circle, we need to find a point on the boundary such that
-    the minimum path goes directly to either p1 or p2 (tangent points), then goes AROUND the circle, finally goes inside
-    to reach the target
+    In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
+    outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
+    circle before being shed tangentially into the shadow of the circle.
+    '''
+    bounds = (angle_Source + thtan, angle_Source - thtan + 2*pi)
+    def fToOptimize1(theta):
+        p_x, p_y = paramCircle(theta)
+        centralAngle = abs( 2*asin( (sqrt( (p_x-zx_1)**2 + (p_y-zy_1)**2 ))/(2*R) )  )
+        # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
+        # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+        return eta1*sqrt(  (x0[0]-zx_1)**2 + (x0[1]-zy_1)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
+    opt_theta1 = minimize_scalar(fToOptimize1,  None, bounds, method='bounded', tol=eps).x 
+    tau_opt1 = fToOptimize1(opt_theta1)
+    def fToOptimize2(theta):
+        p_x, p_y = paramCircle(theta)
+        centralAngle = abs( 2*asin( (sqrt( (p_x-zx_2)**2 + (p_y-zy_2)**2 ))/(2*R) )  )
+        # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
+        # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+        return eta1*sqrt(  (x0[0]-zx_2)**2 + (x0[1]-zy_2)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
+    opt_theta2 = minimize_scalar(fToOptimize2,  None, bounds, method='bounded', tol=eps).x 
+    tau_opt2 = fToOptimize2(opt_theta2)
+    if(tau_opt1 < tau_opt2):
+        tau_opt = tau_opt1
+        opt_theta = opt_theta1
+        angle_z = np.arctan2(zy_1, zx_1)
+    else:
+        tau_opt = tau_opt2
+        opt_theta = opt_theta2
+        angle_z = np.arctan2(zy_2, zx_2)
+    return tau_opt, opt_theta, angle_z
+
+def outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
+    '''
+    In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
+    outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
+    circle before being shed tangentially into the shadow of the circle.
     '''
     n1 = sqrt( (xi - zx_1)**2 + (yi - zy_1)**2 ) # distance from p1 to the target
     n2 = sqrt( (xi - zx_2)**2 + (yi - zy_2)**2 ) # distance from p2 to the target
@@ -141,10 +178,31 @@ def InsideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan):
         zx, zy = zx_1, zy_1
     else:
         zx, zy = zx_2, zy_2
-    def f_t2(theta):
-        p_x, p_y = paramCircle(theta)
-        centralAngle = 
-        return eta1*sqrt( (xi - zx)**2 + (yi - zy)**2 ) + 
+    angle_z = abs( angle_Source - thtan )
+    px_1, py_1, px_2, py_2, angle_xHat,thtan_hat, inner_angleXhat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
+    if( sqrt((px_1 - zx)**2 + (py_1 - zy)**2) <=  sqrt((px_2 - zx)**2 + (py_2 - zy)**2)  ):
+        px, py = px_1, py_1
+    else:
+        px, py = px_2, py_2
+    centralAngle = abs( angle_xHat - angle_z )
+    # print('Angle from the (1,0) to one of the tangent points z1 or z2:  ', angle_z)
+    # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+    opt_theta = np.arctan2(py, px)
+    tau_opt = eta1*sqrt(  (x0[0] - zx)**2 + (x0[1] - zy)**2  ) + eta1*( centralAngle*R ) + eta1*sqrt(  (xi - px)**2 + (yi - py)**2  )
+    return tau_opt, opt_theta
+
+def drawPathTaken(path_taken, type_path):
+    if(type_path == 1): # means the target is inside the circle and is reached by 2 segments of lines
+        plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
+        plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
+        plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
+        plt.plot(path_taken[0], path_taken[1], c='k', linewidth=1, zorder=2)
+    if(type_path == 2): # means the target is inside the circle and it is reached by a creeping ray
+        plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
+        plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
+        plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
+        ax = fig.gca()
+        ax.add_patch(Arc((center[0], center[1]), R,  R, theta1 = path_taken[2], theta2 = path_taken[3], edgecolor="#000536", lw=1.5))
 
 def trueSolution(xi, yi, path = False):
     '''
@@ -152,16 +210,29 @@ def trueSolution(xi, yi, path = False):
     '''
     xhat = np.array([xi, yi])
     tau = np.inf
-    tau_opt = np.inf
+    opt_theta = np.inf
+    type_path = -1
     zx_1, zy_1, zx_2, zy_2, angle_Source, thtan, inner_angleSource = pointsTangentFromSource(x0[0], x0[1], center[0], center[1], R)
-    if( xi**2 + yi**2 <= R**2 ):
+    if( xi**2 + yi**2 <= R**2 ): #xHat is outside the circle
         # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
-        tau_optOriginal = InsideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
-        
-    
-    if(whichRegion(xhat)== 1): 
+        tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
+        tau_optCreepingRay, opt_thetaShedRay, angle_z = insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source) # reached by going around the circle
+        tau = min(tau_optOriginal, tau_optCreepingRay)
+        if(tau_optOriginal < tau_optCreepingRay):
+            tau = tau_optOriginal
+            px_opt, py_opt = paramCircle(opt_thetaOriginal)
+            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi]]
+            type_path = 1
+        else:
+            tau = tau_optCreepingRay
+            px_opt, py_opt = paramCircle(opt_thetaShedRay)
+            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi], opt_thetaShedRay, angle_z]
+            type_path = 2
+    else: 
         if(regA1Bool(xhat)): # if xhat is directly accesible from x0 just via reg1
             tau = norm(sb(xhat, x0))
+            type_path = 3
+            path_taken = [[x0[0], xi], [x0[1], yi]]
         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
             f_t1 = lambda z: eta1*norm(sb(x0, z[0:2])) + eta2*norm(sb(z[0:2], z[2:4])) + eta1*norm(sb(z[2:4], xhat))
             cons1 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, 
@@ -175,14 +246,8 @@ def trueSolution(xi, yi, path = False):
             t1_optPrime4 =  minimize( f_t1, [-5*sqrt(2), -5*sqrt(2), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
             t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
             tau = min(f_t1(t1_opt), f_t1(t1_optPrime), f_t1(t1_optPrime2), f_t1(t1_optPrime3), f_t1(t1_optPrime4), f_t1(t1_optPrime5))
-    else: # x0 starts in reg1, goes into reg3 and that's it
-        def f_t2(theta):
-            p_x, p_y = paramCircle(theta)
-            return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xhat[0])**2 + (p_y - xhat[1])**2  )
-        t2_opt = minimize_scalar(f_t2, bounds=(angleMin, angleMax), method='bounded').x
-        tau = f_t2(t2_opt)
     if path:
-        return tau, t2_opt
+        return tau, path_taken, type_path
     else:
         return tau
 
@@ -203,28 +268,24 @@ true_solGrid = np.zeros(xi.shape)
 # We want to see which path these testing points take
 
 # Test point 1
-x_test = 5
-y_test = 7
+x_test, y_test = 5, 7
+print('Test 1: ',x_test, y_test)
+eikonal_test, path_taken_test, type_path = trueSolution(x_test, y_test, path = True)
 
-eikonal_test, theta_test = trueSolution(x_test, y_test, path = True)
-
-p_x_test, p_y_test = paramCircle(theta_test)
 
 # Test point 2
-x_test2 = 5*sqrt(2) - 0.01
-y_test2 = 5*sqrt(2) - 0.01
+x_test2, y_test2 = paramCircle(5*pi/8)
+print('Test 3: ',x_test2, y_test2)
+eikonal_test2, path_taken_test2, type_path2 = trueSolution(x_test2, y_test2, path = True)
 
-eikonal_test2, theta_test2 = trueSolution(x_test2, y_test2, path = True)
 
-p_x_test2, p_y_test2 = paramCircle(theta_test2)
+# # Test point 3
+x_test3, y_test3 = paramCircle(7*pi/4)
+x_test3, y_test3 = x_test3+0.03, y_test3+0.04
+print('Test 3: ',x_test3, y_test3)
 
-# Test point 3
-x_test3 = 15
-y_test3 = 10
+eikonal_test3, path_taken_test3, type_path3 = trueSolution(x_test3, y_test3, path = True)
 
-eikonal_test3, theta_test3 = trueSolution(x_test3, y_test3, path = True)
-
-p_x_test3, p_y_test3 = paramCircle(theta_test3)
 
 
 for i in range(ny):
@@ -239,7 +300,7 @@ im1 = plt.imshow( true_solGrid, cmap = colormap2, extent=[-18,18,-18,24]  )
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im1)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution3.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution5.png', dpi=my_dpi * 10)
 
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
@@ -256,19 +317,12 @@ plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im_bar1)
 # Add test point 1
-plt.scatter(-15, -10, s=20, c='k', zorder=2)
-plt.scatter(x_test, y_test, s=20, c='k', zorder=2)
-plt.scatter(p_x_test, p_y_test, s=20, c='k', zorder=2)
-plt.plot([-15, p_x_test, x_test], [-10, p_y_test, y_test], c='k', linewidth=1, zorder=2)
+drawPathTaken(path_taken_test, type_path)
 # Add test point 2
-plt.scatter(x_test2, y_test2, s=20, c='k', zorder=2)
-plt.scatter(p_x_test2, p_y_test2, s=20, c='k', zorder=2)
-plt.plot([-15, p_x_test2, x_test2], [-10, p_y_test2, y_test2], c='k', linewidth=1, zorder=2)
+drawPathTaken(path_taken_test2, type_path2)
 # Add test point 3
-plt.scatter(x_test3, y_test3, s=20, c='k', zorder=2)
-plt.scatter(p_x_test3, p_y_test3, s=20, c='k', zorder=2)
-plt.plot([-15, p_x_test3, x_test3], [-10, p_y_test3, y_test3], c='k', linewidth=1, zorder=2)
-figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour3.png'
+drawPathTaken(path_taken_test3, type_path3)
+figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour5.png'
 plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
 # Plot in 3D and save the gif
@@ -278,7 +332,7 @@ ax.scatter(xi, yi, true_solGrid, c= true_solGrid, cmap=colormap2)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour3.gif', dpi=80, writer='Pillow')
+rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour5.gif', dpi=80, writer='Pillow')
 
 
 # Save the computed values (in case they are useful)
@@ -364,7 +418,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base h1")
 # # plt.show(block = False)
 # # plt.colorbar(im4)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -387,7 +441,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base h1")
 # # plt.show(block = False)
 # # plt.colorbar(im6)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -400,7 +454,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base h1")
 # # plt.show(block = False)
 # # plt.colorbar(im7)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -414,7 +468,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h1")
 # plt.show(block = False)
 # plt.colorbar(im8)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -424,7 +478,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h1")
 # plt.show(block = False)
 # plt.colorbar(im9)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -435,7 +489,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h1")
 # plt.show(block = False)
 # plt.colorbar(im10)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -519,7 +573,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base h2")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar14)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -542,7 +596,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base h2")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar16)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -555,7 +609,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base h2")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar17)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -569,7 +623,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h2")
 # plt.show(block = False)
 # plt.colorbar(im_bar18)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -579,7 +633,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h2")
 # plt.show(block = False)
 # plt.colorbar(im_bar19)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -590,7 +644,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h2")
 # plt.show(block = False)
 # plt.colorbar(im_bar20)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H2/H2_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -674,7 +728,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base h3")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar24)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -697,7 +751,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base h3")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar26)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -710,7 +764,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base h3")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar27)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -724,7 +778,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h3")
 # plt.show(block = False)
 # plt.colorbar(im_bar28)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -734,7 +788,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h3")
 # plt.show(block = False)
 # plt.colorbar(im_bar29)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -745,7 +799,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h3")
 # plt.show(block = False)
 # plt.colorbar(im_bar30)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H3/H3_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -828,7 +882,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base h4")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar34)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -851,7 +905,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base h4")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar36)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -864,7 +918,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base h4")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar37)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -878,7 +932,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h4")
 # plt.show(block = False)
 # plt.colorbar(im_bar38)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -888,7 +942,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h4")
 # plt.show(block = False)
 # plt.colorbar(im_bar39)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -899,7 +953,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h4")
 # plt.show(block = False)
 # plt.colorbar(im_bar40)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H4/H4_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -983,7 +1037,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base H5")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar34)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1006,7 +1060,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base H5")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar36)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -1019,7 +1073,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base H5")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar37)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1033,7 +1087,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base H5")
 # plt.show(block = False)
 # plt.colorbar(im_bar38)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1043,7 +1097,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base H5")
 # plt.show(block = False)
 # plt.colorbar(im_bar39)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -1054,7 +1108,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base H5")
 # plt.show(block = False)
 # plt.colorbar(im_bar40)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H5/H5_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -1138,7 +1192,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base h6")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar44)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1161,7 +1215,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base h6")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar46)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -1174,7 +1228,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base h6")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar47)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1188,7 +1242,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h6")
 # plt.show(block = False)
 # plt.colorbar(im_bar48)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1198,7 +1252,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base h6")
 # plt.show(block = False)
 # plt.colorbar(im_bar49)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -1209,7 +1263,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h6")
 # plt.show(block = False)
 # plt.colorbar(im_bar50)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -1294,7 +1348,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Exact solution, test geometry just base H7")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar34)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_ExactSolution.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_ExactSolution.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1317,7 +1371,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors, test geometry just base H7")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar36)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_PointErrors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_PointErrors.png', dpi=my_dpi * 10)
 
 
 
@@ -1330,7 +1384,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.title("Point wise absolute errors and triangulation, test geometry just base H7")
 # # plt.show(block = False)
 # # plt.colorbar(im_bar37)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_PointErrors_Mesh.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1344,7 +1398,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base H7")
 # plt.show(block = False)
 # plt.colorbar(im_bar38)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt_Mesh.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
@@ -1354,7 +1408,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation, test geometry just base H7")
 # plt.show(block = False)
 # plt.colorbar(im_bar39)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt.png', dpi=my_dpi * 10)
 
 
 
@@ -1365,7 +1419,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base H7")
 # plt.show(block = False)
 # plt.colorbar(im_bar40)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt_Grad.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_LinearInt_Grad.png', dpi=my_dpi * 10)
 
 
 
@@ -1391,7 +1445,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.xlabel("Average edge length")
 # # plt.ylabel("Error")
 # # plt.show(block = False)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLength.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLength.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1400,7 +1454,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.xlabel("Number of points in triangulation")
 # # plt.ylabel("Error")
 # # plt.show(block = False)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPoints.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPoints.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1409,7 +1463,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.ylabel("Time taken to solve (sec)")
 # # plt.xlabel("Average edge length")
 # # plt.show(block = False)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_Times.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_Times.png', dpi=my_dpi * 10)
 
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1418,7 +1472,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # plt.xlabel("Time taken to solve (sec)")
 # # plt.ylabel("Error")
 # # plt.show(block = False)
-# # plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errors.png', dpi=my_dpi * 10)
+# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errors.png', dpi=my_dpi * 10)
 
 
 # # table_sqTr = {"Average h": averageH, "Time taken": times, "l2 errors": errorNorm, "Points in triangulation": nPointsH}

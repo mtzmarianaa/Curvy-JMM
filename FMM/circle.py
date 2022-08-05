@@ -8,13 +8,16 @@ from math import pi
 
 
 eta0 = 1
-eta1 = 4
+eta1 = 1.452
 
-r = 3
-R = 2
+r = 24
+R = 10
+my_dpi=96
 
-xsrc, ysrc = -2.5, -2.5
-xhat, yhat = -0.75, 0
+xsrc, ysrc = -15, -10
+# xhat, yhat = -3.826834323650897, 9.238795325112868
+xhat, yhat = 5, 7
+# xhat, yhat = 7.101067811865475, -7.031067811865477
 
 rsrc = np.sqrt(xsrc**2 + ysrc**2)
 thsrc = np.arctan2(ysrc, xsrc)
@@ -69,8 +72,8 @@ for i, j in it.product(range(N), range(N)):
 
 xopt, yopt, thopt, tauopt = get_opt_on_circ(xhat, yhat)
 
-plt.figure()
-plt.contourf(X, Y, Tau, levels=11, cmap=cc.cm.blues)
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.contourf(X, Y, Tau, cmap=cc.cm.blues, levels = 25)
 plt.colorbar()
 plt.plot(Xcirc, Ycirc, c='k', linewidth=1, zorder=2)
 plt.plot([xsrc, xsrc + 20*(xtanp - xsrc)], [ysrc, ysrc + 20*(ytanp - ysrc)],

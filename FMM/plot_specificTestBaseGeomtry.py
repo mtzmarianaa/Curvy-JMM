@@ -44,10 +44,10 @@ figsLinInt = []
 
 factors = [1/1.452, 1/1.348, 1/1.24, 1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75, 5]
 
-for i in range(1, 11):
-    eik_vals = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/ComputedValues_"+ str(i) + ".bin")
-    # eik_paths = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/Paths_"+ str(i) ".bin", dtype=np.uint32)
-    eik_grads = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/ComputedGradients_"+ str(i) + ".bin");
+for i in range(1, 2):
+    eik_vals = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/ComputedValues.bin")
+    # eik_paths = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Paths_"+ str(i) ".bin", dtype=np.uint32)
+    eik_grads = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/ComputedGradients"+ ".bin");
     eik_grads = eik_grads.reshape(len(eik_coords), 2)
     nu1 = 1.348*factors[i-1]
     nu2 = 1.452*factors[i-1]
@@ -56,10 +56,10 @@ for i in range(1, 11):
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     ax = plt.axes(projection='3d')
     ax.scatter(eik_coords[:, 0], eik_coords[:, 1], eik_vals, c= eik_vals, cmap=colormap2)
-    plt.title("Computed eikonal values, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    plt.title("Computed eikonal values, test geometry eta = 1.452")
     plt.show(block = False)
     rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-    rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/ComputedValues_'+str(i)+'.gif', dpi=80, writer='Pillow')
+    rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ComputedValues_'+'.gif', dpi=80, writer='Pillow')
     
     # We interpolate the solution 
     # To be able to use LinearTriInterpolator
@@ -71,10 +71,10 @@ for i in range(1, 11):
     plt.axis('equal')
     im_bar1 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2, levels = 25)
     plt.scatter(eik_coords[:, 0], eik_coords[:, 1], marker = '.' , c = eik_vals, cmap = colormap2)
-    plt.title("Linear interpolation, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    plt.title("Linear interpolation, test geometry eta = 1.452")
     plt.show(block = False)
     plt.colorbar(im_bar1)
-    figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/LinearInt_Contour_'+str(i)+'.png'
+    figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/LinearInt_Contour_'+'.png'
     figsContours.extend([figName_Contour])
     plt.savefig(figName_Contour, dpi=my_dpi * 10)
     
@@ -82,10 +82,10 @@ for i in range(1, 11):
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     plt.axis('equal')
     im_bar2 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
-    plt.title("Linear interpolation, test geometry nu1="+ str(nu1) + ', nu2='+str(nu2))
+    plt.title("Linear interpolation, test geometry eta = 1.452")
     plt.show(block = False)
     plt.colorbar(im_bar2)
-    figName_LinInt = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/LinearInt_'+str(i)+'.png'
+    figName_LinInt = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/LinearInt_'+'.png'
     figsLinInt.extend([figName_LinInt])
     plt.savefig(figName_LinInt, dpi=my_dpi * 10)
 
@@ -95,7 +95,7 @@ print('creating gif\n')
 images = []
 for filename in figsContours:
     images.append(imageio.imread(filename))
-imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/ContoursChange.gif', images)
+imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ContoursChange.gif', images)
 
     
 # Build GIF of the imshows
@@ -103,7 +103,7 @@ print('creating gif\n')
 images = []
 for filename in figsLinInt:
     images.append(imageio.imread(filename))
-imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/LinIntChange.gif', images)
+imageio.mimsave('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/LinIntChange.gif', images)
         
 
 
