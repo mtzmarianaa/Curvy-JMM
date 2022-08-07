@@ -11,6 +11,8 @@ import matplotlib.animation as animation
 import tabulate
 from numpy import subtract as sb
 from matplotlib.patches import Arc
+from matplotlib.colors import ListedColormap
+from matplotlib.ticker import FuncFormatter
 
 
 colormap1 = plt.cm.get_cmap('cubehelix')
@@ -18,8 +20,8 @@ sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 
-nx = 36*2
-ny = 42*2
+nx = 36*20
+ny = 42*20
 my_dpi=96
 eta1 = 1.0
 eta2 = 1.452
@@ -67,12 +69,20 @@ def whichRegion(xhat):
         reg = 1
     return reg
 
-def regA1Bool(xhat):
+def regA1Bool(xi, yi, zx, zy, inner_angleSource, tau3):
     '''
-    This function determines if xhat can be accessed directly from x0
+    This function determines if xhat can be accessed directly from x0. This is in general for a source and a circle since
+    we are just looking at the angles and distances. 
     '''
-    ytan = (26*(7 + sqrt(14))*xhat[0])/(273 - 42*sqrt(13)) + (140*sqrt(13) + 130*sqrt(14))/(91 - 14*sqrt(13))
-    if ( (xhat[1] >= ytan) | (xhat[1]<= -10) |  ((xhat[0]<=0) & (norm(xhat)>= 10) & ( xhat[1]<= 20/sqrt(13))  ) ):
+    # It is in regA1 if the angle from x0 to xhat is greater than the angle from x0 to either of tha tangent points (meaning
+    # that xhat lies "outside" the tangent lines) or
+    # if the distance from x0 to xhat is smaller than the distance from x0 to either of the tangent points (meaning that
+    # xhat lies inside the cone from x0 to the circle)
+    rtan = sqrt((zx - x0[0])**2 + (zy - x0[1])**2) # Distance from the source to either of the tangent points 
+    rx0 = sqrt( (center[0]-x0[0])**2 + (center[1]-x0[1])**2 ) # Distance from the center of the circle to the source x0
+    uc, vc = center[0]-x0[0]/rx0, center[1]-x0[1]/rx0 # direction from the center of the circle to the center of the circle (unitary)
+    dirTarget_x, dirTarget_y = (xi - x0[0])/tau3, (yi - x0[1])/tau3 # direction from the source to the xHat (unitary)
+    if abs(np.arccos(dirTarget_x*uc + dirTarget_y*vc)) >= abs(inner_angleSource) or tau3 <= rtan:
         ans = True
     else:
         ans = False
@@ -158,11 +168,11 @@ def insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
     if(tau_opt1 < tau_opt2):
         tau_opt = tau_opt1
         opt_theta = opt_theta1
-        angle_z = np.arctan2(zy_1, zx_1)
+        angle_z = np.arctan(zy_1/zx_1)
     else:
         tau_opt = tau_opt2
         opt_theta = opt_theta2
-        angle_z = np.arctan2(zy_2, zx_2)
+        angle_z = np.arctan(zy_2/zx_2)
     return tau_opt, opt_theta, angle_z
 
 def outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
@@ -184,12 +194,33 @@ def outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
         px, py = px_1, py_1
     else:
         px, py = px_2, py_2
-    centralAngle = abs( angle_xHat - angle_z )
+    centralAngle = abs( 2*asin( (sqrt( (px-zx)**2 + (py-zy)**2 ))/(2*R) )  )
     # print('Angle from the (1,0) to one of the tangent points z1 or z2:  ', angle_z)
     # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
     opt_theta = np.arctan2(py, px)
-    tau_opt = eta1*sqrt(  (x0[0] - zx)**2 + (x0[1] - zy)**2  ) + eta1*( centralAngle*R ) + eta1*sqrt(  (xi - px)**2 + (yi - py)**2  )
-    return tau_opt, opt_theta
+    tau5 = eta1*sqrt(  (x0[0] - zx)**2 + (x0[1] - zy)**2  ) + eta1*( centralAngle*R ) + eta1*sqrt(  (xi - px)**2 + (yi - py)**2  )
+    return tau5, zx, zy, px, py, opt_theta
+
+def outsideThroughCircle(xi, yi, angle_Source, thtan):
+    # the possible values for the first point on the circle are the same as before (those points on the circle that are direcly accessible from x0)
+    bounds1 = (angle_Source + thtan, angle_Source - thtan + 2*pi)
+    # The same idea is true for the second point but instead they are those points on the circle that are directly accessible from xhat
+    zxHat_1, zyHat_1, zxHat_2, zyHat_2, angle_xHat, thtan_Hat, inner_anglexHat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
+    bounds2 = (angle_xHat + thtan_Hat, angle_xHat - thtan_Hat + 2*pi)
+    # Set up the optimization problem
+    def f_t4(theta_vec):
+        theta1 = theta_vec[0]
+        theta2 = theta_vec[1]
+        px_1, py_1 = paramCircle(theta1)
+        px_2, py_2 = paramCircle(theta2)
+        return eta1*sqrt( (px_1 - x0[0])**2 + (py_1 - x0[1])**2 ) + eta2*sqrt( (px_1 - px_2)**2 + (py_1 - py_2)**2 ) + eta1*sqrt( (xi - px_2)**2 + (yi- py_2)**2 )
+    t4_opti = minimize( f_t4, [angle_Source, angle_xHat], bounds= [ bounds1, bounds2  ] ).x
+    tau4 = f_t4(t4_opti)
+    theta1 = t4_opti[0]
+    theta2 = t4_opti[1]
+    px_1, py_1 = paramCircle(theta1)
+    px_2, py_2 = paramCircle(theta2)
+    return tau4, theta1, px_1, py_1, theta2, px_2, py_2
 
 def drawPathTaken(path_taken, type_path):
     if(type_path == 1): # means the target is inside the circle and is reached by 2 segments of lines
@@ -202,7 +233,8 @@ def drawPathTaken(path_taken, type_path):
         plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
         plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
         ax = fig.gca()
-        ax.add_patch(Arc((center[0], center[1]), R,  R, theta1 = path_taken[2], theta2 = path_taken[3], edgecolor="#000536", lw=1.5))
+        ax.add_patch(Arc((center[0], center[1]), 2*R,  2*R, theta1 = 180*path_taken[2]/pi, theta2 = 180*path_taken[3]/pi, edgecolor="#000536", lw=1.5))
+
 
 def trueSolution(xi, yi, path = False):
     '''
@@ -213,6 +245,9 @@ def trueSolution(xi, yi, path = False):
     opt_theta = np.inf
     type_path = -1
     zx_1, zy_1, zx_2, zy_2, angle_Source, thtan, inner_angleSource = pointsTangentFromSource(x0[0], x0[1], center[0], center[1], R)
+    # print("First tangent point", zx_1, zy_1)
+    # print("Second tangent point", zx_2, zy_2)
+    # print("inner_angleSource", inner_angleSource)
     if( xi**2 + yi**2 <= R**2 ): #xHat is outside the circle
         # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
         tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
@@ -229,27 +264,27 @@ def trueSolution(xi, yi, path = False):
             path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi], opt_thetaShedRay, angle_z]
             type_path = 2
     else: 
-        if(regA1Bool(xhat)): # if xhat is directly accesible from x0 just via reg1
-            tau = norm(sb(xhat, x0))
+        tau3 = sqrt( (xi-x0[0])**2 + (yi - x0[1])**2 )
+        if(regA1Bool(xi, yi, zx_1, zy_1, inner_angleSource, tau3)): # if xhat is directly accesible from x0 just via reg1
+            tau = tau3
             type_path = 3
             path_taken = [[x0[0], xi], [x0[1], yi]]
         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
-            f_t1 = lambda z: eta1*norm(sb(x0, z[0:2])) + eta2*norm(sb(z[0:2], z[2:4])) + eta1*norm(sb(z[2:4], xhat))
-            cons1 = [{'type':'ineq', 'fun': lambda z: consRayIntoCircle(z) }, 
-                     {'type':'ineq', 'fun': lambda z: consRayFromCircle(z, xhat) },
-                     {'type':'eq', 'fun': lambda z: pointOnCircle(z[0:2]) },
-                     {'type':'eq', 'fun': lambda z: pointOnCircle(z[2:4]) }]
-            t1_opt = minimize( f_t1, [0, -10, 10, 0], constraints = cons1 ).x
-            t1_optPrime =  minimize( f_t1, [0, -10, -10, 0], constraints = cons1 ).x
-            t1_optPrime2 =  minimize( f_t1, [0, -10, 5*sqrt(2), -5*sqrt(2)], constraints = cons1 ).x
-            t1_optPrime3 =  minimize( f_t1, [0, -10, -5*sqrt(2), -5*sqrt(2)], constraints = cons1 ).x
-            t1_optPrime4 =  minimize( f_t1, [-5*sqrt(2), -5*sqrt(2), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
-            t1_optPrime5 =  minimize( f_t1, [-30/sqrt(13), 20/sqrt(13), -5*sqrt(2), 5*sqrt(2)], constraints = cons1 ).x
-            tau = min(f_t1(t1_opt), f_t1(t1_optPrime), f_t1(t1_optPrime2), f_t1(t1_optPrime3), f_t1(t1_optPrime4), f_t1(t1_optPrime5))
+            tau4, theta1, px_1, py_1, theta2, px_2, py_2 = outsideThroughCircle(xi, yi, angle_Source, thtan)
+            tau5, zx, zy, px, py, opt_theta = outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source)
+            if (tau4 < tau5):
+                tau = tau4
+                type_path = 4
+                path_taken = [ [x0[0], px_1, px_2, xi], [x0[1], py_1, py_2, yi] ]
+            else:
+                tau = tau5
+                type_path = 5
+                px, py = paramCircle(opt_theta)
+                path_taken = [ [x0[0], zx, px, xi], [x0[1], zy, py, yi], opt_theta ]
     if path:
         return tau, path_taken, type_path
     else:
-        return tau
+        return tau, type_path
 
 
 n = 0
@@ -264,6 +299,7 @@ nPointsH = []
 
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
 true_solGrid = np.zeros(xi.shape)
+type_solution = np.zeros(xi.shape)
 
 # We want to see which path these testing points take
 
@@ -290,7 +326,9 @@ eikonal_test3, path_taken_test3, type_path3 = trueSolution(x_test3, y_test3, pat
 
 for i in range(ny):
     for j in range(nx):
-        true_solGrid[i, j] = trueSolution(  xi[i, j], yi[i,j]  )
+        sol, typeSol = trueSolution(  xi[i, j], yi[i,j]  )
+        true_solGrid[i, j] = sol
+        type_solution[i, j] = typeSol
 
 # We plot the true solution
 
@@ -300,8 +338,17 @@ im1 = plt.imshow( true_solGrid, cmap = colormap2, extent=[-18,18,-18,24]  )
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im1)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution5.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution7.png', dpi=my_dpi * 10)
 
+
+# Plot the type of solution
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im2 = plt.imshow( type_solution, cmap = colormap2, extent=[-18,18,-18,24]  )
+plt.title("Type of solution solution, test geometry just base")
+plt.show(block = False)
+plt.colorbar(im2)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TypeSolution7.png', dpi=my_dpi * 10)
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
@@ -317,12 +364,12 @@ plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im_bar1)
 # Add test point 1
-drawPathTaken(path_taken_test, type_path)
-# Add test point 2
-drawPathTaken(path_taken_test2, type_path2)
-# Add test point 3
-drawPathTaken(path_taken_test3, type_path3)
-figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour5.png'
+# drawPathTaken(path_taken_test, type_path)
+# # Add test point 2
+# drawPathTaken(path_taken_test2, type_path2)
+# # Add test point 3
+# drawPathTaken(path_taken_test3, type_path3)
+figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour7.png'
 plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
 # Plot in 3D and save the gif
@@ -332,7 +379,7 @@ ax.scatter(xi, yi, true_solGrid, c= true_solGrid, cmap=colormap2)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
 rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour5.gif', dpi=80, writer='Pillow')
+rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour7.gif', dpi=80, writer='Pillow')
 
 
 # Save the computed values (in case they are useful)
