@@ -9,10 +9,11 @@ from math import sqrt, cos, sin, pi, atan
 from scipy.optimize import minimize, minimize_scalar
 import matplotlib.animation as animation
 import tabulate
-from numpy import subtract as sb
 from matplotlib.patches import Arc
 from matplotlib.colors import ListedColormap
 from matplotlib.ticker import FuncFormatter
+from analyticSol_circle import trueSolution
+import matplotlib.tri as tri
 
 
 colormap1 = plt.cm.get_cmap('cubehelix')
@@ -20,8 +21,9 @@ sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
 
-nx = 36*20
-ny = 42*20
+
+nx = 36*10
+ny = 42*10
 my_dpi=96
 eta1 = 1.0
 eta2 = 1.452
@@ -57,234 +59,203 @@ def average_edge_length(eik_coords, faces):
             sum += sqrt(  (eik_coords[p2, 0] - eik_coords[p3, 0])**2 +  (eik_coords[p2, 1] - eik_coords[p3, 1])**2 )
     return sum/nEdges
 
-        
 
-def whichRegion(xhat):
-    '''
-    This function determines in which of the 3 regions in the test geometry just base xhat is
-    '''
-    if (norm(xhat)< 10):
-        reg = 3
-    else:
-        reg = 1
-    return reg
-
-def regA1Bool(xi, yi, zx, zy, inner_angleSource, tau3):
-    '''
-    This function determines if xhat can be accessed directly from x0. This is in general for a source and a circle since
-    we are just looking at the angles and distances. 
-    '''
-    # It is in regA1 if the angle from x0 to xhat is greater than the angle from x0 to either of tha tangent points (meaning
-    # that xhat lies "outside" the tangent lines) or
-    # if the distance from x0 to xhat is smaller than the distance from x0 to either of the tangent points (meaning that
-    # xhat lies inside the cone from x0 to the circle)
-    rtan = sqrt((zx - x0[0])**2 + (zy - x0[1])**2) # Distance from the source to either of the tangent points 
-    rx0 = sqrt( (center[0]-x0[0])**2 + (center[1]-x0[1])**2 ) # Distance from the center of the circle to the source x0
-    uc, vc = center[0]-x0[0]/rx0, center[1]-x0[1]/rx0 # direction from the center of the circle to the center of the circle (unitary)
-    dirTarget_x, dirTarget_y = (xi - x0[0])/tau3, (yi - x0[1])/tau3 # direction from the source to the xHat (unitary)
-    if abs(np.arccos(dirTarget_x*uc + dirTarget_y*vc)) >= abs(inner_angleSource) or tau3 <= rtan:
-        ans = True
-    else:
-        ans = False
-    return ans
-
-def consRayIntoCircle(z):
-    '''
-    Constrain such that the segment from x0 to p0 is outside the circle
-    '''
-    x0 = np.array([-15, -10])
-    p0 = z[0:2]
-    t0 = sb(p0, x0)
-    return np.dot(t0, p0)
+# def regA1Bool(xi, yi, zx, zy, inner_angleSource, tau3):
+#     '''
+#     This function determines if xhat can be accessed directly from x0. This is in general for a source and a circle since
+#     we are just looking at the angles and distances. 
+#     '''
+#     # It is in regA1 if the angle from x0 to xhat is greater than the angle from x0 to either of tha tangent points (meaning
+#     # that xhat lies "outside" the tangent lines) or
+#     # if the distance from x0 to xhat is smaller than the distance from x0 to either of the tangent points (meaning that
+#     # xhat lies inside the cone from x0 to the circle)
+#     rtan = sqrt((zx - x0[0])**2 + (zy - x0[1])**2) # Distance from the source to either of the tangent points 
+#     rx0 = sqrt( (center[0]-x0[0])**2 + (center[1]-x0[1])**2 ) # Distance from the center of the circle to the source x0
+#     uc, vc = center[0]-x0[0]/rx0, center[1]-x0[1]/rx0 # direction from the center of the circle to the center of the circle (unitary)
+#     dirTarget_x, dirTarget_y = (xi - x0[0])/tau3, (yi - x0[1])/tau3 # direction from the source to the xHat (unitary)
+#     if abs(np.arccos(dirTarget_x*uc + dirTarget_y*vc)) >= abs(inner_angleSource) or tau3 <= rtan:
+#         ans = True
+#     else:
+#         ans = False
+#     return ans
 
 
-def consRayFromCircle(z, xhat):
-    '''
-    Constrain such that the segment from p1 to xhat is inside the circle
-    '''
-    p1 = z[2:4]
-    t1 = sb(xhat, p1)
-    return -1*np.dot(t1, p1)
+# def paramCircle(theta):
+#     '''
+#     Parametrization of the boundary - the circle with radius R centered at center
+#     '''
+#     return R*cos(theta) + center[0], R*sin(theta) + center[1]
 
-def pointOnCircle(p):
-    return 10 - norm(p)
+# def pointsTangentFromSource(xSource, ySource, xCenter, yCenter, R):
+#     '''
+#     Function that returns the coordinates of the two points on the tangent lines of the circle centered at xCenter, yCenter with 
+#     radius R that go through xSource, ySouce and the inner angle
+#     '''
+#     rSource = sqrt( (xSource - xCenter)**2 + (ySource - yCenter)**2  ) # distance from the source point to the center of the circle
+#     angle_Source = np.arctan2( ySource - yCenter, xSource - xCenter ) # signed angle from (1, 0) to the source point
+#     thtan = np.arccos(R/rSource)
+#     zx_1, zy_1 = R*np.cos( angle_Source + thtan  ), R*np.sin( angle_Source + thtan  )
+#     zx_2, zy_2 = R*np.cos( angle_Source - thtan  ), R*np.sin( angle_Source - thtan  )
+#     inner_angleSource = pi - pi/2 - thtan # Angle between ray from Source to center and the tangents (since the inner angles of a triangle must add up pi)
+#     return zx_1, zy_1, zx_2, zy_2, angle_Source,thtan, inner_angleSource
 
-def paramCircle(theta):
-    '''
-    Parametrization of the boundary - the circle with radius R centered at center
-    '''
-    return R*cos(theta) + center[0], R*sin(theta) + center[1]
-
-def pointsTangentFromSource(xSource, ySource, xCenter, yCenter, R):
-    '''
-    Function that returns the coordinates of the two points on the tangent lines of the circle centered at xCenter, yCenter with 
-    radius R that go through xSource, ySouce and the inner angle
-    '''
-    rSource = sqrt( (xSource - xCenter)**2 + (ySource - yCenter)**2  ) # distance from the source point to the center of the circle
-    angle_Source = np.arctan2( ySource - yCenter, xSource - xCenter ) # signed angle from (1, 0) to the source point
-    thtan = np.arccos(R/rSource)
-    zx_1, zy_1 = R*np.cos( angle_Source + thtan  ), R*np.sin( angle_Source + thtan  )
-    zx_2, zy_2 = R*np.cos( angle_Source - thtan  ), R*np.sin( angle_Source - thtan  )
-    inner_angleSource = pi - pi/2 - thtan # Angle between ray from Source to center and the tangents (since the inner angles of a triangle must add up pi)
-    return zx_1, zy_1, zx_2, zy_2, angle_Source,thtan, inner_angleSource
-
-def insideTwoSegmentLine(xi, yi, angle_Source, thtan):
-    '''
-    Minimization problem. The target is inside the circle, we need to find a point on the boundary that is 
-    directly accessible from the source. The path taken from the source to the target is made up from
-    two segments of straight lines (Snell's law)
-    '''
-    def f_t2(theta):
-        p_x, p_y = paramCircle(theta)
-        return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xi)**2 + (p_y - yi)**2  )
-    bounds = (angle_Source - thtan, angle_Source + thtan)
-    opt_theta = minimize_scalar(f_t2, None, bounds, method='bounded', tol=eps).x 
-    tau_opt = f_t2(opt_theta)
-    return tau_opt, opt_theta
+# def insideTwoSegmentLine(xi, yi, angle_Source, thtan):
+#     '''
+#     Minimization problem. The target is inside the circle, we need to find a point on the boundary that is 
+#     directly accessible from the source. The path taken from the source to the target is made up from
+#     two segments of straight lines (Snell's law)
+#     '''
+#     def f_t2(theta):
+#         p_x, p_y = paramCircle(theta)
+#         return eta1*sqrt( (x0[0] - p_x)**2 + (x0[1] - p_y)**2  ) + eta2*sqrt( (p_x - xi)**2 + (p_y - yi)**2  )
+#     bounds = (angle_Source - thtan, angle_Source + thtan)
+#     opt_theta = minimize_scalar(f_t2, None, bounds, method='bounded', tol=eps).x 
+#     tau_opt = f_t2(opt_theta)
+#     return tau_opt, opt_theta
     
-def insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
-    '''
-    In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
-    outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
-    circle before being shed tangentially into the shadow of the circle.
-    '''
-    bounds = (angle_Source + thtan, angle_Source - thtan + 2*pi)
-    def fToOptimize1(theta):
-        p_x, p_y = paramCircle(theta)
-        centralAngle = abs( 2*asin( (sqrt( (p_x-zx_1)**2 + (p_y-zy_1)**2 ))/(2*R) )  )
-        # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
-        # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
-        return eta1*sqrt(  (x0[0]-zx_1)**2 + (x0[1]-zy_1)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
-    opt_theta1 = minimize_scalar(fToOptimize1,  None, bounds, method='bounded', tol=eps).x 
-    tau_opt1 = fToOptimize1(opt_theta1)
-    def fToOptimize2(theta):
-        p_x, p_y = paramCircle(theta)
-        centralAngle = abs( 2*asin( (sqrt( (p_x-zx_2)**2 + (p_y-zy_2)**2 ))/(2*R) )  )
-        # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
-        # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
-        return eta1*sqrt(  (x0[0]-zx_2)**2 + (x0[1]-zy_2)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
-    opt_theta2 = minimize_scalar(fToOptimize2,  None, bounds, method='bounded', tol=eps).x 
-    tau_opt2 = fToOptimize2(opt_theta2)
-    if(tau_opt1 < tau_opt2):
-        tau_opt = tau_opt1
-        opt_theta = opt_theta1
-        angle_z = np.arctan(zy_1/zx_1)
-    else:
-        tau_opt = tau_opt2
-        opt_theta = opt_theta2
-        angle_z = np.arctan(zy_2/zx_2)
-    return tau_opt, opt_theta, angle_z
+# def insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
+#     '''
+#     In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
+#     outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
+#     circle before being shed tangentially into the shadow of the circle.
+#     '''
+#     bounds = (angle_Source + thtan, angle_Source - thtan + 2*pi)
+#     def fToOptimize1(theta):
+#         p_x, p_y = paramCircle(theta)
+#         centralAngle = abs( 2*asin( (sqrt( (p_x-zx_1)**2 + (p_y-zy_1)**2 ))/(2*R) )  )
+#         # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
+#         # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+#         return eta1*sqrt(  (x0[0]-zx_1)**2 + (x0[1]-zy_1)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
+#     opt_theta1 = minimize_scalar(fToOptimize1,  None, bounds, method='bounded', tol=eps).x 
+#     tau_opt1 = fToOptimize1(opt_theta1)
+#     def fToOptimize2(theta):
+#         p_x, p_y = paramCircle(theta)
+#         centralAngle = abs( 2*asin( (sqrt( (p_x-zx_2)**2 + (p_y-zy_2)**2 ))/(2*R) )  )
+#         # print('Angle from the (1,0) to one of the tangent points z1 or z2 :  ', angle_z)
+#         # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+#         return eta1*sqrt(  (x0[0]-zx_2)**2 + (x0[1]-zy_2)**2 ) + eta1*R*centralAngle + eta2*sqrt(  (xi-p_x)**2 + (yi-p_y)**2 )
+#     opt_theta2 = minimize_scalar(fToOptimize2,  None, bounds, method='bounded', tol=eps).x 
+#     tau_opt2 = fToOptimize2(opt_theta2)
+#     if(tau_opt1 < tau_opt2):
+#         tau_opt = tau_opt1
+#         opt_theta = opt_theta1
+#         angle_z = np.arctan(zy_1/zx_1)
+#     else:
+#         tau_opt = tau_opt2
+#         opt_theta = opt_theta2
+#         angle_z = np.arctan(zy_2/zx_2)
+#     return tau_opt, opt_theta, angle_z
 
-def outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
-    '''
-    In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
-    outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
-    circle before being shed tangentially into the shadow of the circle.
-    '''
-    n1 = sqrt( (xi - zx_1)**2 + (yi - zy_1)**2 ) # distance from p1 to the target
-    n2 = sqrt( (xi - zx_2)**2 + (yi - zy_2)**2 ) # distance from p2 to the target
-    # From which point its going to go around depends on which is closer (this makes sense because the speed of sound is piecewise constant)
-    if ( n1 <= n2):
-        zx, zy = zx_1, zy_1
-    else:
-        zx, zy = zx_2, zy_2
-    angle_z = abs( angle_Source - thtan )
-    px_1, py_1, px_2, py_2, angle_xHat,thtan_hat, inner_angleXhat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
-    if( sqrt((px_1 - zx)**2 + (py_1 - zy)**2) <=  sqrt((px_2 - zx)**2 + (py_2 - zy)**2)  ):
-        px, py = px_1, py_1
-    else:
-        px, py = px_2, py_2
-    centralAngle = abs( 2*asin( (sqrt( (px-zx)**2 + (py-zy)**2 ))/(2*R) )  )
-    # print('Angle from the (1,0) to one of the tangent points z1 or z2:  ', angle_z)
-    # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
-    opt_theta = np.arctan2(py, px)
-    tau5 = eta1*sqrt(  (x0[0] - zx)**2 + (x0[1] - zy)**2  ) + eta1*( centralAngle*R ) + eta1*sqrt(  (xi - px)**2 + (yi - py)**2  )
-    return tau5, zx, zy, px, py, opt_theta
+# def outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source):
+#     '''
+#     In this case there is no minimization problem, we just need to calculate the tangent points from xhat to the circle
+#     outside the circle + reached by shed ray i.e. points outside the circle reached by rays which creep along the 
+#     circle before being shed tangentially into the shadow of the circle.
+#     '''
+#     n1 = sqrt( (xi - zx_1)**2 + (yi - zy_1)**2 ) # distance from p1 to the target
+#     n2 = sqrt( (xi - zx_2)**2 + (yi - zy_2)**2 ) # distance from p2 to the target
+#     # From which point its going to go around depends on which is closer (this makes sense because the speed of sound is piecewise constant)
+#     if ( n1 <= n2):
+#         zx, zy = zx_1, zy_1
+#     else:
+#         zx, zy = zx_2, zy_2
+#     angle_z = abs( angle_Source - thtan )
+#     px_1, py_1, px_2, py_2, angle_xHat,thtan_hat, inner_angleXhat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
+#     if( sqrt((px_1 - zx)**2 + (py_1 - zy)**2) <=  sqrt((px_2 - zx)**2 + (py_2 - zy)**2)  ):
+#         px, py = px_1, py_1
+#     else:
+#         px, py = px_2, py_2
+#     centralAngle = abs( 2*asin( (sqrt( (px-zx)**2 + (py-zy)**2 ))/(2*R) )  )
+#     # print('Angle from the (1,0) to one of the tangent points z1 or z2:  ', angle_z)
+#     # print('Central angle from the tangent point to the optimum point p1: ', centralAngle)
+#     opt_theta = np.arctan2(py, px)
+#     tau5 = eta1*sqrt(  (x0[0] - zx)**2 + (x0[1] - zy)**2  ) + eta1*( centralAngle*R ) + eta1*sqrt(  (xi - px)**2 + (yi - py)**2  )
+#     return tau5, zx, zy, px, py, opt_theta
 
-def outsideThroughCircle(xi, yi, angle_Source, thtan):
-    # the possible values for the first point on the circle are the same as before (those points on the circle that are direcly accessible from x0)
-    bounds1 = (angle_Source + thtan, angle_Source - thtan + 2*pi)
-    # The same idea is true for the second point but instead they are those points on the circle that are directly accessible from xhat
-    zxHat_1, zyHat_1, zxHat_2, zyHat_2, angle_xHat, thtan_Hat, inner_anglexHat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
-    bounds2 = (angle_xHat + thtan_Hat, angle_xHat - thtan_Hat + 2*pi)
-    # Set up the optimization problem
-    def f_t4(theta_vec):
-        theta1 = theta_vec[0]
-        theta2 = theta_vec[1]
-        px_1, py_1 = paramCircle(theta1)
-        px_2, py_2 = paramCircle(theta2)
-        return eta1*sqrt( (px_1 - x0[0])**2 + (py_1 - x0[1])**2 ) + eta2*sqrt( (px_1 - px_2)**2 + (py_1 - py_2)**2 ) + eta1*sqrt( (xi - px_2)**2 + (yi- py_2)**2 )
-    t4_opti = minimize( f_t4, [angle_Source, angle_xHat], bounds= [ bounds1, bounds2  ] ).x
-    tau4 = f_t4(t4_opti)
-    theta1 = t4_opti[0]
-    theta2 = t4_opti[1]
-    px_1, py_1 = paramCircle(theta1)
-    px_2, py_2 = paramCircle(theta2)
-    return tau4, theta1, px_1, py_1, theta2, px_2, py_2
+# def outsideThroughCircle(xi, yi, angle_Source, thtan):
+#     # the possible values for the first point on the circle are the same as before (those points on the circle that are direcly accessible from x0)
+#     bounds1 = (angle_Source - thtan, angle_Source + thtan )
+#     # The same idea is true for the second point but instead they are those points on the circle that are directly accessible from xhat
+#     zxHat_1, zyHat_1, zxHat_2, zyHat_2, angle_xHat, thtan_Hat, inner_anglexHat = pointsTangentFromSource(xi, yi, center[0], center[1], R)
+#     bounds2 = (angle_xHat - thtan_Hat, angle_xHat + thtan_Hat )
+#     # Set up the optimization problem
+#     def f_t4(theta_vec):
+#         theta1 = theta_vec[0]
+#         theta2 = theta_vec[1]
+#         px_1, py_1 = paramCircle(theta1)
+#         px_2, py_2 = paramCircle(theta2)
+#         return eta1*sqrt( (px_1 - x0[0])**2 + (py_1 - x0[1])**2 ) + eta2*sqrt( (px_1 - px_2)**2 + (py_1 - py_2)**2 ) + eta1*sqrt( (xi - px_2)**2 + (yi- py_2)**2 )
+#     t4_opti = minimize( f_t4, [angle_Source, angle_xHat], bounds= [ bounds1, bounds2  ] ).x
+#     tau4 = f_t4(t4_opti)
+#     theta1 = t4_opti[0]
+#     theta2 = t4_opti[1]
+#     px_1, py_1 = paramCircle(theta1)
+#     px_2, py_2 = paramCircle(theta2)
+#     return tau4, theta1, px_1, py_1, theta2, px_2, py_2
 
-def drawPathTaken(path_taken, type_path):
-    if(type_path == 1): # means the target is inside the circle and is reached by 2 segments of lines
-        plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
-        plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
-        plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
-        plt.plot(path_taken[0], path_taken[1], c='k', linewidth=1, zorder=2)
-    if(type_path == 2): # means the target is inside the circle and it is reached by a creeping ray
-        plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
-        plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
-        plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
-        ax = fig.gca()
-        ax.add_patch(Arc((center[0], center[1]), 2*R,  2*R, theta1 = 180*path_taken[2]/pi, theta2 = 180*path_taken[3]/pi, edgecolor="#000536", lw=1.5))
+# def drawPathTaken(path_taken, type_path):
+#     if(type_path == 1): # means the target is inside the circle and is reached by 2 segments of lines
+#         plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
+#         plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
+#         plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
+#         plt.plot(path_taken[0], path_taken[1], c='k', linewidth=1, zorder=2)
+#     if(type_path == 2): # means the target is inside the circle and it is reached by a creeping ray
+#         plt.scatter(x0[0], x0[1], s=20, c='k', zorder=2)
+#         plt.scatter(path_taken[0][2], path_taken[1][2], s=20, c='#0800ff', zorder=2)
+#         plt.scatter(path_taken[0][1], path_taken[1][1], s=20, c='k', zorder=2)
+#         ax = fig.gca()
+#         ax.add_patch(Arc((center[0], center[1]), 2*R,  2*R, theta1 = 180*path_taken[2]/pi, theta2 = 180*path_taken[3]/pi, edgecolor="#000536", lw=1.5))
 
 
-def trueSolution(xi, yi, path = False):
-    '''
-    Analytic solution
-    '''
-    xhat = np.array([xi, yi])
-    tau = np.inf
-    opt_theta = np.inf
-    type_path = -1
-    zx_1, zy_1, zx_2, zy_2, angle_Source, thtan, inner_angleSource = pointsTangentFromSource(x0[0], x0[1], center[0], center[1], R)
-    # print("First tangent point", zx_1, zy_1)
-    # print("Second tangent point", zx_2, zy_2)
-    # print("inner_angleSource", inner_angleSource)
-    if( xi**2 + yi**2 <= R**2 ): #xHat is outside the circle
-        # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
-        tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
-        tau_optCreepingRay, opt_thetaShedRay, angle_z = insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source) # reached by going around the circle
-        tau = min(tau_optOriginal, tau_optCreepingRay)
-        if(tau_optOriginal < tau_optCreepingRay):
-            tau = tau_optOriginal
-            px_opt, py_opt = paramCircle(opt_thetaOriginal)
-            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi]]
-            type_path = 1
-        else:
-            tau = tau_optCreepingRay
-            px_opt, py_opt = paramCircle(opt_thetaShedRay)
-            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi], opt_thetaShedRay, angle_z]
-            type_path = 2
-    else: 
-        tau3 = sqrt( (xi-x0[0])**2 + (yi - x0[1])**2 )
-        if(regA1Bool(xi, yi, zx_1, zy_1, inner_angleSource, tau3)): # if xhat is directly accesible from x0 just via reg1
-            tau = tau3
-            type_path = 3
-            path_taken = [[x0[0], xi], [x0[1], yi]]
-        else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
-            tau4, theta1, px_1, py_1, theta2, px_2, py_2 = outsideThroughCircle(xi, yi, angle_Source, thtan)
-            tau5, zx, zy, px, py, opt_theta = outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source)
-            if (tau4 < tau5):
-                tau = tau4
-                type_path = 4
-                path_taken = [ [x0[0], px_1, px_2, xi], [x0[1], py_1, py_2, yi] ]
-            else:
-                tau = tau5
-                type_path = 5
-                px, py = paramCircle(opt_theta)
-                path_taken = [ [x0[0], zx, px, xi], [x0[1], zy, py, yi], opt_theta ]
-    if path:
-        return tau, path_taken, type_path
-    else:
-        return tau, type_path
+# def trueSolution(xi, yi, path = False):
+#     '''
+#     Analytic solution
+#     '''
+#     xhat = np.array([xi, yi])
+#     tau = np.inf
+#     opt_theta = np.inf
+#     type_path = -1
+#     zx_1, zy_1, zx_2, zy_2, angle_Source, thtan, inner_angleSource = pointsTangentFromSource(x0[0], x0[1], center[0], center[1], R)
+#     # print("First tangent point", zx_1, zy_1)
+#     # print("Second tangent point", zx_2, zy_2)
+#     # print("inner_angleSource", inner_angleSource)
+#     if( xi**2 + yi**2 <= R**2 ): #xHat is outside the circle
+#         # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
+#         tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan) # reached with 2 segments of straight lines
+#         tau_optCreepingRay, opt_thetaShedRay, angle_z = insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source) # reached by going around the circle
+#         tau = min(tau_optOriginal, tau_optCreepingRay)
+#         if(tau_optOriginal < tau_optCreepingRay):
+#             tau = tau_optOriginal
+#             px_opt, py_opt = paramCircle(opt_thetaOriginal)
+#             path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi]]
+#             type_path = 1
+#         else:
+#             tau = tau_optCreepingRay
+#             px_opt, py_opt = paramCircle(opt_thetaShedRay)
+#             path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi], opt_thetaShedRay, angle_z]
+#             type_path = 2
+#     else: 
+#         tau3 = sqrt( (xi-x0[0])**2 + (yi - x0[1])**2 )
+#         if(regA1Bool(xi, yi, zx_1, zy_1, inner_angleSource, tau3)): # if xhat is directly accesible from x0 just via reg1
+#             tau = tau3
+#             type_path = 3
+#             path_taken = [[x0[0], xi], [x0[1], yi]]
+#         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
+#             tau4, theta1, px_1, py_1, theta2, px_2, py_2 = outsideThroughCircle(xi, yi, angle_Source, thtan)
+#             tau5, zx, zy, px, py, opt_theta = outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source)
+#             if (tau4 < tau5):
+#                 tau = tau4
+#                 type_path = 4
+#                 path_taken = [ [x0[0], px_1, px_2, xi], [x0[1], py_1, py_2, yi] ]
+#             else:
+#                 tau = tau5
+#                 type_path = 5
+#                 px, py = paramCircle(opt_theta)
+#                 path_taken = [ [x0[0], zx, px, xi], [x0[1], zy, py, yi], opt_theta ]
+#     if path:
+#         return tau, path_taken, type_path
+#     else:
+#         return tau, type_path
 
 
 n = 0
@@ -301,34 +272,13 @@ xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
 true_solGrid = np.zeros(xi.shape)
 type_solution = np.zeros(xi.shape)
 
-# We want to see which path these testing points take
-
-# Test point 1
-x_test, y_test = 5, 7
-print('Test 1: ',x_test, y_test)
-eikonal_test, path_taken_test, type_path = trueSolution(x_test, y_test, path = True)
 
 
-# Test point 2
-x_test2, y_test2 = paramCircle(5*pi/8)
-print('Test 3: ',x_test2, y_test2)
-eikonal_test2, path_taken_test2, type_path2 = trueSolution(x_test2, y_test2, path = True)
-
-
-# # Test point 3
-x_test3, y_test3 = paramCircle(7*pi/4)
-x_test3, y_test3 = x_test3+0.03, y_test3+0.04
-print('Test 3: ',x_test3, y_test3)
-
-eikonal_test3, path_taken_test3, type_path3 = trueSolution(x_test3, y_test3, path = True)
-
-
-
-for i in range(ny):
-    for j in range(nx):
-        sol, typeSol = trueSolution(  xi[i, j], yi[i,j]  )
-        true_solGrid[i, j] = sol
-        type_solution[i, j] = typeSol
+# for i in range(ny):
+#     for j in range(nx):
+#         sol, typeSol = trueSolution(  xi[i, j], yi[i,j], x0, center, R, eta1, eta2  )
+#         true_solGrid[i, j] = sol
+#         type_solution[i, j] = typeSol
 
 # We plot the true solution
 
@@ -348,7 +298,7 @@ im2 = plt.imshow( type_solution, cmap = colormap2, extent=[-18,18,-18,24]  )
 plt.title("Type of solution solution, test geometry just base")
 plt.show(block = False)
 plt.colorbar(im2)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TypeSolution7.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TypeSolution8.png', dpi=my_dpi * 10)
 
 fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
@@ -362,14 +312,7 @@ plt.axis('equal')
 im_bar1 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 25)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
-plt.colorbar(im_bar1)
-# Add test point 1
-# drawPathTaken(path_taken_test, type_path)
-# # Add test point 2
-# drawPathTaken(path_taken_test2, type_path2)
-# # Add test point 3
-# drawPathTaken(path_taken_test3, type_path3)
-figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour7.png'
+figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour8.png'
 plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
 # Plot in 3D and save the gif
@@ -378,8 +321,8 @@ ax = plt.axes(projection='3d')
 ax.scatter(xi, yi, true_solGrid, c= true_solGrid, cmap=colormap2)
 plt.title("Exact solution, test geometry just base")
 plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour7.gif', dpi=80, writer='Pillow')
+# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
+# rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour8.gif', dpi=80, writer='Pillow')
 
 
 # Save the computed values (in case they are useful)
@@ -387,162 +330,140 @@ rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures
 np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestIndex/TrueSolutionGrid.txt', true_solGrid, delimiter =', ', fmt = '%.8f' )
 
 
-# ######################################################
-# ######################################################
-# ######################################################
-# #### H1
-# ## 1. Plot of the output
+######################################################
+######################################################
+######################################################
+#### H1
+## 1. Plot of the output
 
-# eik_vals_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin")
-# eik_coords_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt", delimiter=",")
-# triangles_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt", delimiter=",")
-# eik_grads_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin");
-# eik_grads_H1 = eik_grads_H1.reshape(len(eik_coords_H1), 2)
+eik_vals_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin")
+eik_coords_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt", delimiter=",")
+triangles_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt", delimiter=",")
+eik_grads_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin");
+eik_grads_H1 = eik_grads_H1.reshape(len(eik_coords_H1), 2)
 
-# # exact_values_H1 = []
-# # errors_H1 = []
-# # for i in range(len(eik_coords_H1)):
-# #     xi = eik_coords_H1[i, 0]
-# #     yi = eik_coords_H1[i, 1]
-# #     sol = exact_solution1(xi, yi)
-# #     exact_values_H1 += [sol]
-# #     errors_H1 += [ abs( sol - eik_vals_H1[i] ) ]
+exact_values_H1 = []
+errors_H1 = []
+for i in range(len(eik_coords_H1)):
+    xi_coords = eik_coords_H1[i, 0]
+    yi_coords = eik_coords_H1[i, 1]
+    sol = trueSolution(xi_coords, yi_coords, x0, center, R, eta1, eta2)
+    exact_values_H1 += [sol]
+    errors_H1 += [ abs( sol - eik_vals_H1[i] ) ]
 
 
 
-# my_dpi=96
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# ax = plt.axes(projection='3d')
-# ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_vals_H1, c= eik_vals_H1, cmap=colormap2)
-# plt.title("Computed eikonal values, test geometry just base h1")
-# plt.show(block = False)
+my_dpi=96
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+ax = plt.axes(projection='3d')
+ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_vals_H1, c= eik_vals_H1, cmap=colormap2)
+plt.title("Computed eikonal values, test geometry just base h1")
+plt.show(block = False)
 # rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
 # rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_ComputedValues.gif', dpi=80, writer='Pillow')
 
 
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # ax = plt.axes(projection='3d')
-# # ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], exact_values_H1, c= exact_values_H1, cmap=colormap2)
-# # plt.title("Exact solution, test geometry just base h1")
-# # plt.show(block = False)
-# # rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# # rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_ExactSolution.gif', dpi=80, writer='Pillow')
-
-
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # ax = plt.axes(projection='3d')
-# # ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], errors_H1, c = errors_H1, cmap=colormap2)
-# # plt.title("Computed errors per point, test geometry just base h1")
-# # plt.show(block = False)
-# # rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# # rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointsPointErrors.gif', dpi=80, writer='Pillow')
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+ax = plt.axes(projection='3d')
+ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], errors_H1, c = errors_H1, cmap=colormap2)
+plt.title("Computed errors per point, test geometry just base h1")
+plt.show(block = False)
+# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
+# rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointsPointErrors.gif', dpi=80, writer='Pillow')
 
 
 
-# # We interpolate the solution on the triangles_H1 (so that we get a smooth plot + Sam´s idea)
-
-# # Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
+# We interpolate the solution on the triangles_H1 (so that we get a smooth plot + Sam´s idea)
 
 
+# We need a triangulation object thing
+triang = tri.Triangulation(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1)
+# To be able to use LinearTriInterpolator
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
+zi_lin = interp_lin(xi, -yi+6)
+
+# Contours of the errors_H1 in 3D and 2D
+solution_interpolated = np.zeros(zi_lin.shape)
+for i in range(nx):
+    for j in range(ny):
+        solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
+errors_H1_abs = abs(zi_lin - solution_interpolated)
 
 
-# # We need a triangulation object thing
-# triang = tri.Triangulation(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1)
-# # To be able to use LinearTriInterpolator
-# interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
-# zi_lin = interp_lin(xi, -yi+6)
-
-# # # Contours of the errors_H1 in 3D and 2D
-# # solution_interpolated = np.zeros(zi_lin.shape)
-# # for i in range(len(xi)):
-# #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
-# # errors_H1_abs = abs(zi_lin - solution_interpolated)
-
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # plt.axis('equal')
-# # im4 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-18,18,-18,24]  )
-# # plt.title("Exact solution, test geometry just base h1")
-# # plt.show(block = False)
-# # plt.colorbar(im4)
-# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_ExactSolution.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+ax = plt.axes(projection='3d')
+ax.contour3D(xi, yi, errors_H1_abs , 50, cmap=colormap2)
+ax.set_xlabel('x')
+ax.set_ylabel('y')
+ax.set_zlabel('errors_H1');
+plt.title("3D point wise errors, test geometry just base h1")
+plt.show(block = False)
+# rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
+# rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.gif', dpi=80, writer='Pillow')
 
 
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # ax = plt.axes(projection='3d')
-# # ax.contour3D(xi, yi, errors_H1_abs , 50, cmap=colormap2)
-# # ax.set_xlabel('x')
-# # ax.set_ylabel('y')
-# # ax.set_zlabel('errors_H1');
-# # plt.title("3D point wise errors, test geometry just base h1")
-# # plt.show(block = False)
-# # rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-# # rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.gif', dpi=80, writer='Pillow')
+#Plot the absolute errors_H1 in 2D
 
-
-# # Plot the absolute errors_H1 in 2D
-
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # plt.axis('equal')
-# # im6 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
-# # plt.title("Point wise absolute errors, test geometry just base h1")
-# # plt.show(block = False)
-# # plt.colorbar(im6)
-# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im6 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
+plt.title("Point wise absolute errors, test geometry just base h1")
+plt.show(block = False)
+plt.colorbar(im6)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.png', dpi=my_dpi * 10)
 
 
 
-# # The absolute errors_H1 in 2D with the triangulation
+# The absolute errors_H1 in 2D with the triangulation
 
-# # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# # plt.axis('equal')
-# # plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#04007e')
-# # im7 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
-# # plt.title("Point wise absolute errors and triangulation, test geometry just base h1")
-# # plt.show(block = False)
-# # plt.colorbar(im7)
-# # #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-# #Now we can plot + plot the triangulation + dots on top
-# # This plots the contours (I think it looks horrible)
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.axis('equal')
-# im8 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2)
-# plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
-# plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#6800ff')
-# plt.title("Linear interpolation, test geometry just base h1")
-# plt.show(block = False)
-# plt.colorbar(im8)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#04007e')
+im7 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-18,18,-18,24]  )
+plt.title("Point wise absolute errors and triangulation, test geometry just base h1")
+plt.show(block = False)
+plt.colorbar(im7)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.axis('equal')
-# im9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
-# plt.title("Linear interpolation, test geometry just base h1")
-# plt.show(block = False)
-# plt.colorbar(im9)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt.png', dpi=my_dpi * 10)
+#Now we can plot + plot the triangulation + dots on top
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im8 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2)
+plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#6800ff')
+plt.title("Linear interpolation, test geometry just base h1")
+plt.show(block = False)
+plt.colorbar(im8)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.axis('equal')
-# im10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
-# plt.quiver(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_grads_H1[:, 0], eik_grads_H1[:, 1])
-# plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h1")
-# plt.show(block = False)
-# plt.colorbar(im10)
-# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
+plt.title("Linear interpolation, test geometry just base h1")
+plt.show(block = False)
+plt.colorbar(im9)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt.png', dpi=my_dpi * 10)
 
 
 
-# # averageH += [average_edge_length(eik_coords_H1, triangles_H1)]
-# # errorNorm += [norm( np.subtract(eik_vals_H1, exact_values_H1)  )/norm( exact_values_H1 )]
-# # nPointsH += [len(eik_coords_H1)]
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+im10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18,18,-18,24]  )
+plt.quiver(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_grads_H1[:, 0], eik_grads_H1[:, 1])
+plt.title("Linear interpolation and computed eikonal gradient, test geometry just base h1")
+plt.show(block = False)
+plt.colorbar(im10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
+
+
+
+averageH += [average_edge_length(eik_coords_H1, triangles_H1)]
+errorNorm += [norm( np.subtract(eik_vals_H1, exact_values_H1)  )/norm( exact_values_H1 )]
+nPointsH += [len(eik_coords_H1)]
 
 
 # ######################################################
@@ -562,7 +483,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H2)):
 # #     xi = eik_coords_H2[i, 0]
 # #     yi = eik_coords_H2[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H2 += [sol]
 # #     errors_H2 += [ abs( sol - eik_vals_H2[i] ) ]
 
@@ -611,7 +532,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H2_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -717,7 +638,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H3)):
 # #     xi = eik_coords_H3[i, 0]
 # #     yi = eik_coords_H3[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H3 += [sol]
 # #     errors_H3 += [ abs( sol - eik_vals_H3[i] ) ]
 
@@ -766,7 +687,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H3_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -871,7 +792,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H4)):
 # #     xi = eik_coords_H4[i, 0]
 # #     yi = eik_coords_H4[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H4 += [sol]
 # #     errors_H4 += [ abs( sol - eik_vals_H4[i] ) ]
 
@@ -920,7 +841,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H4_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1026,7 +947,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H5)):
 # #     xi = eik_coords_H5[i, 0]
 # #     yi = eik_coords_H5[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H5 += [sol]
 # #     errors_H5 += [ abs( sol - eik_vals_H5[i] ) ]
 
@@ -1075,7 +996,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H5_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1181,7 +1102,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H6)):
 # #     xi = eik_coords_H6[i, 0]
 # #     yi = eik_coords_H6[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H6 += [sol]
 # #     errors_H6 += [ abs( sol - eik_vals_H6[i] ) ]
 
@@ -1230,7 +1151,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H6_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -1337,7 +1258,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # for i in range(len(eik_coords_H7)):
 # #     xi = eik_coords_H7[i, 0]
 # #     yi = eik_coords_H7[i, 1]
-# #     sol = exact_solution1(xi, yi)
+# #     sol = trueSolution(xi, yi, x0, center, R, eta1, eta2)
 # #     exact_values_H7 += [sol]
 # #     errors_H7 += [ abs( sol - eik_vals_H7[i] ) ]
 
@@ -1386,7 +1307,7 @@ np.savetxt('/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBas
 # # solution_interpolated = np.zeros(zi_lin.shape)
 # # for i in range(len(xi)):
 # #     for j in range(len(yi)):
-# #         solution_interpolated[i, j] = exact_solution1(  xi[i, j], yi[i,j]  )
+# #         solution_interpolated[i, j] = trueSolution(xi[i,j], yi[i,j], x0, center, R, eta1, eta2)
 # # errors_H7_abs = abs(zi_lin - solution_interpolated)
 
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)

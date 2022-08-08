@@ -20,16 +20,16 @@ int main()
     //   H1
 
     const char *pathPoints_H1, *pathNeighbors_H1, *pathIncidentFaces_H1, *pathBoundaryPoints_H1, *pathFacets_H1, *pathFaces_H1, *pathIndexRegions_H1, *pathToSaveTr_H1_, *pathSaveGradientsTr_H1_;
-    pathPoints_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_MeshPoints.txt";
-    pathNeighbors_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Neigh.txt";
-    pathIncidentFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_IncidentFaces.txt";
-    pathBoundaryPoints_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_BoundaryPoints.txt";
-    pathFacets_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Facets.txt";
-    pathFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Faces.txt";
-    pathIndexRegions_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_FacesLabel.txt";
+    pathPoints_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt";
+    pathNeighbors_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Neigh.txt";
+    pathIncidentFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_IncidentFaces.txt";
+    pathBoundaryPoints_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_BoundaryPoints.txt";
+    pathFacets_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Facets.txt";
+    pathFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt";
+    pathIndexRegions_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_FacesLabel.txt";
 
-    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Computed1-3Values.bin";
-    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H1/H1_Computed1-3Gradients.bin";
+    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin";
+    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin";
 
     int *start_H1;
     int nstart_H1, s_H1;
@@ -67,16 +67,16 @@ int main()
     //   H2
 
     const char *pathPoints_H2, *pathNeighbors_H2, *pathIncidentFaces_H2, *pathBoundaryPoints_H2, *pathFacets_H2, *pathFaces_H2, *pathIndexRegions_H2, *pathToSaveTr_H2_, *pathSaveGradientsTr_H2_;
-    pathPoints_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_MeshPoints.txt";
-    pathNeighbors_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Neigh.txt";
-    pathIncidentFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_IncidentFaces.txt";
-    pathBoundaryPoints_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_BoundaryPoints.txt";
-    pathFacets_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Facets.txt";
-    pathFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Faces.txt";
-    pathIndexRegions_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_FacesLabel.txt";
+    pathPoints_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_MeshPoints.txt";
+    pathNeighbors_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Neigh.txt";
+    pathIncidentFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_IncidentFaces.txt";
+    pathBoundaryPoints_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_BoundaryPoints.txt";
+    pathFacets_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Facets.txt";
+    pathFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Faces.txt";
+    pathIndexRegions_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_FacesLabel.txt";
 
-    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Computed1-3Values.bin";
-    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H2/H2_Computed1-3Gradients.bin";
+    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedValues.bin";
+    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedGradients.bin";
 
     int *start_H2;
     int nstart_H2, s_H2;
@@ -115,16 +115,16 @@ int main()
     //   H3
 
     const char *pathPoints_H3, *pathNeighbors_H3, *pathIncidentFaces_H3, *pathBoundaryPoints_H3, *pathFacets_H3, *pathFaces_H3, *pathIndexRegions_H3, *pathToSaveTr_H3_, *pathSaveGradientsTr_H3_;
-    pathPoints_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_MeshPoints.txt";
-    pathNeighbors_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Neigh.txt";
-    pathIncidentFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_IncidentFaces.txt";
-    pathBoundaryPoints_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_BoundaryPoints.txt";
-    pathFacets_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Facets.txt";
-    pathFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Faces.txt";
-    pathIndexRegions_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_FacesLabel.txt";
+    pathPoints_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_MeshPoints.txt";
+    pathNeighbors_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Neigh.txt";
+    pathIncidentFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_IncidentFaces.txt";
+    pathBoundaryPoints_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_BoundaryPoints.txt";
+    pathFacets_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Facets.txt";
+    pathFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Faces.txt";
+    pathIndexRegions_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_FacesLabel.txt";
 
-    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Computed1-3Values.bin";
-    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H3/H3_Computed1-3Gradients.bin";
+    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedValues.bin";
+    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedGradients.bin";
 
     int *start_H3;
     int nstart_H3, s_H3;
@@ -162,16 +162,16 @@ int main()
     //   H4
 
     const char *pathPoints_H4, *pathNeighbors_H4, *pathIncidentFaces_H4, *pathBoundaryPoints_H4, *pathFacets_H4, *pathFaces_H4, *pathIndexRegions_H4, *pathToSaveTr_H4_, *pathSaveGradientsTr_H4_;
-    pathPoints_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_MeshPoints.txt";
-    pathNeighbors_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Neigh.txt";
-    pathIncidentFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_IncidentFaces.txt";
-    pathBoundaryPoints_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_BoundaryPoints.txt";
-    pathFacets_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Facets.txt";
-    pathFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Faces.txt";
-    pathIndexRegions_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_FacesLabel.txt";
+    pathPoints_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_MeshPoints.txt";
+    pathNeighbors_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Neigh.txt";
+    pathIncidentFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_IncidentFaces.txt";
+    pathBoundaryPoints_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_BoundaryPoints.txt";
+    pathFacets_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Facets.txt";
+    pathFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Faces.txt";
+    pathIndexRegions_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_FacesLabel.txt";
 
-    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Computed1-3Values.bin";
-    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H4/H4_Computed1-3Gradients.bin";
+    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedValues.bin";
+    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedGradients.bin";
 
     int *start_H4;
     int nstart_H4, s_H4;
@@ -209,16 +209,16 @@ int main()
     //   H5
 
     const char *pathPoints_H5, *pathNeighbors_H5, *pathIncidentFaces_H5, *pathBoundaryPoints_H5, *pathFacets_H5, *pathFaces_H5, *pathIndexRegions_H5, *pathToSaveTr_H5_, *pathSaveGradientsTr_H5_;
-    pathPoints_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_MeshPoints.txt";
-    pathNeighbors_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Neigh.txt";
-    pathIncidentFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_IncidentFaces.txt";
-    pathBoundaryPoints_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_BoundaryPoints.txt";
-    pathFacets_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Facets.txt";
-    pathFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Faces.txt";
-    pathIndexRegions_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_FacesLabel.txt";
+    pathPoints_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_MeshPoints.txt";
+    pathNeighbors_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Neigh.txt";
+    pathIncidentFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_IncidentFaces.txt";
+    pathBoundaryPoints_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_BoundaryPoints.txt";
+    pathFacets_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Facets.txt";
+    pathFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Faces.txt";
+    pathIndexRegions_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_FacesLabel.txt";
 
-    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Computed1-3Values.bin";
-    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H5/H5_Computed1-3Gradients.bin";
+    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedValues.bin";
+    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedGradients.bin";
 
     int *start_H5;
     int nstart_H5, s_H5;
@@ -256,16 +256,16 @@ int main()
     //   H6
 
     const char *pathPoints_H6, *pathNeighbors_H6, *pathIncidentFaces_H6, *pathBoundaryPoints_H6, *pathFacets_H6, *pathFaces_H6, *pathIndexRegions_H6, *pathToSaveTr_H6_, *pathSaveGradientsTr_H6_;
-    pathPoints_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_MeshPoints.txt";
-    pathNeighbors_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Neigh.txt";
-    pathIncidentFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_IncidentFaces.txt";
-    pathBoundaryPoints_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_BoundaryPoints.txt";
-    pathFacets_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Facets.txt";
-    pathFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Faces.txt";
-    pathIndexRegions_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_FacesLabel.txt";
+    pathPoints_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_MeshPoints.txt";
+    pathNeighbors_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Neigh.txt";
+    pathIncidentFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_IncidentFaces.txt";
+    pathBoundaryPoints_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_BoundaryPoints.txt";
+    pathFacets_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Facets.txt";
+    pathFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Faces.txt";
+    pathIndexRegions_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_FacesLabel.txt";
 
-    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Computed1-3Values.bin";
-    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H6/H6_Computed1-3Gradients.bin";
+    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedValues.bin";
+    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedGradients.bin";
 
     int *start_H6;
     int nstart_H6, s_H6;
@@ -303,16 +303,16 @@ int main()
     //   H7
 
     const char *pathPoints_H7, *pathNeighbors_H7, *pathIncidentFaces_H7, *pathBoundaryPoints_H7, *pathFacets_H7, *pathFaces_H7, *pathIndexRegions_H7, *pathToSaveTr_H7_, *pathSaveGradientsTr_H7_;
-    pathPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_MeshPoints.txt";
-    pathNeighbors_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Neigh.txt";
-    pathIncidentFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_IncidentFaces.txt";
-    pathBoundaryPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_BoundaryPoints.txt";
-    pathFacets_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Facets.txt";
-    pathFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Faces.txt";
-    pathIndexRegions_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_FacesLabel.txt";
+    pathPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_MeshPoints.txt";
+    pathNeighbors_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Neigh.txt";
+    pathIncidentFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_IncidentFaces.txt";
+    pathBoundaryPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_BoundaryPoints.txt";
+    pathFacets_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Facets.txt";
+    pathFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Faces.txt";
+    pathIndexRegions_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_FacesLabel.txt";
 
-    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Computed1-3Values.bin";
-    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/H7/H7_Computed1-3Gradients.bin";
+    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedValues.bin";
+    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedGradients.bin";
 
     int *start_H7;
     int nstart_H7, s_H7;
@@ -349,7 +349,7 @@ int main()
 
     const char *pathTimes;
 
-    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/MeshInfo/Times.bin";
+    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times.bin";
 
     saveTimes(times, pathTimes);
 
