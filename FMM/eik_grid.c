@@ -26,8 +26,8 @@ struct eik_grid {
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   int *current_states; // 0 far, 1 trial, 2 valid
-  int *pathsTaken; // path taken from x0 to each of the nodes
-  int currentUpdate[2]; // 0 is xlambda, 1 is xhat (currently)
+  int (*parents_path)[2]; // this are the two parent nodes (their indices) from which each node has been updated
+  double *lambdas; // lambdas from which (using the two parents) the node was updated
 } ;
 
 void eik_grid_alloc(eik_gridS **eik_g ) {
@@ -50,21 +50,28 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   // we first set all the current eik_vals to infinity, set all the current_states to 0 (far)
   double *eik_vals;
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
-  int *current_states, *pathsTaken;
+  int (*parents_path)[2]; // this is a pointer to a list of the parents that are used to update that node (by indices)
+  double *lambdas; // pointer to the lambdas used to update each node using their parents
+  int *current_states;
   eik_vals = malloc(triM_2D->nPoints*sizeof(double)); 
   current_states = malloc(triM_2D->nPoints*sizeof(int));
   eik_grad = malloc(2*triM_2D->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
-  pathsTaken = malloc(triM_2D->nPoints*sizeof(int)); // initiate the paths taken array
+  parents_path = malloc(2*triM_2D->nPoints*sizeof(int)); // each node has two parents by index
+  lambdas = malloc(triM_2D->nPoints*sizeof(double)); // each node was updated with one lambda which is a double
   for(int i = 0; i<triM_2D->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
     eik_grad[i][0] = 0; // initialize all the gradients to zero
     eik_grad[i][1] = 0;
-    pathsTaken[i] = i; // initiate them as themselves
+    parents_path[i][0] = i; // initialize both parents as themselves
+    parents_path[i][1] = i;
+    lambdas[i] = 0; // initialize all lambdas to 0 (meaning that its parent is itself, useful for the starting points)
   }
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
   eik_g->eik_grad = eik_grad;
+  eik_g->parents_path = parents_path;
+  eik_g->lambdas = lambdas;
 
   // we initialize the priority queue, all the elements in start are going to be inserted and their current states set to 1
   // notice that we need to add both the index of the starting points AND their eikonal value (which is 0) to the p_queue struct
@@ -73,10 +80,8 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   priority_queue_init(p_queueG); // initiate
   for(int i = 0; i<nStart; i++){
     insert(p_queueG, 0, start[i]); // insert all the starting points with eikonal value 0
-    pathsTaken[start[i]] = start[i]; // the starting point start at themselves
   }
   eik_g->p_queueG = p_queueG;
-  eik_g->pathsTaken = pathsTaken;
   assert(&eik_g != NULL); // eik_g should not be null
 }
 
@@ -104,7 +109,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal value:   %fl    ||  Comes from:   %d    ||  Current state:   %d ||  Coordinates eik gradient:   (%fl, %fl) \n", i, x[0], x[1]  , eik_g->eik_vals[i], eik_g->pathsTaken[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %d ||  Eik gradient:   (%fl, %fl)||  Parents:   (%d, %d)||  LamOpt:   %fl \n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1], eik_g->parents_path[i][0], eik_g->parents_path[i][1], eik_g->lambdas[i]);
   }
 }
 
@@ -124,7 +129,7 @@ void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, doubl
   *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
 }
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double xlam[2], double *That2, int *regionIndex){
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex){
   // this is where we use the optimization problem (we find lambda and then update it)
   double lambda_opt, lambda0, lambda1, T0, T1, tol;
   double x0[2], x1[2], xHat[2];
@@ -153,6 +158,7 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
   // printf("\nyHat %fl\n", xHat[1]);
   // compute the optimum lambda from  the linear model
   lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, *regionIndex);
+  *lambda = lambda_opt;
   // printf("Lambda found %fl\n", lambda_opt);
   // save the xlam 
   xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
@@ -180,7 +186,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
   nNei = eik_g->triM_2D->neighbors[index_accepted].len;
   for(int i = 0; i<nNei; i++){
     neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // a neighbor
-    if(eik_g->current_states[neighborsIndex] == 0) {
+    if(eik_g->current_states[neighborsIndex] == 0) { // meaning that we just add the neighbors which are currently set as far
       onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex, &That1, &regionIndex);
       insert(eik_g->p_queueG, That1 , neighborsIndex); // insert this one point update to the priority queue
       eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
@@ -191,8 +197,8 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
       norm_div = l2norm(temp_substraction);
       eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
       eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-      // and we add the path
-      eik_g->pathsTaken[neighborsIndex] = index_accepted;
+      eik_g->parents_path[neighborsIndex][0] = index_accepted; // it was updated directly from the newly accepted node
+      // we don't update the lambdas because currently they're set to 0, i.e. the update is set directly from parents_path[neighborsIndex][0].
     }
   }
 }
@@ -201,18 +207,19 @@ void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int ind
   // after accepting a node, if it has a valid neighbor and a trial neighbor we might perform an update in the 
   // current eikonal value of that trial neighbor using the newly accepted node and the valid neighbor (two point update)
   int regionIndex;
-  double norm_div, twoPointVal, temp_substraction[2], xlam[2], xhat[2];
+  double norm_div, twoPointVal, lambda_opt, temp_substraction[2], xlam[2], xhat[2];
   xhat[0] = eik_g->triM_2D->points->x[neighborTrial];
   xhat[1] = eik_g->triM_2D->points->y[neighborTrial];
-  twoPointUpdate_eikValue(eik_g, index_accepted, neighborValid, neighborTrial, xlam, &twoPointVal, &regionIndex);
+  twoPointUpdate_eikValue(eik_g, index_accepted, neighborValid, neighborTrial, &lambda_opt, xlam, &twoPointVal, &regionIndex);
   update(eik_g->p_queueG, twoPointVal, neighborTrial); // this function takes care, if its smaller it will update the new value
-  if( twoPointVal < eik_g->eik_vals[neighborTrial] ){
+  if( twoPointVal < eik_g->eik_vals[neighborTrial] ){ // if we actually have a better update
     vec2_substraction(xhat, xlam, temp_substraction);
     norm_div = l2norm(temp_substraction);
     eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
     eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-    // we add the path if the eikonal value is minimized by taking a two point update
-    eik_g->pathsTaken[neighborTrial] = index_accepted;
+    eik_g->parents_path[neighborTrial][0] = index_accepted;
+    eik_g->parents_path[neighborTrial][1] = neighborValid;
+    eik_g->lambdas[neighborTrial] = lambda_opt;
   }
 }
 
@@ -293,10 +300,20 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
     fclose(fp);
 }
 
-
-void savePathsTaken(eik_gridS *eik_g, const char *pathFile){
+void saveComputedParents(eik_gridS *eik_g, const char *pathFile){
     FILE *fp;
     fp = fopen(pathFile, "wb");
-    fwrite(eik_g->pathsTaken, sizeof(int), eik_g->triM_2D->nPoints, fp);
+    
+    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+      fwrite(eik_g->parents_path[i], sizeof(int), 2, fp);
+    }
+
     fclose(fp);
+}
+
+void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile){
+  FILE *fp;
+  fp = fopen(pathFile, "wb");
+  fwrite(eik_g->lambdas, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fclose(fp);
 }

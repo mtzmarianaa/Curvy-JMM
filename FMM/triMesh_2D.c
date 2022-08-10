@@ -135,14 +135,15 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
 }
 
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
-    // we look in the incidentFaces, both points must share two faces
+    // we look in the incidentFaces, both points must share two faces, we are looking for this and for the smaller region (meaning that the index of refraction is smaller there)
     int current_face, i, region, region_test;
     region = triM_2D->indexRegions[ triM_2D->incidentFaces[index_from].neis_i[0] ]; // index corresponding to the first incident face of from
     for (i = 1; i<triM_2D->incidentFaces[index_from].len; i++){
         current_face = triM_2D->incidentFaces[index_from].neis_i[i];
         region_test = triM_2D->indexRegions[ current_face ];
-        if ( region != region_test & region_test > region ){
-            // if there is an incident face with different index region and that index is greater
+        if ( region != region_test & region_test < region ){
+            // if there is an incident face with different index region and that index is smaller (if this happens then we're on the edge and we assume that 
+            // we can travel "fast" via the edge, check the idea behind computing the analytic solution)
             if (  triM_2D->faces->points[current_face][0] == index_to |  triM_2D->faces->points[current_face][1] == index_to | triM_2D->faces->points[current_face][2] == index_to ){
                 //printf("From %d to %d we consider the face indexed with %d \n", index_from, index_to, current_face);
                 region = region_test;
