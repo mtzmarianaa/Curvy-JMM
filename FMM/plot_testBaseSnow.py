@@ -33,6 +33,9 @@ center = np.array([0,0])
 R = 10
 eps = np.finfo(np.float64).resolution
 
+#########################################################
+####### USEFUL FUNCTIONS
+
 def rotate(angle):
     ax.view_init(azim=angle)
 
@@ -59,6 +62,39 @@ def average_edge_length(eik_coords, faces):
             nEdges += 1
             sum += sqrt(  (eik_coords[p2, 0] - eik_coords[p3, 0])**2 +  (eik_coords[p2, 1] - eik_coords[p3, 1])**2 )
     return sum/nEdges
+
+def getPathFromIndex(eik_coords, index_to_get_path_from, parents_path, lambdas):
+    '''
+    Given the coordinates, list of parents and list of optimal lambdas we get the path of index_to_get_path_from
+    '''
+    path = [(eik_coords[index_to_get_path_from, 0], eik_coords[index_to_get_path_from, 1])] # the path ends/starts in the index of interest
+    queue_indices = [index_to_get_path_from]
+    queue = [ (parents_path[index_to_get_path_from, 0],  parents_path[index_to_get_path_from, 1]) ] # queue, the indices in the current level considered
+    while( queue ): #while there are elements on the list
+        # for the pairs of parents in the queue we calculate the mean of the paths (i.e. means of (1-lambda)parent0 + lambda*parent1)
+        sum_x = 0
+        sum_y = 0
+        count = 0
+        len_queue = len(queue) #number of pairs of parents in the queue
+        for i in range(len_queue):
+            lamb = lambdas[ queue_indices[i]]
+            sum_x += (1 - lamb)*eik_coords[ queue[i][0] , 0] + lamb*eik_coords[ queue[i][1], 0 ] #add the coordinates of the xlambdas
+            sum_y += (1 - lamb)*eik_coords[ queue[i][0] , 1] + lamb*eik_coords[ queue[i][1], 1 ]
+            count += 1
+        path.extend( [  (sum_x/count, sum_y/count)  ] ) #add the mean of the xlambdas to que path
+        queue_indices = [ n[0] for n in queue ] + [ n[1] for n in queue ]
+        if len(set(queue_indices)) == 0:
+            queue = [] # if all the new indices are the same then it means that we've reached a source/starting point
+            path.extend(  (eik_coords[queue_indices[0], 0], eik_coords[queue_indices[0], 1]  )   ) # we add the source to the path
+        else:
+            queue = [  (parents_path[ind, 0], parents_path[ind, 0] ) for ind in queue_indices   ] # we have a new queue
+    # we need to reverse this list because it starts at the end point and ends in the source (just for aesthetics)
+    path.reverse()
+    return path
+        
+        
+        
+    
 
 
 n = 0
