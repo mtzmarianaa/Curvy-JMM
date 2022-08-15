@@ -20,6 +20,7 @@ int main()
     //   H1
 
     const char *pathPoints_H1, *pathNeighbors_H1, *pathIncidentFaces_H1, *pathBoundaryPoints_H1, *pathFacets_H1, *pathFaces_H1, *pathIndexRegions_H1, *pathToSaveTr_H1_, *pathSaveGradientsTr_H1_;
+    const char *pathSavePath_H1, *pathSaveLambdas_H1;
     pathPoints_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt";
     pathNeighbors_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Neigh.txt";
     pathIncidentFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_IncidentFaces.txt";
@@ -30,6 +31,8 @@ int main()
 
     pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin";
     pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin";
+    pathSavePath_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents.bin";
+    pathSaveLambdas_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt.bin";
 
     int *start_H1;
     int nstart_H1, s_H1;
@@ -61,12 +64,17 @@ int main()
 
     saveComputedGradients(eik_g1, pathSaveGradientsTr_H1_);
 
+    saveComputedParents(eik_g1, pathSavePath_H1);
+
+    saveComputedLambdas(eik_g1, pathSaveLambdas_H1);
+
     eik_grid_dealloc(&eik_g1);
 
 
     //   H2
 
     const char *pathPoints_H2, *pathNeighbors_H2, *pathIncidentFaces_H2, *pathBoundaryPoints_H2, *pathFacets_H2, *pathFaces_H2, *pathIndexRegions_H2, *pathToSaveTr_H2_, *pathSaveGradientsTr_H2_;
+    const char *pathSavePath_H2, *pathSaveLambdas_H2;
     pathPoints_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_MeshPoints.txt";
     pathNeighbors_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Neigh.txt";
     pathIncidentFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_IncidentFaces.txt";
@@ -77,6 +85,8 @@ int main()
 
     pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedValues.bin";
     pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedGradients.bin";
+    pathSavePath_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Parents.bin";
+    pathSaveLambdas_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_LambdasOpt.bin";
 
     int *start_H2;
     int nstart_H2, s_H2;
@@ -108,6 +118,10 @@ int main()
 
     saveComputedGradients(eik_g2, pathSaveGradientsTr_H2_);
 
+    saveComputedParents(eik_g2, pathSavePath_H2);
+
+    saveComputedLambdas(eik_g2, pathSaveLambdas_H2);
+
     eik_grid_dealloc(&eik_g2);
 
 
@@ -115,6 +129,7 @@ int main()
     //   H3
 
     const char *pathPoints_H3, *pathNeighbors_H3, *pathIncidentFaces_H3, *pathBoundaryPoints_H3, *pathFacets_H3, *pathFaces_H3, *pathIndexRegions_H3, *pathToSaveTr_H3_, *pathSaveGradientsTr_H3_;
+    const char *pathSavePath_H3, *pathSaveLambdas_H3;
     pathPoints_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_MeshPoints.txt";
     pathNeighbors_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Neigh.txt";
     pathIncidentFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_IncidentFaces.txt";
@@ -125,6 +140,8 @@ int main()
 
     pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedValues.bin";
     pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedGradients.bin";
+    pathSavePath_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Parents.bin";
+    pathSaveLambdas_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_LambdasOpt.bin";
 
     int *start_H3;
     int nstart_H3, s_H3;
@@ -156,12 +173,17 @@ int main()
 
     saveComputedGradients(eik_g3, pathSaveGradientsTr_H3_);
 
+    saveComputedParents(eik_g3, pathSavePath_H3);
+
+    saveComputedLambdas(eik_g3, pathSaveLambdas_H3);
+
     eik_grid_dealloc(&eik_g3);
 
 
     //   H4
 
     const char *pathPoints_H4, *pathNeighbors_H4, *pathIncidentFaces_H4, *pathBoundaryPoints_H4, *pathFacets_H4, *pathFaces_H4, *pathIndexRegions_H4, *pathToSaveTr_H4_, *pathSaveGradientsTr_H4_;
+    const char *pathSavePath_H4, *pathSaveLambdas_H4;
     pathPoints_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_MeshPoints.txt";
     pathNeighbors_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Neigh.txt";
     pathIncidentFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_IncidentFaces.txt";
@@ -172,6 +194,8 @@ int main()
 
     pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedValues.bin";
     pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedGradients.bin";
+    pathSavePath_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Parents.bin";
+    pathSaveLambdas_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_LambdasOpt.bin";
 
     int *start_H4;
     int nstart_H4, s_H4;
@@ -203,12 +227,17 @@ int main()
 
     saveComputedGradients(eik_g4, pathSaveGradientsTr_H4_);
 
+    saveComputedParents(eik_g4, pathSavePath_H4);
+
+    saveComputedLambdas(eik_g4, pathSaveLambdas_H4);
+
     eik_grid_dealloc(&eik_g4);
 
 
     //   H5
 
     const char *pathPoints_H5, *pathNeighbors_H5, *pathIncidentFaces_H5, *pathBoundaryPoints_H5, *pathFacets_H5, *pathFaces_H5, *pathIndexRegions_H5, *pathToSaveTr_H5_, *pathSaveGradientsTr_H5_;
+    const char *pathSavePath_H5, *pathSaveLambdas_H5;
     pathPoints_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_MeshPoints.txt";
     pathNeighbors_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Neigh.txt";
     pathIncidentFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_IncidentFaces.txt";
@@ -219,6 +248,8 @@ int main()
 
     pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedValues.bin";
     pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedGradients.bin";
+    pathSavePath_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Parents.bin";
+    pathSaveLambdas_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_LambdasOpt.bin";
 
     int *start_H5;
     int nstart_H5, s_H5;
@@ -250,12 +281,17 @@ int main()
 
     saveComputedGradients(eik_g5, pathSaveGradientsTr_H5_);
 
+    saveComputedParents(eik_g5, pathSavePath_H5);
+
+    saveComputedLambdas(eik_g5, pathSaveLambdas_H5);
+
     eik_grid_dealloc(&eik_g5);
 
 
     //   H6
 
     const char *pathPoints_H6, *pathNeighbors_H6, *pathIncidentFaces_H6, *pathBoundaryPoints_H6, *pathFacets_H6, *pathFaces_H6, *pathIndexRegions_H6, *pathToSaveTr_H6_, *pathSaveGradientsTr_H6_;
+    const char *pathSavePath_H6, *pathSaveLambdas_H6;
     pathPoints_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_MeshPoints.txt";
     pathNeighbors_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Neigh.txt";
     pathIncidentFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_IncidentFaces.txt";
@@ -266,6 +302,8 @@ int main()
 
     pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedValues.bin";
     pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedGradients.bin";
+    pathSavePath_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Parents.bin";
+    pathSaveLambdas_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_LambdasOpt.bin";
 
     int *start_H6;
     int nstart_H6, s_H6;
@@ -297,12 +335,17 @@ int main()
 
     saveComputedGradients(eik_g6, pathSaveGradientsTr_H6_);
 
+    saveComputedParents(eik_g6, pathSavePath_H6);
+
+    saveComputedLambdas(eik_g6, pathSaveLambdas_H6);
+
     eik_grid_dealloc(&eik_g6);
 
 
     //   H7
 
     const char *pathPoints_H7, *pathNeighbors_H7, *pathIncidentFaces_H7, *pathBoundaryPoints_H7, *pathFacets_H7, *pathFaces_H7, *pathIndexRegions_H7, *pathToSaveTr_H7_, *pathSaveGradientsTr_H7_;
+    const char *pathSavePath_H7, *pathSaveLambdas_H7;
     pathPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_MeshPoints.txt";
     pathNeighbors_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Neigh.txt";
     pathIncidentFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_IncidentFaces.txt";
@@ -313,6 +356,8 @@ int main()
 
     pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedValues.bin";
     pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedGradients.bin";
+    pathSavePath_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Parents.bin";
+    pathSaveLambdas_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_LambdasOpt.bin";
 
     int *start_H7;
     int nstart_H7, s_H7;
@@ -343,6 +388,10 @@ int main()
     saveComputedValues(eik_g7, pathToSaveTr_H7_);
 
     saveComputedGradients(eik_g7, pathSaveGradientsTr_H7_);
+
+    saveComputedParents(eik_g7, pathSavePath_H7);
+
+    saveComputedLambdas(eik_g7, pathSaveLambdas_H7);
 
     eik_grid_dealloc(&eik_g7);
 

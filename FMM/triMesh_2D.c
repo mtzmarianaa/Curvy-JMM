@@ -138,7 +138,7 @@ int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
     // we look in the incidentFaces, both points must share two faces, we are looking for this and for the smaller region (meaning that the index of refraction is smaller there)
     int current_face, i, region, region_test;
     region = triM_2D->indexRegions[ triM_2D->incidentFaces[index_from].neis_i[0] ]; // index corresponding to the first incident face of from
-    for (i = 1; i<triM_2D->incidentFaces[index_from].len; i++){
+    for (i = 0; i<triM_2D->incidentFaces[index_from].len; i++){
         current_face = triM_2D->incidentFaces[index_from].neis_i[i];
         region_test = triM_2D->indexRegions[ current_face ];
         if ( region != region_test & region_test < region ){
@@ -151,6 +151,77 @@ int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
         }
     }
     return region;
+}
+
+void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int index_neighNeigh, int *trA, int *trB) {
+    // function to find the two triangles trA and trB for when we want to disable updates with nonzero lagrange
+    // we need these triangles in order to determine if the imaginary triangle we are going to consider
+    // with edges (index_xHat, index_newAccepted, inedex_neighNeigh) is all contained in just one region (if it is
+    // then we don't have to worry with a two part line segment)
+    int current_face,j, thirdIndex, possibleThirdIndex[2], possibleTrB[2];
+    j = 0;
+    // there are only two possible third points for trB, we find them both
+    for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
+        current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
+        if ( (triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_neighNeigh) | (triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_neighNeigh) ) {
+            possibleThirdIndex[j] = triM_2D->faces->points[current_face][2];
+            possibleTrB[j] = current_face;
+            j ++;
+        }
+        else if ( (triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_neighNeigh) |  (triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_neighNeigh) ) {
+            possibleThirdIndex[j] = triM_2D->faces->points[current_face][0];
+            possibleTrB[j] = current_face;
+            j ++;
+        }
+        else if ( (triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_neighNeigh) | (triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_neighNeigh) ) {
+            possibleThirdIndex[j] = triM_2D->faces->points[current_face][1];
+            possibleTrB[j] = current_face;
+            j ++;
+        }
+    }
+    // printf("\nPossible trB %d, %d", possibleTrB[0], possibleTrB[1]);
+    // printf("\nThe nodes in those triangles are:\n");
+    // printf("First:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[0]][0], triM_2D->faces->points[possibleTrB[0]][1], triM_2D->faces->points[possibleTrB[0]][2]);
+    // printf("Second:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[1]][0], triM_2D->faces->points[possibleTrB[1]][1], triM_2D->faces->points[possibleTrB[1]][2]);
+    // printf("The possibilities for the third index are: %d   %d\n", possibleThirdIndex[0], possibleThirdIndex[1]);
+    // now we have two candidates for f1, the winner is going to be that point that is also in a triangle containing xhat at p1
+    for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
+        current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
+        for (j = 0; j<2; j++){
+            if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+            else if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+            else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+            else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+            else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+            else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
+                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
+                *trB = possibleTrB[j];
+                *trA = current_face;
+            }
+        }
+    }
+    printf("TrA  %d\n", *trA);
+    printf("TrB  %d\n", *trB);
 }
 
 int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3){

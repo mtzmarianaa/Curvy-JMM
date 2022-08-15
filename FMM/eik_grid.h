@@ -17,13 +17,15 @@ void printGeneralInfo(eik_gridS *eik_g);
 
 void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, double *That1, int *regionIndex);
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex);
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex, int L);
+
+void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, double That2, int x0_ind, int x1_ind, int *neighNeigh_ind, int xHat_ind, double xlamNeigh[2], double *That2Art, int *regionIndex, double lambda0, double lambda1, double T0, double x0[], double xHat[], double tol, double maxIter);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
 
-void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted);
+void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted, int L);
 
-void update_afterAccepted(eik_gridS *eik_g, int index_accepted);
+void update_afterAccepted(eik_gridS *eik_g, int index_accepted, int L);
 
 void popAddNeighbors(eik_gridS *eik_g);
 

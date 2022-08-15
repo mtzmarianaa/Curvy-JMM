@@ -129,15 +129,16 @@ void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, doubl
   *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
 }
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex){
+void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind_original, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex, int L){
   // this is where we use the optimization problem (we find lambda and then update it)
   double lambda_opt, lambda0, lambda1, T0, T1, tol;
-  double x0[2], x1[2], xHat[2];
-  int maxIter, faceBetweenPoints;
+  double x0[2], x1[2], xHat[2], xlamNeigh[2];
+  int maxIter, faceBetweenPoints, neighNeigh_ind, x1_ind;
+  x1_ind = *x1_ind_original;
   lambda0 = 0.0;
   lambda1 = 1.0;
   maxIter = 25;
-  tol = 0.001; // ask if these parameters are ok
+  tol = 0.001;
   T0 = eik_g->eik_vals[x0_ind];
   T1 = eik_g->eik_vals[x1_ind];
   faceBetweenPoints = faceBetween3Points(eik_g->triM_2D, x0_ind, x1_ind, xHat_ind ); // get the face that is defined by these 3 points
@@ -158,15 +159,84 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int x1_ind, int xHat_
   // printf("\nyHat %fl\n", xHat[1]);
   // compute the optimum lambda from  the linear model
   lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, *regionIndex);
-  *lambda = lambda_opt;
-  // printf("Lambda found %fl\n", lambda_opt);
-  // save the xlam 
-  xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
-  xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
-  // get the possible eikonal value for this two point update
-  *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
-  // printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
-  // printf("Eikonal value with two point update %fl\n", That2);
+  if(L == 0){
+    *lambda = lambda_opt;
+    // printf("Lambda found %fl\n", lambda_opt);
+    // save the xlam 
+    xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
+    xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
+    // get the possible eikonal value for this two point update
+    *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
+    // printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
+    // printf("Eikonal value with two point update %fl\n", That2);
+  }
+  else if(L == 1){
+    double That2Art;
+    // if this happens then artificial triangles are allowed
+    // we first compute everything "as usual" because although we are allowed to use artificial triangles, this update might be smaller
+    *lambda = lambda_opt;
+    // printf("Lambda found %fl\n", lambda_opt);
+    // save the xlam 
+    xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
+    xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
+    // get the possible eikonal value using the "classical" two point update with the triangles from the mesh
+    *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
+    // But if this is not the optimal value i.e. lambda_opt < 0 or lambda_opt > 1 with certain tolerance then we use artificial triangles
+    // in the artificial triangles there is another filter because it might happen that those updates are worse than the "classical" one
+    if ( fabs(gPrime(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex)) > tol ) {
+      // this is where artificial triangles are useful, the optimum lambda found IS not optimal, we have other options for the update
+      lambdaWithArtificialTriangleAllowed(eik_g, *That2, x0_ind, x1_ind, &neighNeigh_ind, xHat_ind, xlamNeigh, &That2Art, regionIndex, lambda0, lambda1, T0, x0, xHat, tol, maxIter);
+      *That2 = That2Art;
+      *x1_ind_original = neighNeigh_ind;
+    }
+  }
+}
+
+void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, double That2, int x0_ind, int x1_ind, int *neighNeigh_ind, int xHat_ind, double xlamNeigh[2], double *That2Art, int *regionIndex, double lambda0, double lambda1, double T0, double x0[], double xHat[], double tol, double maxIter){
+  // this is where it gets creative and allow two types of updates: with an artificial triangle (if both triangles involved 
+  // belong to the same region or with a two piecewise linear update)
+  // lambda0, lambda1 are the possible initial values for lambda T0 is the eikonal at x0, T1 is the eikonal at x1,
+  // x0 is the newly accepted node, x1 is one of its valid neighbors, xhat is the node we want to update
+  // first, we have to iterate through the neighbors of the newly accepted node that are set to valid
+  int indexNeighNeigh, trA, trB; // indices of the neighbor of the neighbor (i.e. neighbor of x1)
+  double xNeighNeigh[2], TNeighNeigh, lambda_optNeighNeigh, ThatCurrent;
+  *That2Art = That2; // the goal is to find some update that yields That2Art<That2
+  *neighNeigh_ind = x1_ind; // if we dont find such update we stay with the "classical one"
+  for(int i = 0; i<eik_g->triM_2D->neighbors[x0_ind].len; i++ ){
+    // but we don't want to consider x0 again
+    indexNeighNeigh = eik_g->triM_2D->neighbors[x0_ind].neis_i[i];
+    if(indexNeighNeigh != x1_ind & eik_g->current_states[indexNeighNeigh] == 2){
+      // we don't consider x1 again (that was considered in the "classical two point update"), we want to look for the neighbors of the neighbor
+      // to determine if we are changing region type we use this function and we only consider valid neighbors of the neighbor
+      findTrATrB(eik_g->triM_2D, xHat_ind, x0_ind, indexNeighNeigh, &trA, &trB);
+      if(trA == trB){
+        // if this happens then we are not changing regions, it is "easier"/less difficult because we can just use an artificial triangle
+        // the corners of such artificial triangle are x0, indexNeighNeigh, xHat
+        *regionIndex = eik_g->triM_2D->indexRegions[ trA ];
+        // get the coordinates of the neighbor of the neighbor
+        xNeighNeigh[0] = eik_g->triM_2D->points->x[indexNeighNeigh];
+        xNeighNeigh[1] = eik_g->triM_2D->points->y[indexNeighNeigh];
+        TNeighNeigh = eik_g->eik_vals[indexNeighNeigh];
+        // compute the artificial triangle update
+        lambda_optNeighNeigh = secant_2D(lambda0, lambda1, T0, TNeighNeigh, x0, xNeighNeigh, xHat, tol, maxIter, *regionIndex);
+        ThatCurrent = eikApproxLin(TNeighNeigh, T0, lambda_optNeighNeigh, x0, xNeighNeigh, xHat, *regionIndex);
+        if( ThatCurrent< *That2Art){
+          *That2Art = ThatCurrent; // we found an update that is better
+          xlamNeigh[0] = (1-lambda_optNeighNeigh)*x0[0] + lambda_optNeighNeigh*xNeighNeigh[0];
+          xlamNeigh[1] = (1-lambda_optNeighNeigh)*x0[1] + lambda_optNeighNeigh*xNeighNeigh[1];
+          *neighNeigh_ind = indexNeighNeigh; // we set this as the index neigh neigh (we need to save this to save the parents of xhat)
+        }
+      }
+      else{
+        // if this happens then we ARE changing regions (horrible, we dont like this and we need a 2D optimization method gggg)
+        // ASK SAM HOW TO SAVE THIS TWO PARAMETERS FOR THE PATH
+        xlamNeigh[0] = 0;
+        xlamNeigh[1] = 0;
+        *neighNeigh_ind = -5;
+        *That2Art = 6000;
+      }
+    }
+  }
 }
 
 
@@ -203,30 +273,30 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
   }
 }
 
-void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted){
+void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted, int L){
   // after accepting a node, if it has a valid neighbor and a trial neighbor we might perform an update in the 
   // current eikonal value of that trial neighbor using the newly accepted node and the valid neighbor (two point update)
   int regionIndex;
   double norm_div, twoPointVal, lambda_opt, temp_substraction[2], xlam[2], xhat[2];
   xhat[0] = eik_g->triM_2D->points->x[neighborTrial];
   xhat[1] = eik_g->triM_2D->points->y[neighborTrial];
-  twoPointUpdate_eikValue(eik_g, index_accepted, neighborValid, neighborTrial, &lambda_opt, xlam, &twoPointVal, &regionIndex);
+  twoPointUpdate_eikValue(eik_g, index_accepted, &neighborValid, neighborTrial, &lambda_opt, xlam, &twoPointVal, &regionIndex, L);
   update(eik_g->p_queueG, twoPointVal, neighborTrial); // this function takes care, if its smaller it will update the new value
   if( twoPointVal < eik_g->eik_vals[neighborTrial] ){ // if we actually have a better update
-    vec2_substraction(xhat, xlam, temp_substraction);
-    norm_div = l2norm(temp_substraction);
-    eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-    eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-    eik_g->parents_path[neighborTrial][0] = index_accepted;
-    eik_g->parents_path[neighborTrial][1] = neighborValid;
-    eik_g->lambdas[neighborTrial] = lambda_opt;
+      vec2_substraction(xhat, xlam, temp_substraction);
+      norm_div = l2norm(temp_substraction);
+      eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
+      eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
+      eik_g->parents_path[neighborTrial][0] = index_accepted;
+      eik_g->parents_path[neighborTrial][1] = neighborValid;
+      eik_g->lambdas[neighborTrial] = lambda_opt;
   }
 }
 
 // after accepting the neighboring nodes and putting them into the priority queue (their updates were all computed with
 // either a one point update (if they were previously far) or stayed with their pre computed eikonal value)
 // now we need to update those nodes that can be updated via a two point update
-void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
+void update_afterAccepted(eik_gridS *eik_g, int index_accepted, int L){
   // we need to first find the incident faces to the index_accepted point, then we iterate through those
   // faces to find the 2 other points that belong to the same face, if one of them is set as valid then we might consider performing
   // a two point update
@@ -252,14 +322,14 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
       // two point update considered
       neighborValid = neis[0];
       neighborTrial = neis[1];
-      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
+      update_step(eik_g, neighborValid, neighborTrial, index_accepted, L);
     }
     if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
       // neis[0] is trial, neis[1] is valid
       // two point update considered
       neighborValid = neis[1];
       neighborTrial = neis[0];
-      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
+      update_step(eik_g, neighborValid, neighborTrial, index_accepted, L);
     }
     // if both of them are trial it means that they were recently added as the neighbors of index_accepted, no two point update can be done in this case
   }

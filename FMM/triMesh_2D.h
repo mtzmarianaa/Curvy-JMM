@@ -34,4 +34,6 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D);
 
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to);
 
+void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int index_neighNeigh, int *trA, int *trB);
+
 int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3);

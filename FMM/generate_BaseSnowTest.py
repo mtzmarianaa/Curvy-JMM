@@ -1,6 +1,6 @@
 # Generate test geometry but just its base (i.e. just the circle) specifying h
 
-h = 0.75
+h = 0.5
 h_string = str(h)
 
 
@@ -60,12 +60,12 @@ def nPoints(h):
     With this function we know how many points we need in the top of the snowman and in the bottom, depending on which h we want
     WE ASSUME THAT WE ARE DISTRIBUTING UNIFORMLY THESE POINTS
     '''
-    nBottom = ceil(20*pi/h) 
+    nBottom = ceil(40*pi/h) 
     return nBottom
 
 Nbase = nPoints(h)
 
-t = np.linspace(1/4, 9/4, num = Nbase , endpoint = False)
+t = np.linspace(3/4, 11/4, num = Nbase , endpoint = False)
 t = np.multiply(t, pi)
 
 points_base = circ_base(t)
@@ -73,10 +73,10 @@ points_base = circ_base(t)
 
 # The points on the outline of the snowman
 points =  [(-15, -10)] # start with x0 so that in each mesh we know its index
-points.extend([(0, 11), (4, 4), (10, 15), (10, 10)]) # we add the points whose path we want to track (on reg2, on reg3, on reg1, on reg1)
+points.extend([(17, -17), (8,8), (3, -4), (0.87, 7.36), (-5, 7) ]) # we add the points whose path we want to track (regA1, on circle, reg1\A1, reg3 type1, boundary of type1 and type 2, reg3 type 2)
 points.extend([ (points_base[i, 0], points_base[i, 1]) for i in range( len(points_base) ) ] )
 # Add the facets
-facets = round_trip_connect(5, len(points) -1 ) # we don't want to connnect x0
+facets = round_trip_connect(6, len(points) -1 ) # we don't want to connnect x0
 
 
 
@@ -158,7 +158,6 @@ plt.gca().set_aspect('equal')
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#6800ff')
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
 plt.title('Delaunay triangulation of test geometry (just base) with rectangle, H = '+h_string)
 plt.show(block=False)
 
@@ -180,38 +179,38 @@ plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tr
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
 plt.title('Delaunay triangulation of test geometry (just base), H = '+h_string)
 plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TestIndex/Triangulation.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_Triangulation.png', dpi=my_dpi * 10)
 
 
 ## Save them as well
 
-np.savetxt('TestBaseSnow/TestIndex/BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestBaseSnow/H7/H7_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets_square)
-np.savetxt('TestBaseSnow/TestIndex/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestBaseSnow/H7/H7_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestBaseSnow/TestIndex/MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestBaseSnow/H7/H7_MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
 
-np.savetxt('TestBaseSnow/TestIndex/Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestBaseSnow/H7/H7_Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestBaseSnow/TestIndex/NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('TestBaseSnow/H7/H7_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
 separator = "," 
 
-with open("TestBaseSnow/TestIndex/Neigh.txt", "w") as out_file:
+with open("TestBaseSnow/H7/H7_Neigh.txt", "w") as out_file:
     for l in mesh_square_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestBaseSnow/TestIndex/IncidentFaces.txt", "w") as out_file:
+with open("TestBaseSnow/H7/H7_IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces_sq:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestBaseSnow/TestIndex/FacesLabel.txt", "w") as out_file:
+with open("TestBaseSnow/H7/H7_FacesLabel.txt", "w") as out_file:
     for l in faces_label:
         out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)
         
 
-#plt.show()
+plt.show()
