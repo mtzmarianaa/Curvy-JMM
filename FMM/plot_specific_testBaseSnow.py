@@ -118,7 +118,7 @@ averageH = []
 errorNorm = []
 nPointsH = []
 
-# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times_ARTIFICIAL.bin")
+# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times_ARTIFICIAL_ARTIFICIAL.bin")
 # Compute the analytic solution in a grid
 
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
@@ -145,7 +145,7 @@ for i in range(ny):
 # plt.title("Exact solution, test geometry just base")
 # plt.show(block = False)
 # plt.colorbar(im1)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution8_ARTIFICIAL.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution8_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 # # Plot the type of solution
@@ -158,7 +158,7 @@ for i in range(ny):
 # plt.title("Type of solution solution, test geometry just base")
 # plt.show(block = False)
 # plt.colorbar(im1)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TypeSolution8_ARTIFICIAL.png', dpi=my_dpi * 10)
+# #plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/TypeSolution8_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
 
@@ -176,7 +176,7 @@ for i in range(ny):
 # plt.title("Exact solution, test geometry just base")
 # plt.show(block = False)
 # figName_Contour = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ExactSolution_Contour8_ARTIFICIAL.png'
-# plt.savefig(figName_Contour, dpi=my_dpi * 10)
+# #plt.savefig(figName_Contour, dpi=my_dpi * 10)
 
 # # # Plot in 3D and save the gif
 # # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -197,87 +197,87 @@ for i in range(ny):
 ######################################################
 ######################################################
 ######################################################
-#### H6
+#### H1
 ## 1. Plot of the output
 
-eik_vals_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedValues_ARTIFICIAL.bin")
-eik_coords_H6 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_MeshPoints.txt", delimiter=",")
-triangles_H6 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Faces.txt", delimiter=",")
-eik_grads_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedGradients_ARTIFICIAL.bin");
-eik_grads_H6 = eik_grads_H6.reshape(len(eik_coords_H6), 2)
-eik_parents_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Parents_ARTIFICIAL.bin", dtype=np.int32)
-eik_parents_H6 = eik_parents_H6.reshape(len(eik_coords_H6), 2)
-eik_lambdas_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_LambdasOpt_ARTIFICIAL.bin")
+eik_vals_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues_ARTIFICIAL.bin")
+eik_coords_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt", delimiter=",")
+triangles_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt", delimiter=",")
+eik_grads_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients_ARTIFICIAL.bin");
+eik_grads_H1 = eik_grads_H1.reshape(len(eik_coords_H1), 2)
+eik_parents_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents_ARTIFICIAL.bin", dtype=np.int32)
+eik_parents_H1 = eik_parents_H1.reshape(len(eik_coords_H1), 2)
+eik_lambdas_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt_ARTIFICIAL.bin")
 
-exact_values_H6 = []
-errorsAbs_H6 = []
-errors_H6 = []
-for i in range(len(eik_coords_H6)):
-    xi_coords = eik_coords_H6[i, 0]
-    yi_coords = eik_coords_H6[i, 1]
+exact_values_H1 = []
+errorsAbs_H1 = []
+errors_H1 = []
+for i in range(len(eik_coords_H1)):
+    xi_coords = eik_coords_H1[i, 0]
+    yi_coords = eik_coords_H1[i, 1]
     sol = trueSolution(xi_coords, yi_coords, x0, center, R, eta1, eta2)
-    exact_values_H6 += [sol]
-    errorsAbs_H6 += [ abs( sol - eik_vals_H6[i] ) ]
-    errors_H6 += [ sol - eik_vals_H6[i] ]
+    exact_values_H1 += [sol]
+    errorsAbs_H1 += [ abs( sol - eik_vals_H1[i] ) ]
+    errors_H1 += [ sol - eik_vals_H1[i] ]
 
 
-# We interpolate the solution on the triangles_H6 (so that we get a smooth plot + Sam´s idea)
+# We interpolate the solution on the triangles_H1 (so that we get a smooth plot + Sam´s idea)
 
 
 # We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6)
+triang = tri.Triangulation(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1)
 # To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H6)
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
 zi_lin = interp_lin(xi, -yi+6)
 zi_linP = interp_lin(xi, yi)
 
-#Contours of the errorsAbs_H6 in 3D and 2D
-errors_inter_H6 = true_solGrid - zi_linP
-errorsAbs_inter_H6 = abs(true_solGrid - zi_linP )
+#Contours of the errorsAbs_H1 in 3D and 2D
+errors_inter_H1 = true_solGrid - zi_linP
+errorsAbs_inter_H1 = abs(true_solGrid - zi_linP )
 
 
 
-#Plot the absolute errorsAbs_H6 in 2D
+#Plot the absolute errorsAbs_H1 in 2D
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca()
 ax.set_xlim(-18,18)
 ax.set_ylim(-18, 24)
-im2_2 = plt.imshow( errorsAbs_inter_H6, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.title("Point wise absolute errors, test geometry just base H6")
+im2_2 = plt.imshow( errorsAbs_inter_H1, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.title("Point wise absolute errors, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_2)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 # Signed point wise errors
-vmax = np.max( errorsAbs_inter_H6 )
+vmax = np.max( errorsAbs_inter_H1 )
 vmin = -1*vmax
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca()
 ax.set_xlim(-18,18) 
 ax.set_ylim(-18, 24)
-im2_3 = plt.imshow( errors_inter_H6, cmap = colormap3, extent=[-18,18,-18,24], origin='lower', vmin = vmin, vmax = vmax  )
-plt.title("Signed point wise absolute errors, test geometry just base H6")
+im2_3 = plt.imshow( errors_inter_H1, cmap = colormap3, extent=[-18,18,-18,24], origin='lower', vmin = vmin, vmax = vmax  )
+plt.title("Signed point wise absolute errors, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_3)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_SignPointErrors_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_SignPointErrors_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
-# The absolute errorsAbs_H6 in 2D with the triangulation
+# The absolute errorsAbs_H1 in 2D with the triangulation
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca()
 ax.set_xlim(-18,18)
 ax.set_ylim(-18, 24)
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#ffffff')
-im2_4 = plt.imshow( errorsAbs_inter_H6, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.title("Point wise absolute errors and triangulation, test geometry just base H6")
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#ffffff')
+im2_4 = plt.imshow( errorsAbs_inter_H1, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.title("Point wise absolute errors and triangulation, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_4)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_PointErrors_Mesh_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 
@@ -288,12 +288,12 @@ ax = plt.gca()
 ax.set_xlim(-18,18)
 ax.set_ylim(-18, 24)
 im2_5 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H6[:, 0], eik_coords_H6[:, 1], c = eik_vals_H6, cmap = colormap2)
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.title("Linear interpolation, test geometry just base H6")
+plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.title("Linear interpolation, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_5)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Mesh_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 
@@ -303,120 +303,120 @@ ax = plt.gca()
 ax.set_xlim(-18,18)
 ax.set_ylim(-18, 24)
 im2_6 = plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.title("Linear interpolation, test geometry just base H6")
+plt.title("Linear interpolation, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 # Plotting the paths to certain indices
 
 ###### Path reg A1
 print("First trial node")
-path1_H6 = getPathFromIndex(eik_coords_H6, 1, eik_parents_H6, eik_lambdas_H6)
+path1_H1 = getPathFromIndex(eik_coords_H1, 1, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in path1_H6], [p[1] for p in path1_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path1_H1], [p[1] for p in path1_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[1], 0], eik_coords_H6[[1], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on reg A1 , test geometry just base H6")
+plt.scatter( eik_coords_H1[[1], 0], eik_coords_H1[[1], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg A1 , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path1_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path1_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 ###### Path on circle
 print("Second trial node")
-path2_H6 = getPathFromIndex(eik_coords_H6, 6, eik_parents_H6, eik_lambdas_H6)
+path2_H1 = getPathFromIndex(eik_coords_H1, 6, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in path2_H6], [p[1] for p in path2_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path2_H1], [p[1] for p in path2_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[6], 0], eik_coords_H6[[6], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on circle , test geometry just base H6")
+plt.scatter( eik_coords_H1[[6], 0], eik_coords_H1[[6], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on circle , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path2_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path2_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 ###### Path on reg1
 print("Third trial node")
-path3_H6 = getPathFromIndex(eik_coords_H6, 2, eik_parents_H6, eik_lambdas_H6)
+path3_H1 = getPathFromIndex(eik_coords_H1, 2, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in path3_H6], [p[1] for p in path3_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path3_H1], [p[1] for p in path3_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[2], 0], eik_coords_H6[[2], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on reg 1 , test geometry just base H6")
+plt.scatter( eik_coords_H1[[2], 0], eik_coords_H1[[2], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg 1 , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path3_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path3_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 ###### Path on reg3
 print("Fourth trial node")
-Path4_H6 = getPathFromIndex(eik_coords_H6, 3, eik_parents_H6, eik_lambdas_H6)
+Path4_H1 = getPathFromIndex(eik_coords_H1, 3, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in Path4_H6], [p[1] for p in Path4_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in Path4_H1], [p[1] for p in Path4_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[3], 0], eik_coords_H6[[3], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on reg3 type1 , test geometry just base H6")
+plt.scatter( eik_coords_H1[[3], 0], eik_coords_H1[[3], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 type1 , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path4_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path4_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 ###### Path on reg3 boundary of type 1 and type 2
 print("Fifth trial node")
-Path5_H6 = getPathFromIndex(eik_coords_H6, 4, eik_parents_H6, eik_lambdas_H6)
+Path5_H1 = getPathFromIndex(eik_coords_H1, 4, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in Path5_H6], [p[1] for p in Path5_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in Path5_H1], [p[1] for p in Path5_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[4], 0], eik_coords_H6[[4], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on reg3 boundary type 1/2 , test geometry just base H6")
+plt.scatter( eik_coords_H1[[4], 0], eik_coords_H1[[4], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 boundary type 1/2 , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path5_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path5_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 ###### Path on reg3 type 2
 print("Fifth trial node")
-path6_H6 = getPathFromIndex(eik_coords_H6, 5, eik_parents_H6, eik_lambdas_H6)
+patH1_H1 = getPathFromIndex(eik_coords_H1, 5, eik_parents_H1, eik_lambdas_H1)
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.axis('equal')
 ax = plt.gca( )
 plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.2, c='#6800ff')
-plt.plot( [p[0] for p in path6_H6], [p[1] for p in path6_H6], marker = ".", c = "#ffffff", linewidth=2 )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in patH1_H1], [p[1] for p in patH1_H1], marker = ".", c = "#ffffff", linewidth=2 )
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
-plt.scatter( eik_coords_H6[[5], 0], eik_coords_H6[[5], 1], marker='o', c = "#c100ff" )
-plt.title("Linear interpolation with path, on reg3 type 2 , test geometry just base H6")
+plt.scatter( eik_coords_H1[[5], 0], eik_coords_H1[[5], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 type 2 , test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_6)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Path6_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_PatH1_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 
@@ -426,16 +426,264 @@ ax = plt.gca()
 ax.set_xlim(-18,18)
 ax.set_ylim(-18, 24)
 im2_13 = plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
-plt.quiver(eik_coords_H6[:, 0], eik_coords_H6[:, 1], eik_grads_H6[:, 0], eik_grads_H6[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, test geometry just base H6")
+plt.quiver(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_grads_H1[:, 0], eik_grads_H1[:, 1])
+plt.title("Linear interpolation and computed eikonal gradient, test geometry just base H1")
 plt.show(block = False)
 plt.colorbar(im2_13)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H6/H6_LinearInt_Grad_ARTIFICIAL.png', dpi=my_dpi * 10)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad_ARTIFICIAL.png', dpi=my_dpi * 10)
 
 
 
-averageH += [average_edge_length(eik_coords_H6, triangles_H6)]
-errorNorm += [norm( errorsAbs_H6  )/norm( exact_values_H6 )]
-nPointsH += [len(eik_coords_H6)]
+averageH += [average_edge_length(eik_coords_H1, triangles_H1)]
+errorNorm += [norm( errorsAbs_H1  )/norm( exact_values_H1 )]
+nPointsH += [len(eik_coords_H1)]
+
+print("Error with artificial triangles", errorNorm[0])
+
+
+
+
+####### Same but with non artificial triangles
+
+
+
+eik_vals_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin")
+eik_coords_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt", delimiter=",")
+triangles_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt", delimiter=",")
+eik_grads_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin");
+eik_grads_H1 = eik_grads_H1.reshape(len(eik_coords_H1), 2)
+eik_parents_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents.bin", dtype=np.int32)
+eik_parents_H1 = eik_parents_H1.reshape(len(eik_coords_H1), 2)
+eik_lambdas_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt.bin")
+
+exact_values_H1 = []
+errorsAbs_H1 = []
+errors_H1 = []
+for i in range(len(eik_coords_H1)):
+    xi_coords = eik_coords_H1[i, 0]
+    yi_coords = eik_coords_H1[i, 1]
+    sol = trueSolution(xi_coords, yi_coords, x0, center, R, eta1, eta2)
+    exact_values_H1 += [sol]
+    errorsAbs_H1 += [ abs( sol - eik_vals_H1[i] ) ]
+    errors_H1 += [ sol - eik_vals_H1[i] ]
+
+
+# We interpolate the solution on the triangles_H1 (so that we get a smooth plot + Sam´s idea)
+
+
+# We need a triangulation object thing
+triang = tri.Triangulation(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1)
+# To be able to use LinearTriInterpolator
+interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
+zi_lin = interp_lin(xi, -yi+6)
+zi_linP = interp_lin(xi, yi)
+
+#Contours of the errorsAbs_H1 in 3D and 2D
+errors_inter_H1 = true_solGrid - zi_linP
+errorsAbs_inter_H1 = abs(true_solGrid - zi_linP )
+
+
+
+#Plot the absolute errorsAbs_H1 in 2D
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18)
+ax.set_ylim(-18, 24)
+im2_2 = plt.imshow( errorsAbs_inter_H1, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.title("Point wise absolute errors, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_2)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors.png', dpi=my_dpi * 10)
+
+# Signed point wise errors
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18) 
+ax.set_ylim(-18, 24)
+im2_3 = plt.imshow( errors_inter_H1, cmap = colormap3, extent=[-18,18,-18,24], origin='lower', vmin = vmin, vmax = vmax  )
+plt.title("Signed point wise absolute errors, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_3)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_SignPointErrors.png', dpi=my_dpi * 10)
+
+
+# The absolute errorsAbs_H1 in 2D with the triangulation
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18)
+ax.set_ylim(-18, 24)
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#ffffff')
+im2_4 = plt.imshow( errorsAbs_inter_H1, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.title("Point wise absolute errors and triangulation, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_4)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
+
+
+
+#Now we can plot + plot the triangulation + dots on top
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18)
+ax.set_ylim(-18, 24)
+im2_5 = plt.contourf(xi, 6-yi, zi_lin, cmap = colormap2)
+plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.title("Linear interpolation, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_5)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
+
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18)
+ax.set_ylim(-18, 24)
+im2_6 = plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.title("Linear interpolation, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt.png', dpi=my_dpi * 10)
+
+
+# Plotting the paths to certain indices
+
+###### Path reg A1
+print("First trial node")
+path1_H1 = getPathFromIndex(eik_coords_H1, 1, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path1_H1], [p[1] for p in path1_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[1], 0], eik_coords_H1[[1], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg A1 , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path1.png', dpi=my_dpi * 10)
+
+
+###### Path on circle
+print("Second trial node")
+path2_H1 = getPathFromIndex(eik_coords_H1, 6, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path2_H1], [p[1] for p in path2_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[6], 0], eik_coords_H1[[6], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on circle , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path2.png', dpi=my_dpi * 10)
+
+
+###### Path on reg1
+print("Third trial node")
+path3_H1 = getPathFromIndex(eik_coords_H1, 2, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in path3_H1], [p[1] for p in path3_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[2], 0], eik_coords_H1[[2], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg 1 , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path3.png', dpi=my_dpi * 10)
+
+
+###### Path on reg3
+print("Fourth trial node")
+Path4_H1 = getPathFromIndex(eik_coords_H1, 3, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in Path4_H1], [p[1] for p in Path4_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[3], 0], eik_coords_H1[[3], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 type1 , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path4.png', dpi=my_dpi * 10)
+
+
+###### Path on reg3 boundary of type 1 and type 2
+print("Fifth trial node")
+Path5_H1 = getPathFromIndex(eik_coords_H1, 4, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in Path5_H1], [p[1] for p in Path5_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[4], 0], eik_coords_H1[[4], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 boundary type 1/2 , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path5.png', dpi=my_dpi * 10)
+
+
+###### Path on reg3 type 2
+print("Fifth trial node")
+Path6_H1 = getPathFromIndex(eik_coords_H1, 5, eik_parents_H1, eik_lambdas_H1)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca( )
+plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.2, c='#6800ff')
+plt.plot( [p[0] for p in Path6_H1], [p[1] for p in Path6_H1], marker = ".", c = "#ffffff", linewidth=2 )
+circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
+ax.add_patch(circle_b)
+plt.scatter( eik_coords_H1[[5], 0], eik_coords_H1[[5], 1], marker='o', c = "#c100ff" )
+plt.title("Linear interpolation with path, on reg3 type 2 , test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_6)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Path6.png', dpi=my_dpi * 10)
+
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.axis('equal')
+ax = plt.gca()
+ax.set_xlim(-18,18)
+ax.set_ylim(-18, 24)
+im2_13 = plt.imshow( zi_linP, cmap = colormap2, extent=[-18,18,-18,24], origin='lower'  )
+plt.quiver(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_grads_H1[:, 0], eik_grads_H1[:, 1])
+plt.title("Linear interpolation and computed eikonal gradient, test geometry just base H1")
+plt.show(block = False)
+plt.colorbar(im2_13)
+#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
+
+
+
+averageH += [average_edge_length(eik_coords_H1, triangles_H1)]
+errorNorm += [norm( errorsAbs_H1  )/norm( exact_values_H1 )]
+nPointsH += [len(eik_coords_H1)]
+
+print("Error without artificial triangles", norm( errorsAbs_H1  )/norm( exact_values_H1 ))
+
 
 plt.show()

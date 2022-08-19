@@ -160,6 +160,13 @@ void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int
     // then we don't have to worry with a two part line segment)
     int current_face,j, thirdIndex, possibleThirdIndex[2], possibleTrB[2];
     j = 0;
+    printf("\n\nIndex new accepted: %d,   Index neighbor neighbor  %d,   index xHat: %d\n", index_newAccepted, index_neighNeigh, index_xHat);
+    // Initialize just that it doesnt crash, there might be only one possible TrB but if we dont initialize
+    // this with something sensible then this is going to try to acces to a possible face with an index that doesnt exist
+
+    possibleTrB[0] = triM_2D->incidentFaces[index_newAccepted].neis_i[0];
+    possibleTrB[1] = triM_2D->incidentFaces[index_newAccepted].neis_i[0];
+
     // there are only two possible third points for trB, we find them both
     for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
         current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
@@ -179,44 +186,74 @@ void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int
             j ++;
         }
     }
-    // printf("\nPossible trB %d, %d", possibleTrB[0], possibleTrB[1]);
-    // printf("\nThe nodes in those triangles are:\n");
-    // printf("First:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[0]][0], triM_2D->faces->points[possibleTrB[0]][1], triM_2D->faces->points[possibleTrB[0]][2]);
-    // printf("Second:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[1]][0], triM_2D->faces->points[possibleTrB[1]][1], triM_2D->faces->points[possibleTrB[1]][2]);
-    // printf("The possibilities for the third index are: %d   %d\n", possibleThirdIndex[0], possibleThirdIndex[1]);
+
+    printf("\nPossible trB %d, %d", possibleTrB[0], possibleTrB[1]);
+    printf("\nThe nodes in those triangles are:\n");
+    printf("First:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[0]][0], triM_2D->faces->points[possibleTrB[0]][1], triM_2D->faces->points[possibleTrB[0]][2]);
+    printf("Second:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[1]][0], triM_2D->faces->points[possibleTrB[1]][1], triM_2D->faces->points[possibleTrB[1]][2]);
+    printf("The possibilities for the third index are: %d   %d\n", possibleThirdIndex[0], possibleThirdIndex[1]);
+    // initialize
+    *trA = -1;
+    *trB = -1;
+    thirdIndex = -1;
     // now we have two candidates for f1, the winner is going to be that point that is also in a triangle containing xhat at p1
     for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
         current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
+        // printf("Considering this triangle for trA %d   | %d   | %d\n", triM_2D->faces->points[current_face][0], triM_2D->faces->points[current_face][1], triM_2D->faces->points[current_face][2]);
         for (j = 0; j<2; j++){
             if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
             else if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
             else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
             else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
             else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
             else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
                 thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
                 *trB = possibleTrB[j];
                 *trA = current_face;
+                printf("The option selected was:\n");
+                printf("For the third index: %d ", thirdIndex);
+                printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
+                printf("For trA %d, set as %d\n", current_face, *trA);
             }
         }
     }
