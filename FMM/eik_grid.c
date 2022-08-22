@@ -189,7 +189,7 @@ void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, int x0_ind, int *x1_i
   lambda1 = 1;
   tol = 0.0005;
   maxIter = 25;
-  printf("\n\n\n\nStarting to consider an artificial triangle update\n");
+  // printf("\n\n\n\nStarting to consider an artificial triangle update\n");
   int indexNeighNeigh, trA, trB; // indices of the neighbor of the neighbor (i.e. neighbor of x1)
   double xNeighNeigh[2], x0[2], xHat[2], TNeighNeigh, lambda_optNeighNeigh, ThatCurrent, T0;
   T0 = eik_g->eik_vals[x0_ind];
@@ -222,13 +222,13 @@ void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, int x0_ind, int *x1_i
           // compute the artificial triangle update
           lambda_optNeighNeigh = secant_2D(lambda0, lambda1, T0, TNeighNeigh, x0, xNeighNeigh, xHat, tol, maxIter, *regionIndex);
           ThatCurrent = eikApproxLin(TNeighNeigh, T0, lambda_optNeighNeigh, x0, xNeighNeigh, xHat, *regionIndex);
-          printf("\n Current ThatCurren: %fl for index %d,  comes from the parents (%d,%d)  that have valid state with eikonal (%fl, %fl)\n", ThatCurrent, xHat_ind, x0_ind, indexNeighNeigh, T0, TNeighNeigh);
+          // printf("\n Current ThatCurren: %fl for index %d,  comes from the parents (%d,%d)  that have valid state with eikonal (%fl, %fl)\n", ThatCurrent, xHat_ind, x0_ind, indexNeighNeigh, T0, TNeighNeigh);
           if( ThatCurrent < *That2){
-            printf("The current value %fl has been subsituted by this new value %fl\n", *That2, ThatCurrent);
+            // printf("The current value %fl has been subsituted by this new value %fl\n", *That2, ThatCurrent);
             *That2 = ThatCurrent; // we found an update that is better
             *x1_ind = indexNeighNeigh; // we set this as the index neigh neigh (we need to save this to save the parents of xhat)
             *lambda = lambda_optNeighNeigh;
-            printf("\nThere was an artificial triangle used here\n");
+            // printf("\nThere was an artificial triangle used here\n");
             }
         }
         else{

@@ -5,6 +5,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <time.h>
 
 
 int main()
@@ -14,22 +15,25 @@ int main()
 
 
     const char *pathPoints, *pathNeighbors, *pathIncidentFaces, *pathBoundaryPoints, *pathFacets, *pathFaces, *pathIndexRegions, *pathToSaveTr_, *pathSaveGradientsTr_;
-    const char *pathSavePath, *pathSaveLambdas;
-    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/MeshPoints.txt";
-    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/Neigh.txt";
-    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/IncidentFaces.txt";
-    pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/BoundaryPoints.txt";
-    pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/Facets.txt";
-    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/Faces.txt";
-    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/FacesLabel.txt";
+    const char *pathSavePath, *pathSaveLambdas, *pathTimes;
+    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt";
+    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Neigh.txt";
+    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_IncidentFaces.txt";
+    pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_BoundaryPoints.txt";
+    pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Facets.txt";
+    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt";
+    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_FacesLabel.txt";
 
-    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/ComputedValues_ARTIFICIAL.bin";
-    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/ComputedGradients_ARTIFICIAL.bin";
-    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/Parents_ARTIFICIAL.bin";
-    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/TestArtificial/LambdasOpt_ARTIFICIAL.bin";
+    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin";
+    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin";
+    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents.bin";
+    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt.bin";
+    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Times.bin";
 
     int *start;
     int nstart, s;
+    double time_taken[1], time;
+    clock_t start_t, end_t;
 
     s = 0;
     start = &s;
@@ -46,16 +50,22 @@ int main()
 
     printAllInfoMesh(eik_g1);
 
-    FMM_2D( eik_g1 , 1);
+    start_t = clock();
+    FMM_2D( eik_g1, 0 );
+    end_t = clock();
+    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
+    time_taken[0] = time;
     
 
-    // saveComputedValues(eik_g1, pathToSaveTr_);
+    saveComputedValues(eik_g1, pathToSaveTr_);
 
-    // saveComputedGradients(eik_g1, pathSaveGradientsTr_);
+    saveComputedGradients(eik_g1, pathSaveGradientsTr_);
 
-    // saveComputedParents(eik_g1, pathSavePath);
+    saveComputedParents(eik_g1, pathSavePath);
 
-    // saveComputedLambdas(eik_g1, pathSaveLambdas);
+    saveComputedLambdas(eik_g1, pathSaveLambdas);
+
+    saveTimes(time_taken, pathTimes);
 
     printGeneralInfo(eik_g1);
 

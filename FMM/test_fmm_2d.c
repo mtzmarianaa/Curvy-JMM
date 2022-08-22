@@ -29,10 +29,10 @@ int main()
     pathFaces_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt";
     pathIndexRegions_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_FacesLabel.txt";
 
-    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues.bin";
-    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients.bin";
-    pathSavePath_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents.bin";
-    pathSaveLambdas_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt.bin";
+    pathToSaveTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H1_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H1 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H1;
     int nstart_H1, s_H1;
@@ -52,7 +52,7 @@ int main()
     printGeneralInfo(eik_g1);
 
     start_t = clock();
-    FMM_2D( eik_g1 );
+    FMM_2D( eik_g1 , 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[0] = time;
@@ -83,10 +83,10 @@ int main()
     pathFaces_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Faces.txt";
     pathIndexRegions_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_FacesLabel.txt";
 
-    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedValues.bin";
-    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedGradients.bin";
-    pathSavePath_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Parents.bin";
-    pathSaveLambdas_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_LambdasOpt.bin";
+    pathToSaveTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H2_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H2 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H2/H2_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H2;
     int nstart_H2, s_H2;
@@ -106,7 +106,7 @@ int main()
     printGeneralInfo(eik_g2);
 
     start_t = clock();
-    FMM_2D( eik_g2 );
+    FMM_2D( eik_g2 , 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[1] = time;
@@ -138,10 +138,10 @@ int main()
     pathFaces_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Faces.txt";
     pathIndexRegions_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_FacesLabel.txt";
 
-    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedValues.bin";
-    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedGradients.bin";
-    pathSavePath_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Parents.bin";
-    pathSaveLambdas_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_LambdasOpt.bin";
+    pathToSaveTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H3_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H3 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H3/H3_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H3;
     int nstart_H3, s_H3;
@@ -161,7 +161,7 @@ int main()
     printGeneralInfo(eik_g3);
 
     start_t = clock();
-    FMM_2D( eik_g3 );
+    FMM_2D( eik_g3 , 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[2] = time;
@@ -192,10 +192,10 @@ int main()
     pathFaces_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Faces.txt";
     pathIndexRegions_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_FacesLabel.txt";
 
-    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedValues.bin";
-    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedGradients.bin";
-    pathSavePath_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Parents.bin";
-    pathSaveLambdas_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_LambdasOpt.bin";
+    pathToSaveTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H4_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H4 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H4/H4_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H4;
     int nstart_H4, s_H4;
@@ -215,7 +215,7 @@ int main()
     printGeneralInfo(eik_g4);
 
     start_t = clock();
-    FMM_2D( eik_g4 );
+    FMM_2D( eik_g4 , 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[3] = time;
@@ -246,10 +246,10 @@ int main()
     pathFaces_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Faces.txt";
     pathIndexRegions_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_FacesLabel.txt";
 
-    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedValues.bin";
-    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedGradients.bin";
-    pathSavePath_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Parents.bin";
-    pathSaveLambdas_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_LambdasOpt.bin";
+    pathToSaveTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H5_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H5 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H5/H5_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H5;
     int nstart_H5, s_H5;
@@ -269,7 +269,7 @@ int main()
     printGeneralInfo(eik_g5);
 
     start_t = clock();
-    FMM_2D( eik_g5 );
+    FMM_2D( eik_g5, 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[4] = time;
@@ -300,10 +300,10 @@ int main()
     pathFaces_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Faces.txt";
     pathIndexRegions_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_FacesLabel.txt";
 
-    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedValues.bin";
-    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedGradients.bin";
-    pathSavePath_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Parents.bin";
-    pathSaveLambdas_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_LambdasOpt.bin";
+    pathToSaveTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H6_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H6 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H6/H6_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H6;
     int nstart_H6, s_H6;
@@ -323,7 +323,7 @@ int main()
     printGeneralInfo(eik_g6);
 
     start_t = clock();
-    FMM_2D( eik_g6 );
+    FMM_2D( eik_g6, 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[5] = time;
@@ -354,10 +354,10 @@ int main()
     pathFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Faces.txt";
     pathIndexRegions_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_FacesLabel.txt";
 
-    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedValues.bin";
-    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedGradients.bin";
-    pathSavePath_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Parents.bin";
-    pathSaveLambdas_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_LambdasOpt.bin";
+    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_LambdasOpt_ARTIFICIAL.bin";
 
     int *start_H7;
     int nstart_H7, s_H7;
@@ -377,7 +377,7 @@ int main()
     printGeneralInfo(eik_g7);
 
     start_t = clock();
-    FMM_2D( eik_g7 );
+    FMM_2D( eik_g7, 1 );
     end_t = clock();
     time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
     times[6] = time;
@@ -398,7 +398,7 @@ int main()
 
     const char *pathTimes;
 
-    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times.bin";
+    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times_ARTIFICIAL.bin";
 
     saveTimes(times, pathTimes);
 

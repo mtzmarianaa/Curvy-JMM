@@ -47,3 +47,18 @@ double toc() {
   t1 = clock();
   return ((double)t1 - (double)t0)/CLOCKS_PER_SEC;
 }
+
+double determinant(matrix_2x2 const A){
+    return A[0][0]*A[1][1] - A[0][1]*A[1][0];
+}
+
+void inverse2x2(matrix_2x2 const A, matrix_2x2 Ainv){
+    double determinantA;
+    determinantA = determinant(A);
+    Ainv[0][0] = A[1][1]/determinantA;
+    Ainv[0][1] = -A[0][1]/determinantA;
+    Ainv[1][0] = -A[1][0]/determinantA;
+    Ainv[1][1] = A[0][0]/determinantA;
+}
+
+

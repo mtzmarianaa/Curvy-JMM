@@ -16,11 +16,7 @@ void FMM_2D( eik_gridS *eik_g, int L){
             // if this happens then after adding the neighbors we do a round of artificial triangle update
             updateWithArtificial(eik_g, currentMinInd);
         }
-        else{
-            update_afterAccepted(eik_g, currentMinInd);
-        }
-        printf("\n\n\n\n\n New ITERATION \n\n");
-        printGeneralInfo(eik_g);
+        update_afterAccepted(eik_g, currentMinInd);
     }
     //printGeneralInfo(eik_g);
 }

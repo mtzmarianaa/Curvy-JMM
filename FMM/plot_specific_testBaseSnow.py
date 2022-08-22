@@ -118,7 +118,7 @@ averageH = []
 errorNorm = []
 nPointsH = []
 
-# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times_ARTIFICIAL_ARTIFICIAL.bin")
+# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times_ARTIFICIAL.bin")
 # Compute the analytic solution in a grid
 
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))

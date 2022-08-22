@@ -1069,55 +1069,55 @@ plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBa
 # nPointsH += [len(eik_coords_H7)]
 
 
-# ######################################################
-# ######################################################
-# ######################################################
-# ######################################################
-# ################## ERRORS ############################
-# ################### EACH #############################
-# ####################  H  #############################
-# ######################################################
-# ######################################################
+######################################################
+######################################################
+######################################################
+######################################################
+################## ERRORS ############################
+################### EACH #############################
+####################  H  #############################
+######################################################
+######################################################
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.loglog(averageH, errorNorm, c = '#6800ff')
-# plt.title("l2 errors and average edge length")
-# plt.xlabel("Average edge length")
-# plt.ylabel("Error")
-# plt.show(block = False)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLength.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(averageH, errorNorm, c = '#6800ff')
+plt.title("l2 errors and average edge length")
+plt.xlabel("Average edge length")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLength.png', dpi=my_dpi * 10)
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.loglog(averageH, nPointsH, c = '#6800ff')
-# plt.title("l2 errors and number of points in triangulation")
-# plt.xlabel("Number of points in triangulation")
-# plt.ylabel("Error")
-# plt.show(block = False)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPoints.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(averageH, nPointsH, c = '#6800ff')
+plt.title("l2 errors and number of points in triangulation")
+plt.xlabel("Number of points in triangulation")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPoints.png', dpi=my_dpi * 10)
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.loglog(averageH, times, c = '#6800ff')
-# plt.title("Average edge length and time taken to solve")
-# plt.ylabel("Time taken to solve (sec)")
-# plt.xlabel("Average edge length")
-# plt.show(block = False)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_Times.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(averageH, times, c = '#6800ff')
+plt.title("Average edge length and time taken to solve")
+plt.ylabel("Time taken to solve (sec)")
+plt.xlabel("Average edge length")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_Times.png', dpi=my_dpi * 10)
 
 
-# fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-# plt.loglog(times, errorNorm, c = '#6800ff')
-# plt.title("Time taken to solve and l2 errors")
-# plt.xlabel("Time taken to solve (sec)")
-# plt.ylabel("Error")
-# plt.show(block = False)
-# plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errors.png', dpi=my_dpi * 10)
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(times, errorNorm, c = '#6800ff')
+plt.title("Time taken to solve and l2 errors")
+plt.xlabel("Time taken to solve (sec)")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errors.png', dpi=my_dpi * 10)
 
 
-# table_sqTr = {"Average h": averageH, "Time taken": times, "l2 errors": errorNorm, "Points in triangulation": nPointsH}
+table_sqTr = {"Average h": averageH, "Time taken": times, "l2 errors": errorNorm, "Points in triangulation": nPointsH}
 
-# print(tabulate(table_sqTr, headers="keys", tablefmt="latex"))
+print(tabulate(table_sqTr, headers="keys", tablefmt="latex"))
 
 plt.show()

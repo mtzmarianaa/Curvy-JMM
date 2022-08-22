@@ -14,7 +14,7 @@ Optimization methods for the 2D FMM
 double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1[2], double xHat[2], int regionIndex) {
     // this is the approximation to the eikonal solution using local approximations everywhere
     double x0Minx1[2], xHatMinx0[2], lamx0Minx1[2], vecAux[2], normAux, gApprox;
-    printf("\nx0 is (%fl, %fl), x1 is (%fl, %fl), and lambda is %fl\n", x0[0], x0[1], x1[0], x1[1], lambda);
+    // printf("\nx0 is (%fl, %fl), x1 is (%fl, %fl), and lambda is %fl\n", x0[0], x0[1], x1[0], x1[1], lambda);
 
     x0Minx1[0] = 0;
     x0Minx1[1] = 0;
@@ -35,7 +35,7 @@ double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1
     scalar_times_2vec(lambda, x0Minx1, lamx0Minx1);
     vec2_addition(xHatMinx0, lamx0Minx1, vecAux);
     normAux = l2norm(vecAux);
-    printf("The norm of this path is %fl\n", normAux);
+    // printf("The norm of this path is %fl\n", normAux);
     gApprox = lambda*(T1 - T0) + T0 + s_function_threeSections(xHat, regionIndex)*normAux;
 
     return gApprox;

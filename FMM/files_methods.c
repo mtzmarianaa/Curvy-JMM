@@ -104,10 +104,10 @@ void readIntColumn(const char *pathFile, int *column){
     }
 }
 
-void saveTimes(double times[7], const char *pathFile){
+void saveTimes(double times[1], const char *pathFile){
   FILE *fp;
   fp = fopen(pathFile, "wb");
-  fwrite(times, sizeof(double), 7, fp);
+  fwrite(times, sizeof(double), 1, fp);
   fclose(fp);
 }
 
