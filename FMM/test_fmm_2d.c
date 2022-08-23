@@ -342,38 +342,38 @@ int main()
     eik_grid_dealloc(&eik_g6);
 
 
-    //   H7
+    //   H0
 
-    const char *pathPoints_H7, *pathNeighbors_H7, *pathIncidentFaces_H7, *pathBoundaryPoints_H7, *pathFacets_H7, *pathFaces_H7, *pathIndexRegions_H7, *pathToSaveTr_H7_, *pathSaveGradientsTr_H7_;
-    const char *pathSavePath_H7, *pathSaveLambdas_H7;
-    pathPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_MeshPoints.txt";
-    pathNeighbors_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Neigh.txt";
-    pathIncidentFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_IncidentFaces.txt";
-    pathBoundaryPoints_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_BoundaryPoints.txt";
-    pathFacets_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Facets.txt";
-    pathFaces_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Faces.txt";
-    pathIndexRegions_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_FacesLabel.txt";
+    const char *pathPoints_H0, *pathNeighbors_H0, *pathIncidentFaces_H0, *pathBoundaryPoints_H0, *pathFacets_H0, *pathFaces_H0, *pathIndexRegions_H0, *pathToSaveTr_H0_, *pathSaveGradientsTr_H0_;
+    const char *pathSavePath_H0, *pathSaveLambdas_H0;
+    pathPoints_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_MeshPoints.txt";
+    pathNeighbors_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_Neigh.txt";
+    pathIncidentFaces_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_IncidentFaces.txt";
+    pathBoundaryPoints_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_BoundaryPoints.txt";
+    pathFacets_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_Facets.txt";
+    pathFaces_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_Faces.txt";
+    pathIndexRegions_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_FacesLabel.txt";
 
-    pathToSaveTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedValues_ARTIFICIAL.bin";
-    pathSaveGradientsTr_H7_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_ComputedGradients_ARTIFICIAL.bin";
-    pathSavePath_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_Parents_ARTIFICIAL.bin";
-    pathSaveLambdas_H7 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H7/H7_LambdasOpt_ARTIFICIAL.bin";
+    pathToSaveTr_H0_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_H0_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas_H0 = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H-2/H-2_LambdasOpt_ARTIFICIAL.bin";
 
-    int *start_H7;
-    int nstart_H7, s_H7;
+    int *start_H0;
+    int nstart_H0, s_H0;
 
-    s_H7 = 0;
-    start_H7 = &s_H7;
-    nstart_H7 = 1;
+    s_H0 = 0;
+    start_H0 = &s_H0;
+    nstart_H0 = 1;
     // now we test the init with just the path to the files
 
     printf("\n------------------------------------");
     printf("\n------------------------------------");
     printf("\n------------------------------------");
-    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR TEST GEOMERTY H7 - THREE SECTIONS \n\n\n\n");
+    printf("\n\n\n TESTING FROM FILES OF A TRIANGULAR MESH FOR TEST GEOMERTY H0 - THREE SECTIONS \n\n\n\n");
     eik_gridS *eik_g7;
     eik_grid_alloc(&eik_g7);
-    eik_grid_initFromFile(eik_g7, start_H7, nstart_H7, pathPoints_H7, pathNeighbors_H7, pathIncidentFaces_H7, pathBoundaryPoints_H7, pathFacets_H7, pathFaces_H7, pathIndexRegions_H7);
+    eik_grid_initFromFile(eik_g7, start_H0, nstart_H0, pathPoints_H0, pathNeighbors_H0, pathIncidentFaces_H0, pathBoundaryPoints_H0, pathFacets_H0, pathFaces_H0, pathIndexRegions_H0);
     printGeneralInfo(eik_g7);
 
     start_t = clock();
@@ -385,13 +385,13 @@ int main()
     printf("Time taken %fl\n", time);
     
 
-    saveComputedValues(eik_g7, pathToSaveTr_H7_);
+    saveComputedValues(eik_g7, pathToSaveTr_H0_);
 
-    saveComputedGradients(eik_g7, pathSaveGradientsTr_H7_);
+    saveComputedGradients(eik_g7, pathSaveGradientsTr_H0_);
 
-    saveComputedParents(eik_g7, pathSavePath_H7);
+    saveComputedParents(eik_g7, pathSavePath_H0);
 
-    saveComputedLambdas(eik_g7, pathSaveLambdas_H7);
+    saveComputedLambdas(eik_g7, pathSaveLambdas_H0);
 
     eik_grid_dealloc(&eik_g7);
 

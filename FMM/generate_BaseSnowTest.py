@@ -1,6 +1,6 @@
 # Generate test geometry but just its base (i.e. just the circle) specifying h
 
-h = 0.5
+h = 6
 h_string = str(h)
 
 
@@ -60,7 +60,7 @@ def nPoints(h):
     With this function we know how many points we need in the top of the snowman and in the bottom, depending on which h we want
     WE ASSUME THAT WE ARE DISTRIBUTING UNIFORMLY THESE POINTS
     '''
-    nBottom = ceil(40*pi/h) 
+    nBottom = ceil(15*pi/h) 
     return nBottom
 
 Nbase = nPoints(h)
@@ -179,35 +179,35 @@ plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tr
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
 plt.title('Delaunay triangulation of test geometry (just base), H = '+h_string)
 plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H7/H7_Triangulation.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H-7/H-7_Triangulation.png', dpi=my_dpi * 10)
 
 
 ## Save them as well
 
-np.savetxt('TestBaseSnow/H7/H7_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestBaseSnow/H-7/H-7_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets_square)
-np.savetxt('TestBaseSnow/H7/H7_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestBaseSnow/H-7/H-7_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestBaseSnow/H7/H7_MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestBaseSnow/H-7/H-7_MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
 
-np.savetxt('TestBaseSnow/H7/H7_Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestBaseSnow/H-7/H-7_Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestBaseSnow/H7/H7_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('TestBaseSnow/H-7/H-7_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
 separator = "," 
 
-with open("TestBaseSnow/H7/H7_Neigh.txt", "w") as out_file:
+with open("TestBaseSnow/H-7/H-7_Neigh.txt", "w") as out_file:
     for l in mesh_square_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestBaseSnow/H7/H7_IncidentFaces.txt", "w") as out_file:
+with open("TestBaseSnow/H-7/H-7_IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces_sq:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestBaseSnow/H7/H7_FacesLabel.txt", "w") as out_file:
+with open("TestBaseSnow/H-7/H-7_FacesLabel.txt", "w") as out_file:
     for l in faces_label:
         out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)

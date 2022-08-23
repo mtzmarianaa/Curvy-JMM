@@ -33,7 +33,7 @@ center = np.array([0,0])
 R = 10
 eps = np.finfo(np.float64).resolution
 
-Hs = ["H1", "H2", "H3", "H4", "H5", "H6", "H7"]
+Hs = ["H0", "H-1", "H-2", "H-3", "H-4", "H-5", "H-6", "H1", "H2", "H3", "H4", "H5", "H6", "H7"]
 
 #########################################################
 ####### USEFUL FUNCTIONS
@@ -745,4 +745,4 @@ print(tabulate(table_orig, headers="keys", tablefmt="latex"))
 print("\n\n\nTable with artificial triangles:\n")
 print(tabulate(table_artf, headers="keys", tablefmt="latex"))
 
-plt.show()
+# plt.show()
