@@ -9,14 +9,20 @@ import matplotlib.tri as tri
 from scipy.optimize import NonlinearConstraint, minimize
 import matplotlib.animation as animation
 import tabulate
-
+import pandas as pd
+import colorcet as cc
 
 colormap1 = plt.cm.get_cmap('cubehelix')
 sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
-colormap3 = plt.cm.get_cmap('magma')
+colormap3 = plt.cm.get_cmap('cet_diverging_cwm_80_100_c22')
 sm3 = plt.cm.ScalarMappable(cmap=colormap3)
+
+saveFigures = True
+nx = 20*10
+ny = 20*10
+my_dpi=96
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -57,7 +63,7 @@ def IndexRefractionRegions(x):
     Slowness function according to the two sections present in this particular domain
     '''
     if constrainOnBoundary(x)> 0:
-        s = 2
+        s = 1.452
     else:
         s = 1
     return s
@@ -83,832 +89,431 @@ averageH = []
 errorNorm = []
 nPointsH = []
 
-times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/Times.bin")
+# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/Times.bin")
 
+# Compute the analytic solution in a grid
+
+xi, yi = np.meshgrid(np.linspace(-10, 10, nx), np.linspace(-10, 10, ny))
+true_solGrid = np.zeros(xi.shape)
+
+
+
+for i in range(ny):
+    for j in range(nx):
+        sol= exact_solution1(  xi[i, j], yi[i,j])
+        true_solGrid[i, j] = sol
+        
+averageH_orig = []
+errorNorm_orig = []
+nPointsH_orig = []
+averageH_artf = []
+errorNorm_artf = []
+nPointsH_artf = []
+times_orig_vec = []
+times_artf_vec = []
+
+Hs = ["H0_1","H1_1", "H2_1","H3_1", "H4_1","H5_1", "H6_1","H7_1", "H8_1","H9_1", "H10_1", "H11_1", "H12_1","H13_1", "H14_1","H15_1", "H16_1","H17_1", "H18_1","H19_1", "H20_1"]
+# Hs += ["H11_1", "H12_1", "H13_1","H14_1", "H15_1", "H16_1", "H17_1", "H18_1","H19_1", "H20_1"]
+        
+for stringPart in Hs:
+    # We want to plot for each of the H's we're considering
+    ######
+    ######       FOR THE ORIGINAL TRIANGLES (IN MESH) UPDATES
+    times_orig = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Times.bin")
+    eik_vals_orig = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_ComputedValues.bin")
+    eik_coords_orig = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_MeshPoints.txt", delimiter=",")
+    triangles_orig = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Faces.txt", delimiter=",", dtype=np.int32)
+    eik_grads_orig = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_ComputedGradients.bin");
+    eik_grads_orig = eik_grads_orig.reshape(len(eik_coords_orig), 2)
+    eik_parents_orig = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Parents.bin", dtype=np.int32)
+    eik_parents_orig = eik_parents_orig.reshape(len(eik_coords_orig), 2)
+    eik_lambdas_orig = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_LambdasOpt.bin")
+
+    exact_values_orig = []
+    errorsAbs_orig = []
+    errors_orig = []
+    for i in range(len(eik_coords_orig)):
+        xi_coords = eik_coords_orig[i, 0]
+        yi_coords = eik_coords_orig[i, 1]
+        sol = exact_solution1(xi_coords, yi_coords)
+        exact_values_orig += [sol]
+        errorsAbs_orig += [ abs( sol - eik_vals_orig[i] ) ]
+        errors_orig += [ sol - eik_vals_orig[i] ]
+    # We interpolate the solution on the triangles_orig (so that we get a smooth plot + Sam´s idea)
+    # We need a triangulation object thing
+    triang = tri.Triangulation(eik_coords_orig[:, 0], eik_coords_orig[:, 1], triangles_orig)
+    # To be able to use LinearTriInterpolator
+    interp_lin = tri.LinearTriInterpolator(triang, eik_vals_orig)
+    zi_lin = interp_lin(xi, -yi+6)
+    zi_linP = interp_lin(xi, yi)
+    #Contours of the errorsAbs_orig in 3D and 2D
+    errors_inter_orig = true_solGrid - zi_linP
+    errorsAbs_inter_orig = abs(true_solGrid - zi_linP )
+    # #Plot the absolute errorsAbs_orig in 2D
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10)
+    ax.set_ylim(-10,10)
+    im2_2 = plt.imshow( errorsAbs_inter_orig, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    plt.title("Point wise absolute errors, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_2)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_PointErrors_AugustC.png', dpi=my_dpi * 10)
+
+    # Signed point wise errors
+    vmax = np.max( errorsAbs_inter_orig )
+    vmin = -1*vmax
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10) 
+    ax.set_ylim(-10,10)
+    im2_3 = plt.imshow( errors_inter_orig, cmap = colormap3, extent=[-10,10,-10,10], origin='lower', vmin = vmin, vmax = vmax  )
+    plt.title("Signed point wise absolute errors, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_3)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_SignPointErrors_AugustC.png', dpi=my_dpi * 10)
+    # The absolute errorsAbs_orig in 2D with the triangulation
+
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10)
+    ax.set_ylim(-10,10)
+    plt.triplot(eik_coords_orig[:, 0], eik_coords_orig[:, 1], triangles_orig, '-.', lw=0.2, c='#ffffff')
+    im2_4 = plt.imshow( errorsAbs_inter_orig, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    plt.title("Point wise absolute errors and triangulation, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_4)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_PointErrors_Mesh_AugustC.png', dpi=my_dpi * 10)
+
+    #Now we can plot + plot the triangulation + dots on top
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10)
+    ax.set_ylim(-10,10)
+    im2_5 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
+    plt.scatter(eik_coords_orig[:, 0], eik_coords_orig[:, 1], c = eik_vals_orig, cmap = colormap2)
+    plt.triplot(eik_coords_orig[:, 0], eik_coords_orig[:, 1], triangles_orig, '-.', lw=0.2, c='#6800ff')
+    plt.title("Linear interpolation, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_5)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_Mesh_AugustC.png', dpi=my_dpi * 10)
+    
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10)
+    ax.set_ylim(-10,10)
+    im2_6 = plt.imshow( zi_linP, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    plt.title("Linear interpolation, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_6)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_AugustC.png', dpi=my_dpi * 10)
+
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    plt.axis('equal')
+    ax = plt.gca()
+    ax.set_xlim(-10,10)
+    ax.set_ylim(-10,10)
+    im2_13 = plt.imshow( zi_linP, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    plt.quiver(eik_coords_orig[:, 0], eik_coords_orig[:, 1], eik_grads_orig[:, 0], eik_grads_orig[:, 1])
+    plt.title("Linear interpolation and computed eikonal gradient, test geometry just base " + stringPart + "original updates")
+    plt.show(block = False)
+    plt.colorbar(im2_13)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_Grad_AugustC.png', dpi=my_dpi * 10)
+
+    averageH_orig += [average_edge_length(eik_coords_orig, triangles_orig)]
+    errorNorm_orig += [norm( errorsAbs_orig  )/norm( exact_values_orig )]
+    nPointsH_orig += [len(eik_coords_orig)]
+    times_orig_vec += [times_orig[0]]
+
+    
+    ######
+    ######       FOR THE UPDATES WITH ARTIFICIAL TRIANGLES
+    times_artf = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Times_ARTIFICIAL.bin")
+    eik_vals_artf = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_ComputedValues_ARTIFICIAL.bin")
+    eik_coords_artf = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_MeshPoints.txt", delimiter=",")
+    triangles_artf = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Faces.txt", delimiter=",")
+    eik_grads_artf = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_ComputedGradients_ARTIFICIAL.bin");
+    eik_grads_artf = eik_grads_artf.reshape(len(eik_coords_artf), 2)
+    eik_parents_artf = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_Parents_ARTIFICIAL.bin", dtype=np.int32)
+    eik_parents_artf = eik_parents_artf.reshape(len(eik_coords_artf), 2)
+    eik_lambdas_artf = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + stringPart + "/" + stringPart + "_LambdasOpt_ARTIFICIAL.bin")
+    
+    exact_values_artf = []
+    errorsAbs_artf = []
+    errors_artf = []
+    for i in range(len(eik_coords_artf)):
+        xi_coords = eik_coords_artf[i, 0]
+        yi_coords = eik_coords_artf[i, 1]
+        sol = exact_solution1(xi_coords, yi_coords)
+        exact_values_artf += [sol]
+        errorsAbs_artf += [ abs( sol - eik_vals_artf[i] ) ]
+        errors_artf += [ sol - eik_vals_artf[i] ]
+    # We interpolate the solution on the triangles_artf (so that we get a smooth plot + Sam´s idea)
+    # We need a triangulation object thing
+    triang = tri.Triangulation(eik_coords_artf[:, 0], eik_coords_artf[:, 1], triangles_artf)
+    # To be able to use LinearTriInterpolator
+    interp_lin = tri.LinearTriInterpolator(triang, eik_vals_artf)
+    zi_lin = interp_lin(xi, -yi+6)
+    zi_linP = interp_lin(xi, yi)
+    #Contours of the errorsAbs_artf in 3D and 2D
+    errors_inter_artf = true_solGrid - zi_linP
+    errorsAbs_inter_artf = abs(true_solGrid - zi_linP )
+    # #Plot the absolute errorsAbs_artf in 2D
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10)
+    # ax.set_ylim(-10,10)
+    # im2_2 = plt.imshow( errorsAbs_inter_artf, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    # plt.title("Point wise absolute errors, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_2)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_PointErrors_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+
+    # # Signed point wise errors
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10) 
+    # ax.set_ylim(-10,10)
+    # im2_3 = plt.imshow( errors_inter_artf, cmap = colormap3, extent=[-10,10,-10,10], origin='lower', vmin = vmin, vmax = vmax  )
+    # plt.title("Signed point wise absolute errors, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_3)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_SignPointErrors_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+    # # The absolute errorsAbs_artf in 2D with the triangulation
+
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10)
+    # ax.set_ylim(-10,10)
+    # plt.triplot(eik_coords_artf[:, 0], eik_coords_artf[:, 1], triangles_artf, '-.', lw=0.2, c='#ffffff')
+    # im2_4 = plt.imshow( errorsAbs_inter_artf, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    # plt.title("Point wise absolute errors and triangulation, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_4)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_PointErrors_Mesh_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+
+    # #Now we can plot + plot the triangulation + dots on top
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10)
+    # ax.set_ylim(-10,10)
+    # im2_5 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
+    # plt.scatter(eik_coords_artf[:, 0], eik_coords_artf[:, 1], c = eik_vals_artf, cmap = colormap2)
+    # plt.triplot(eik_coords_artf[:, 0], eik_coords_artf[:, 1], triangles_artf, '-.', lw=0.2, c='#6800ff')
+    # plt.title("Linear interpolation, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_5)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_Mesh_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+    
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10)
+    # ax.set_ylim(-10,10)
+    # im2_6 = plt.imshow( zi_linP, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    # plt.title("Linear interpolation, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_6)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+
+    # fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    # plt.axis('equal')
+    # ax = plt.gca()
+    # ax.set_xlim(-10,10)
+    # ax.set_ylim(-10,10)
+    # im2_13 = plt.imshow( zi_linP, cmap = colormap2, extent=[-10,10,-10,10], origin='lower'  )
+    # plt.quiver(eik_coords_artf[:, 0], eik_coords_artf[:, 1], eik_grads_artf[:, 0], eik_grads_artf[:, 1])
+    # plt.title("Linear interpolation and computed eikonal gradient, test geometry just base " + stringPart + "artificial triangles")
+    # plt.show(block = False)
+    # plt.colorbar(im2_13)
+    # if (saveFigures):
+    #     plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/' + stringPart + "/" + stringPart + '_LinearInt_Grad_ARTIFICIAL_AugustC.png', dpi=my_dpi * 10)
+
+    averageH_artf += [average_edge_length(eik_coords_artf, triangles_artf)]
+    errorNorm_artf += [norm( errorsAbs_artf  )/norm( exact_values_artf )]
+    nPointsH_artf += [len(eik_coords_artf)]
+    times_artf_vec += [times_artf[0]]
+    
+    
 ######################################################
 ######################################################
 ######################################################
-#### H1
-## 1. Plot of the output
-
-eik_vals_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H1_ComputedValues.bin")
-eik_coords_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H1_MeshPoints.txt", delimiter=",")
-triangles_H1 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H1_Faces.txt", delimiter=",")
-eik_grads_H1 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H1_ComputedGradients.bin");
-eik_grads_H1 = eik_grads_H1.reshape(len(eik_coords_H1), 2)
-
-exact_values_H1 = []
-errors_H1 = []
-for i in range(len(eik_coords_H1)):
-    xi = eik_coords_H1[i, 0]
-    yi = eik_coords_H1[i, 1]
-    sol = exact_solution1(xi, yi)
-    exact_values_H1 += [sol]
-    errors_H1 += [ abs( sol - eik_vals_H1[i] ) ]
-
-
-
-my_dpi=96
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_vals_H1, c= eik_vals_H1, cmap=colormap2)
-plt.title("Computed eikonal values, triangle and square h1")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], exact_values_H1, c= exact_values_H1, cmap=colormap2)
-plt.title("Exact solution, triangle and square h1")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], errors_H1, c = errors_H1, cmap=colormap2)
-plt.title("Computed errors per point, triangle and square h1")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H1 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
-
-xi, yi = np.meshgrid(np.linspace(-10, 10, 500), np.linspace(-10, 10, 500))
-# We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H1)
-zi_lin = interp_lin(xi, -yi)
-
-# Contours of the errors_H1 in 3D and 2D
-solution_interpolated = np.zeros(zi_lin.shape)
-for i in range(len(xi)):
-    for j in range(len(yi)):
-        solution_interpolated[i, j] = exact_solution1(  xi[i, j], -yi[i,j]  )
-errors_H1_abs = abs(zi_lin - solution_interpolated)
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im4 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Exact solution, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im4)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_ExactSolution.png', dpi=my_dpi * 10)
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, errors_H1_abs , 50, cmap=colormap2)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('errors_H1');
-plt.title("3D point wise errors, triangle and square h1")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H1 in 2D
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im6 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im6)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# The absolute errors_H1 in 2D with the triangulation
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#04007e')
-im7 = plt.imshow( errors_H1_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors and triangulation, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im7)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im8 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H1[:, 0], eik_coords_H1[:, 1], c = eik_vals_H1, cmap = colormap2)
-plt.triplot(eik_coords_H1[:, 0], eik_coords_H1[:, 1], triangles_H1, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im8)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_LinearInt_Mesh.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Linear interpolation, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im9)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_LinearInt.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.quiver(eik_coords_H1[:, 0], eik_coords_H1[:, 1], eik_grads_H1[:, 0], eik_grads_H1[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, triangle and square h1")
-plt.show(block = False)
-plt.colorbar(im10)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H1/H1_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-averageH += [average_edge_length(eik_coords_H1, triangles_H1)]
-errorNorm += [norm( np.subtract(eik_vals_H1, exact_values_H1)  )/norm( exact_values_H1 )]
-nPointsH += [len(eik_coords_H1)]
-
-
+######################################################
+################## ERRORS ############################
+################### EACH #############################
+####################  H  #############################
 ######################################################
 ######################################################
-######################################################
-#### H2
-## 1. Plot of the output
 
-eik_vals_H2 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H2_ComputedValues.bin")
-eik_coords_H2 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H2_MeshPoints.txt", delimiter=",")
-triangles_H2 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H2_Faces.txt", delimiter=",")
-eik_grads_H2 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H2_ComputedGradients.bin");
-eik_grads_H2 = eik_grads_H2.reshape(len(eik_coords_H2), 2)
 
-exact_values_H2 = []
-errors_H2 = []
-for i in range(len(eik_coords_H2)):
-    xi = eik_coords_H2[i, 0]
-    yi = eik_coords_H2[i, 1]
-    sol = exact_solution1(xi, yi)
-    exact_values_H2 += [sol]
-    errors_H2 += [ abs( sol - eik_vals_H2[i] ) ]
+# First we need to order these things so that the plots look nice
 
+info_frameErrors = pd.DataFrame(  data = {'H': Hs, 'Edge Length original':  averageH_orig, 'Error original': errorNorm_orig,
+                                          'nPoints': nPointsH_orig, 'Times original': times_orig_vec,
+                                          'Edge Length artificial': averageH_artf, 'Error artificial': errorNorm_artf,
+                                          'Times artificial': times_artf_vec}  )
+
+# Sort them according to the average edge length original
+
+info_frameErrors = info_frameErrors.sort_values( by = ['Edge Length original'], ignore_index = True )
+
+print(info_frameErrors)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H2[:, 0], eik_coords_H2[:, 1], eik_vals_H2, c= eik_vals_H2, cmap=colormap2)
-plt.title("Computed eikonal values, triangle and square h2")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H2[:, 0], eik_coords_H2[:, 1], exact_values_H2, c= exact_values_H2, cmap=colormap2)
-plt.title("Exact solution, triangle and square h2")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H2[:, 0], eik_coords_H2[:, 1], errors_H2, c = errors_H2, cmap=colormap2)
-plt.title("Computed errors per point, triangle and square h2")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H2 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
-
-xi, yi = np.meshgrid(np.linspace(-10, 10, 500), np.linspace(-10, 10, 500))
-# We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H2[:, 0], eik_coords_H2[:, 1], triangles_H2)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H2)
-zi_lin = interp_lin(xi, -yi)
-
-# Contours of the errors_H2 in 3D and 2D
-solution_interpolated = np.zeros(zi_lin.shape)
-for i in range(len(xi)):
-    for j in range(len(yi)):
-        solution_interpolated[i, j] = exact_solution1(  xi[i, j], -yi[i,j]  )
-errors_H2_abs = abs(zi_lin - solution_interpolated)
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar14 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Exact solution, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar14)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_ExactSolution.png', dpi=my_dpi * 10)
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, errors_H2_abs , 50, cmap=colormap2)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('errors_H2');
-plt.title("3D point wise errors, triangle and square h2")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H2 in 2D
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar16 = plt.imshow( errors_H2_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar16)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# The absolute errors_H2 in 2D with the triangulation
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-plt.triplot(eik_coords_H2[:, 0], eik_coords_H2[:, 1], triangles_H2, '-.', lw=0.5, c='#04007e')
-im_bar17 = plt.imshow( errors_H2_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors and triangulation, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar17)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar18 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H2[:, 0], eik_coords_H2[:, 1], c = eik_vals_H2, cmap = colormap2)
-plt.triplot(eik_coords_H2[:, 0], eik_coords_H2[:, 1], triangles_H2, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar18)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_LinearInt_Mesh.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar19 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Linear interpolation, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar19)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_LinearInt.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar20 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.quiver(eik_coords_H2[:, 0], eik_coords_H2[:, 1], eik_grads_H2[:, 0], eik_grads_H2[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, triangle and square h2")
-plt.show(block = False)
-plt.colorbar(im_bar20)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H2/H2_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-averageH += [average_edge_length(eik_coords_H2, triangles_H2)]
-errorNorm += [norm( np.subtract(eik_vals_H2, exact_values_H2)  )/norm( exact_values_H2 )]
-nPointsH += [len(eik_coords_H2)]
-
-
-######################################################
-######################################################
-######################################################
-#### H3
-## 1. Plot of the output
-
-eik_vals_H3 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H3_ComputedValues.bin")
-eik_coords_H3 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H3_MeshPoints.txt", delimiter=",")
-triangles_H3 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H3_Faces.txt", delimiter=",")
-eik_grads_H3 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H3_ComputedGradients.bin");
-eik_grads_H3 = eik_grads_H3.reshape(len(eik_coords_H3), 2)
-
-exact_values_H3 = []
-errors_H3 = []
-for i in range(len(eik_coords_H3)):
-    xi = eik_coords_H3[i, 0]
-    yi = eik_coords_H3[i, 1]
-    sol = exact_solution1(xi, yi)
-    exact_values_H3 += [sol]
-    errors_H3 += [ abs( sol - eik_vals_H3[i] ) ]
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H3[:, 0], eik_coords_H3[:, 1], eik_vals_H3, c= eik_vals_H3, cmap=colormap2)
-plt.title("Computed eikonal values, triangle and square h3")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H3[:, 0], eik_coords_H3[:, 1], exact_values_H3, c= exact_values_H3, cmap=colormap2)
-plt.title("Exact solution, triangle and square h3")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H3[:, 0], eik_coords_H3[:, 1], errors_H3, c = errors_H3, cmap=colormap2)
-plt.title("Computed errors per point, triangle and square h3")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H3 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
-
-xi, yi = np.meshgrid(np.linspace(-10, 10, 500), np.linspace(-10, 10, 500))
-# We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H3[:, 0], eik_coords_H3[:, 1], triangles_H3)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H3)
-zi_lin = interp_lin(xi, -yi)
-
-# Contours of the errors_H3 in 3D and 2D
-solution_interpolated = np.zeros(zi_lin.shape)
-for i in range(len(xi)):
-    for j in range(len(yi)):
-        solution_interpolated[i, j] = exact_solution1(  xi[i, j], -yi[i,j]  )
-errors_H3_abs = abs(zi_lin - solution_interpolated)
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar24 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Exact solution, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar24)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_ExactSolution.png', dpi=my_dpi * 10)
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, errors_H3_abs , 50, cmap=colormap2)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('errors_H3');
-plt.title("3D point wise errors, triangle and square h3")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H3 in 2D
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar26 = plt.imshow( errors_H3_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar26)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# The absolute errors_H3 in 2D with the triangulation
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-plt.triplot(eik_coords_H3[:, 0], eik_coords_H3[:, 1], triangles_H3, '-.', lw=0.5, c='#04007e')
-im_bar27 = plt.imshow( errors_H3_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors and triangulation, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar27)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar28 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H3[:, 0], eik_coords_H3[:, 1], c = eik_vals_H3, cmap = colormap2)
-plt.triplot(eik_coords_H3[:, 0], eik_coords_H3[:, 1], triangles_H3, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar28)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_LinearInt_Mesh.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar29 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Linear interpolation, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar29)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_LinearInt.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar30 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.quiver(eik_coords_H3[:, 0], eik_coords_H3[:, 1], eik_grads_H3[:, 0], eik_grads_H3[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, triangle and square h3")
-plt.show(block = False)
-plt.colorbar(im_bar30)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H3/H3_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-averageH += [average_edge_length(eik_coords_H3, triangles_H3)]
-errorNorm += [norm( np.subtract(eik_vals_H3, exact_values_H3)  )/norm( exact_values_H3 )]
-nPointsH += [len(eik_coords_H3)]
-
-######################################################
-######################################################
-######################################################
-#### H4
-## 1. Plot of the output
-
-eik_vals_H4 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H4_ComputedValues.bin")
-eik_coords_H4 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H4_MeshPoints.txt", delimiter=",")
-triangles_H4 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H4_Faces.txt", delimiter=",")
-eik_grads_H4 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H4_ComputedGradients.bin");
-eik_grads_H4 = eik_grads_H4.reshape(len(eik_coords_H4), 2)
-
-exact_values_H4 = []
-errors_H4 = []
-for i in range(len(eik_coords_H4)):
-    xi = eik_coords_H4[i, 0]
-    yi = eik_coords_H4[i, 1]
-    sol = exact_solution1(xi, yi)
-    exact_values_H4 += [sol]
-    errors_H4 += [ abs( sol - eik_vals_H4[i] ) ]
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], eik_vals_H4, c= eik_vals_H4, cmap=colormap2)
-plt.title("Computed eikonal values, triangle and square h4")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], exact_values_H4, c= exact_values_H4, cmap=colormap2)
-plt.title("Exact solution, triangle and square h4")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], errors_H4, c = errors_H4, cmap=colormap2)
-plt.title("Computed errors per point, triangle and square h4")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H4 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
-
-xi, yi = np.meshgrid(np.linspace(-10, 10, 500), np.linspace(-10, 10, 500))
-# We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H4)
-zi_lin = interp_lin(xi, -yi)
-
-# Contours of the errors_H4 in 3D and 2D
-solution_interpolated = np.zeros(zi_lin.shape)
-for i in range(len(xi)):
-    for j in range(len(yi)):
-        solution_interpolated[i, j] = exact_solution1(  xi[i, j], -yi[i,j]  )
-errors_H4_abs = abs(zi_lin - solution_interpolated)
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar34 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Exact solution, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar34)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_ExactSolution.png', dpi=my_dpi * 10)
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, errors_H4_abs , 50, cmap=colormap2)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('errors_H4');
-plt.title("3D point wise errors, triangle and square h4")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H4 in 2D
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar36 = plt.imshow( errors_H4_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar36)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# The absolute errors_H4 in 2D with the triangulation
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-plt.triplot(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4, '-.', lw=0.5, c='#04007e')
-im_bar37 = plt.imshow( errors_H4_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors and triangulation, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar37)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar38 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H4[:, 0], eik_coords_H4[:, 1], c = eik_vals_H4, cmap = colormap2)
-plt.triplot(eik_coords_H4[:, 0], eik_coords_H4[:, 1], triangles_H4, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar38)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_LinearInt_Mesh.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar39 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Linear interpolation, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar39)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_LinearInt.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar40 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.quiver(eik_coords_H4[:, 0], eik_coords_H4[:, 1], eik_grads_H4[:, 0], eik_grads_H4[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, triangle and square h4")
-plt.show(block = False)
-plt.colorbar(im_bar40)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H4/H4_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-averageH += [average_edge_length(eik_coords_H4, triangles_H4)]
-errorNorm += [norm( np.subtract(eik_vals_H4, exact_values_H4)  )/norm( exact_values_H4 )]
-nPointsH += [len(eik_coords_H4)]
-
-
-######################################################
-######################################################
-######################################################
-#### H6
-## 1. Plot of the output
-
-eik_vals_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H6_ComputedValues.bin")
-eik_coords_H6 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H6_MeshPoints.txt", delimiter=",")
-triangles_H6 = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H6_Faces.txt", delimiter=",")
-eik_grads_H6 = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H6_ComputedGradients.bin");
-eik_grads_H6 = eik_grads_H6.reshape(len(eik_coords_H6), 2)
-
-exact_values_H6 = []
-errors_H6 = []
-for i in range(len(eik_coords_H6)):
-    xi = eik_coords_H6[i, 0]
-    yi = eik_coords_H6[i, 1]
-    sol = exact_solution1(xi, yi)
-    exact_values_H6 += [sol]
-    errors_H6 += [ abs( sol - eik_vals_H6[i] ) ]
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H6[:, 0], eik_coords_H6[:, 1], eik_vals_H6, c= eik_vals_H6, cmap=colormap2)
-plt.title("Computed eikonal values, triangle and square h6")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_ComputedValues.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H6[:, 0], eik_coords_H6[:, 1], exact_values_H6, c= exact_values_H6, cmap=colormap2)
-plt.title("Exact solution, triangle and square h6")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_ExactSolution.gif', dpi=80, writer='imagemagick')
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.scatter(eik_coords_H6[:, 0], eik_coords_H6[:, 1], errors_H6, c = errors_H6, cmap=colormap2)
-plt.title("Computed errors per point, triangle and square h6")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_PointsPointErrors.gif', dpi=80, writer='imagemagick')
-
-
-
-# We interpolate the solution on the triangles_H6 (so that we get a smooth plot + Sam´s idea)
-
-# Since we are dealing with a square on [-5, 5], [-5, -5], [5, -5] , [5, 5]
-
-xi, yi = np.meshgrid(np.linspace(-10, 10, 500), np.linspace(-10, 10, 500))
-# We need a triangulation object thing
-triang = tri.Triangulation(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6)
-# To be able to use LinearTriInterpolator
-interp_lin = tri.LinearTriInterpolator(triang, eik_vals_H6)
-zi_lin = interp_lin(xi, -yi)
-
-# Contours of the errors_H6 in 3D and 2D
-solution_interpolated = np.zeros(zi_lin.shape)
-for i in range(len(xi)):
-    for j in range(len(yi)):
-        solution_interpolated[i, j] = exact_solution1(  xi[i, j], -yi[i,j]  )
-errors_H6_abs = abs(zi_lin - solution_interpolated)
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar44 = plt.imshow( solution_interpolated, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Exact solution, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar44)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_ExactSolution.png', dpi=my_dpi * 10)
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-ax = plt.axes(projection='3d')
-ax.contour3D(xi, yi, errors_H6_abs , 50, cmap=colormap2)
-ax.set_xlabel('x')
-ax.set_ylabel('y')
-ax.set_zlabel('errors_H6');
-plt.title("3D point wise errors, triangle and square h6")
-plt.show(block = False)
-rot_animation = animation.FuncAnimation(fig, rotate, frames=np.arange(0, 362, 2), interval=100)
-rot_animation.save('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_PointErrors.gif', dpi=80, writer='imagemagick')
-
-
-# Plot the absolute errors_H6 in 2D
-
-fig = plt.figure(46)
-plt.axis('equal')
-im_bar46 = plt.imshow( errors_H6_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar46)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_PointErrors.png', dpi=my_dpi * 10)
-
-
-
-# The absolute errors_H6 in 2D with the triangulation
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.5, c='#04007e')
-im_bar47 = plt.imshow( errors_H6_abs, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Point wise absolute errors and triangulation, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar47)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_PointErrors_Mesh.png', dpi=my_dpi * 10)
-
-
-
-#Now we can plot + plot the triangulation + dots on top
-# This plots the contours (I think it looks horrible)
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar48 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2)
-plt.scatter(eik_coords_H6[:, 0], eik_coords_H6[:, 1], c = eik_vals_H6, cmap = colormap2)
-plt.triplot(eik_coords_H6[:, 0], eik_coords_H6[:, 1], triangles_H6, '-.', lw=0.5, c='#6800ff')
-plt.title("Linear interpolation, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar48)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_LinearInt_Mesh.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar49 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.title("Linear interpolation, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar49)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_LinearInt.png', dpi=my_dpi * 10)
-
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.axis('equal')
-im_bar50 = plt.imshow( zi_lin, cmap = colormap2, extent=[-10,10,-10,10]  )
-plt.quiver(eik_coords_H6[:, 0], eik_coords_H6[:, 1], eik_grads_H6[:, 0], eik_grads_H6[:, 1])
-plt.title("Linear interpolation and computed eikonal gradient, triangle and square h6")
-plt.show(block = False)
-plt.colorbar(im_bar50)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H6/H6_LinearInt_Grad.png', dpi=my_dpi * 10)
-
-
-
-averageH += [average_edge_length(eik_coords_H6, triangles_H6)]
-errorNorm += [norm( np.subtract(eik_vals_H6, exact_values_H6)  )/norm( exact_values_H6 )]
-nPointsH += [len(eik_coords_H6)]
-
-
-# ######################################################
-# ######################################################
-# ######################################################
-# ######################################################
-# ################## ERRORS ############################
-# ################### EACH #############################
-# ####################  H  #############################
-# ######################################################
-# ######################################################
-
-
-fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.loglog(averageH, errorNorm, c = '#6800ff')
-plt.title("l2 errors and average edge length")
+plt.loglog(info_frameErrors['Edge Length original'] , info_frameErrors['Error original'], c = '#6800ff', linestyle='--', marker='o')
+plt.title("l2 errors and average edge length, triangles in mesh")
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 plt.show(block = False)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_EdgeLength_orig_AugustC.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.loglog(averageH, nPointsH, c = '#6800ff')
-plt.title("l2 errors and number of points in triangulation")
+plt.loglog(info_frameErrors['nPoints'], info_frameErrors['Error original'], c = '#6800ff', linestyle='--', marker='o')
+plt.title("l2 errors and number of points in triangulation, triangles in mesh")
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 plt.show(block = False)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_nPoints_orig_AugustC.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.loglog(averageH, times, c = '#6800ff')
-plt.title("Average edge length and time taken to solve")
+plt.loglog(info_frameErrors['Edge Length original'], info_frameErrors['Times original'], c = '#6800ff', linestyle='--', marker='o')
+plt.title("Average edge length and time taken to solve, triangles in mesh")
 plt.ylabel("Time taken to solve (sec)")
 plt.xlabel("Average edge length")
 plt.show(block = False)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/EdgeLength_Times.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/EdgeLength_Times_orig_AugustC.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-plt.loglog(times, errorNorm, c = '#6800ff')
-plt.title("Time taken to solve and l2 errors")
+plt.loglog(info_frameErrors['Times original'], info_frameErrors['Error original'], c = '#6800ff', linestyle='--', marker='o')
+plt.title("Time taken to solve and l2 errors, triangles in mesh")
 plt.xlabel("Time taken to solve (sec)")
 plt.ylabel("Error")
 plt.show(block = False)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Times_Errors.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Times_Errors_orig_AugustC.png', dpi=my_dpi * 10)
 
 
-table_sqTr = {"Average h": averageH, "Time taken": times, "l2 errors": errorNorm, "Points in triangulation": nPointsH}
+table_orig = {"Average h": averageH_orig, "Time taken": times_orig_vec, "l2 errors": errorNorm_orig, "Points in triangulation": nPointsH_orig}
 
-print(tabulate(table_sqTr, headers="keys", tablefmt="latex"))
+# with artificial triangles
 
-plt.show()
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Edge Length artificial'] , info_frameErrors['Error artificial'], c = '#5993b3', linestyle='--', marker='o')
+plt.title("l2 errors and average edge length, artificial triangles")
+plt.xlabel("Average edge length")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_EdgeLength_artf_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['nPoints'], info_frameErrors['Error artificial'], c = '#5993b3', linestyle='--', marker='o')
+plt.title("l2 errors and number of points in triangulation, artificial triangles")
+plt.xlabel("Number of points in triangulation")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_nPoints_artf_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Edge Length artificial'], info_frameErrors['Times artificial'], c = '#5993b3', linestyle='--', marker='o')
+plt.title("Average edge length and time taken to solve, artificial triangles")
+plt.ylabel("Time taken to solve (sec)")
+plt.xlabel("Average edge length")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/EdgeLength_Times_artf_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Times artificial'], info_frameErrors['Error artificial'], c = '#5993b3', linestyle='--', marker='o')
+plt.title("Time taken to solve and l2 errors, artificial triangles")
+plt.xlabel("Time taken to solve (sec)")
+plt.ylabel("Error")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Times_Errors_artf_AugustC.png', dpi=my_dpi * 10)
+
+
+table_artf = {"Average h": averageH_artf, "Time taken": times_artf_vec, "l2 errors": errorNorm_artf, "Points in triangulation": nPointsH_artf}
+
+
+
+#### We plot the comparison
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Edge Length original'] , info_frameErrors['Error original'], c = '#5993b3', linestyle='--', marker='o', label = 'Triangles in mesh')
+plt.loglog(info_frameErrors['Edge Length artificial'] , info_frameErrors['Error artificial'], c = '#6800ff', linestyle='--', marker='o', label = 'Artificial triangles')
+plt.title("l2 errors and average edge length, artificial triangles")
+plt.xlabel("Average edge length")
+plt.ylabel("Error")
+plt.legend()
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_EdgeLength_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['nPoints'], info_frameErrors['Error original'] , c = '#5993b3', linestyle='--', marker='o', label = 'Triangles in mesh')
+plt.loglog(info_frameErrors['nPoints'], info_frameErrors['Error artificial'], c = '#6800ff', linestyle='--', marker='o', label = 'Artificial triangles')
+plt.title("l2 errors and number of points in triangulation, artificial triangles")
+plt.xlabel("Number of points in triangulation")
+plt.ylabel("Error")
+plt.legend()
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Errors_nPoints_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Edge Length original'] , info_frameErrors['Times original'], c = '#5993b3', linestyle='--', marker='o', label = 'Triangles in mesh')
+plt.loglog(info_frameErrors['Edge Length artificial'] , info_frameErrors['Times artificial'], c = '#6800ff', linestyle='--', marker='o', label = 'Artificial triangles')
+plt.title("Average edge length and time taken to solve, artificial triangles")
+plt.ylabel("Time taken to solve (sec)")
+plt.xlabel("Average edge length")
+plt.legend()
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/EdgeLength_Times_AugustC.png', dpi=my_dpi * 10)
+
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Times original'], info_frameErrors['Error original'], c = '#5993b3', linestyle='--', marker='o', label = 'Triangles in mesh')
+plt.loglog(info_frameErrors['Times artificial'], info_frameErrors['Error artificial'], c = '#6800ff', linestyle='--', marker='o', label = 'Artificial triangles')
+plt.title("Time taken to solve and l2 errors, artificial triangles")
+plt.xlabel("Time taken to solve (sec)")
+plt.ylabel("Error")
+plt.legend()
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/Times_Errors_AugustC.png', dpi=my_dpi * 10)
+
+fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.loglog(info_frameErrors['Edge Length original'], info_frameErrors['nPoints'], c = '#5993b3', linestyle='--', marker='o')
+plt.title("Points in mesh vs average edge length")
+plt.xlabel("Points in mesh")
+plt.ylabel("Average edge length")
+plt.show(block = False)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/EdgeLength_nPoints_AugustC.png', dpi=my_dpi * 10)
+
+print("\n\n\nTable with original method:\n")
+print(tabulate(info_frameErrors, headers="keys", tablefmt="latex"))
+
+

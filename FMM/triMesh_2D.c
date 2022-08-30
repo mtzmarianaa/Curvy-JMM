@@ -9,6 +9,7 @@ meshpy is given
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 
 
 void triMesh_2Dalloc(triMesh_2Ds **triM_2D) {
@@ -137,16 +138,15 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
     // we look in the incidentFaces, both points must share two faces, we are looking for this and for the smaller region (meaning that the index of refraction is smaller there)
     int current_face, i, region, region_test;
-    region = triM_2D->indexRegions[ triM_2D->incidentFaces[index_from].neis_i[0] ]; // index corresponding to the first incident face of from
+    region = INFINITY;
     for (i = 0; i<triM_2D->incidentFaces[index_from].len; i++){
+        // we first iterate through all the points
         current_face = triM_2D->incidentFaces[index_from].neis_i[i];
-        region_test = triM_2D->indexRegions[ current_face ];
-        if ( region != region_test & region_test < region ){
-            // if there is an incident face with different index region and that index is smaller (if this happens then we're on the edge and we assume that 
-            // we can travel "fast" via the edge, check the idea behind computing the analytic solution)
-            if (  triM_2D->faces->points[current_face][0] == index_to |  triM_2D->faces->points[current_face][1] == index_to | triM_2D->faces->points[current_face][2] == index_to ){
-                //printf("From %d to %d we consider the face indexed with %d \n", index_from, index_to, current_face);
-                region = region_test;
+        if(triM_2D->faces->points[current_face][0] == index_to |  triM_2D->faces->points[current_face][1] == index_to | triM_2D->faces->points[current_face][2] == index_to) {
+            // we've found a triangle that contains both index_from and index_to (there are only 2 triangles that contain both of these points
+            region_test = triM_2D->indexRegions[current_face]; // the region of one of the two triangles containing both points
+            if(region_test<region){
+                region = region_test; // would only happen when we find a face and then if the edge between these two points separates two different areas
             }
         }
     }

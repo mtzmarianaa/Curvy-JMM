@@ -67,7 +67,7 @@ void heapify(p_queue *Priority_queue, int i)
 {
   if (Priority_queue->size == 1)
   {
-    printf("Single element in the heap, heapified done");
+    // printf("Single element in the heap, heapified done");
   }
   else
   {
@@ -201,6 +201,9 @@ void printeik_queue(p_queue *Priority_queue)
 void update(p_queue *Priority_queue, double new_valConsidered, int index)
 {
     int i, j;
+    printf("Before updating the queue looks like this: \n");
+    printeik_queue(Priority_queue);
+    printf("\n");
     // First find the current value associated with index
     for (i = 0; i < Priority_queue->size; i++)
     {
@@ -210,11 +213,17 @@ void update(p_queue *Priority_queue, double new_valConsidered, int index)
     // Then, if the new value considered is smaller than the current value
     if ( Priority_queue->queue_vals[i] > new_valConsidered  )
     {
+        printf("New value updated in %d to the queue: %fl\n", index, new_valConsidered);
         Priority_queue->queue_vals[i] = new_valConsidered;
         for (j = Priority_queue->size / 2 ; j >= 0; j--)
         {
             heapify(Priority_queue, j);
         }
+        printf("The queue so far looks like this: \n");
+        printeik_queue(Priority_queue);
+    }
+    else{
+      printf("\nWe were trying to update at %d the value of %fl but the current value in the queue is better.\n", index, new_valConsidered);
     }
 }
 

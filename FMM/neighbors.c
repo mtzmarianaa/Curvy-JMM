@@ -104,10 +104,11 @@ void printAllNeighbors(neighborsRS *neighbors, int N) {
         printf("Neighbors for point indexed: %d \n", p);
         printf("Has %d neighbors: \n", currentN);
         for (int i= 0;i<currentN; i++){
-            printf("| %d  |", Neighs[i]);
+            printf("|          %d          |", Neighs[i]);
         }
         printf("\n\n");
     }
 }
+
 
 

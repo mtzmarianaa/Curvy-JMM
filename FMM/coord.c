@@ -28,7 +28,7 @@ void coord_init(coordS *coordinates, double *x, double *y, int nPoints) {
 void print_coord(coordS *coordinates) {
     printf("Number of coordinates: %d \n", coordinates->nPoints);
     for(int i = 0; i< coordinates->nPoints; i ++) {
-        printf("x: %f,  y: %f \n", coordinates->x[i], coordinates->y[i]);
+        printf("%d    x: %f,  y: %f \n", i, coordinates->x[i], coordinates->y[i]);
     }
 }
 

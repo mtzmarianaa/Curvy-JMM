@@ -5,6 +5,17 @@ import meshpy.triangle as triangle
 import numpy.linalg as la
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from math import floor
+import pandas as pd
+
+my_dpi=96
+h = 10
+h_string = str(h)
+# h_stringPrev = "H0_1"
+
+# previousPoints = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + h_stringPrev + "/" + h_stringPrev + "_MeshPoints.txt", delimiter=",")
+# previousPoints = previousPoints
+# edges_square = [  (p[0], p[1]) for p in previousPoints  ]
+# print("Amount of previous points:  ", len(edges_square))
 
 def round_trip_connect(start, end):
     return [(i, i + 1) for i in range(start, end)] + [(end, start)]
@@ -12,24 +23,19 @@ def round_trip_connect(start, end):
 def connect(start, end):
     return [(i, i + 1) for i in range(start, end)]
 
-# def needs_refinement(vertices, area):
-#         bary = np.sum(np.array(vertices), axis=0) /5
-#         max_area = 0.5 + (la.norm(bary, np.inf) - 1) * 0.001
-#         return bool(area > max_area)
 
 def needs_refinement(vertices, area):
-        max_area = 0.6
+        max_area = h
         return bool(area > max_area)
 
-edges_square = [(-10, -10), (10, -10), (10, 10), (-10, 10)]
+edges_square = [ (0,-2) ,(-10, -10), (10, -10), (10, 10), (-10, 10)]
 
-facets = round_trip_connect(0, len(edges_square)-1  ) 
+facets = round_trip_connect(1, 4  ) 
 
 edges_square += [(0, 0)]
 
-facets += [(2, 4), (4, 3)]
+facets += [(3, 5), (5, 4)]
 
-edges_square = edges_square + [(0, -2), (8, 2)] # The points where we want to start (so that for every h we start at the same points)
 
 # We add the inverted triangle part
 
@@ -82,12 +88,13 @@ for fi in range(len(mesh_tris)):
         colors += [0.5]
         
 
-plt.figure(1)
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
 ax = fig.gca()
 plt.gca().set_aspect('equal')
 plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
 plt.title('Delaunay triangulation of test square')
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H0_1/H0_1_TriangulationWhite.png', dpi=my_dpi * 10)
 plt.show(block = False)
 
 viridis = plt.get_cmap('magma', 256)
@@ -100,12 +107,13 @@ new_colors += [purple]*mid
 newcmp = ListedColormap(new_colors)
 
 
-plt.figure(2)
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
 plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, colors, cmap = newcmp)
 plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#00fffb')
-plt.title('Delaunay triangulation of test square, H4')
+plt.title('Delaunay triangulation of test square, H0_1, h=' + h_string )
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H0_1/H0_1_Triangulation.png', dpi=my_dpi * 10)
 plt.show(block = False)
 
 
@@ -116,31 +124,32 @@ plt.show()
 
 # # # Now we save this triangulation to a bin file so that we can read it later from C
 
-np.savetxt('TestTriangleSquare/BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestTriangleSquare/H0_1/H0_1_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets)
-np.savetxt('TestTriangleSquare/Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestTriangleSquare/H0_1/H0_1_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestTriangleSquare/MeshPoints.txt', mesh_points, delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestTriangleSquare/H0_1/H0_1_MeshPoints.txt', mesh_points, delimiter =', ', fmt = '%.8f' )
+print("Amount of new points:  ", len(mesh_points))
 
-np.savetxt('TestTriangleSquare/Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestTriangleSquare/H0_1/H0_1_Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestTriangleSquare/NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('TestTriangleSquare/H0_1/H0_1_NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
 # Save the list of lists into a txt file
 separator = "," 
 
-with open("TestTriangleSquare/Neigh.txt", "w") as out_file:
+with open("TestTriangleSquare/H0_1/H0_1_Neigh.txt", "w") as out_file:
     for l in mesh_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestTriangleSquare/IncidentFaces.txt", "w") as out_file:
+with open("TestTriangleSquare/H0_1/H0_1_IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestTriangleSquare/FacesLabel.txt", "w") as out_file:
+with open("TestTriangleSquare/H0_1/H0_1_FacesLabel.txt", "w") as out_file:
     for l in faces_label:
         out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)

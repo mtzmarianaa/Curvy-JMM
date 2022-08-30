@@ -129,7 +129,7 @@ void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, doubl
   vec2_substraction(x0, x1, x1Minx0);
   dist = l2norm(x1Minx0);
   *regionIndex = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
-  //printf("\n Region %d \n", *regionIndex);
+  printf("\n Region %d \n", *regionIndex);
   *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
 }
 
@@ -138,6 +138,7 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind_original,
   double lambda_opt, lambda0, lambda1, T0, T1, tol;
   double x0[2], x1[2], xHat[2], xlamNeigh[2];
   int maxIter, faceBetweenPoints, neighNeigh_ind, x1_ind;
+  printf("\n\n\n\n\nStarting a two point update\n\n\n");
   x1_ind = *x1_ind_original;
   lambda0 = 0.0;
   lambda1 = 1.0;
@@ -147,6 +148,7 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind_original,
   T1 = eik_g->eik_vals[x1_ind];
   faceBetweenPoints = faceBetween3Points(eik_g->triM_2D, x0_ind, x1_ind, xHat_ind ); // get the face that is defined by these 3 points
   *regionIndex = eik_g->triM_2D->indexRegions[ faceBetweenPoints ]; // get the region where this face belongs to
+  printf("The triangle defined by this three points belongs to this region: %d\n", *regionIndex);
   // get the coordinates of the points x0, x1, xHat
   x0[0] = eik_g->triM_2D->points->x[x0_ind];
   // printf("\n");
@@ -164,14 +166,16 @@ void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind_original,
   // compute the optimum lambda from  the linear model
   lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, *regionIndex);
   *lambda = lambda_opt;
-  // printf("Lambda found %fl\n", lambda_opt);
+  printf("Interpolating from %d to %d \n", x0_ind, x1_ind);
+  printf("Lambda found %fl\n", lambda_opt);
   // save the xlam 
   xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
   xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
   // get the possible eikonal value for this two point update
   *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
-  // printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
-  // printf("Eikonal value with two point update %fl\n", That2);
+  printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
+  printf("Eikonal value with two point update %fl\n", *That2);
+  printf("\n\n\n");
   
 }
 
@@ -262,10 +266,14 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
   xlam[0] = eik_g->triM_2D->points->x[index_accepted];
   xlam[1] = eik_g->triM_2D->points->y[index_accepted];
   nNei = eik_g->triM_2D->neighbors[index_accepted].len;
+  printf("After accepting %d we add its neighbors with a one point update\n", index_accepted);
   for(int i = 0; i<nNei; i++){
     neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // a neighbor
+    printf("Now considering this neighbor: %d\n", neighborsIndex);
     if(eik_g->current_states[neighborsIndex] == 0) { // meaning that we just add the neighbors which are currently set as far
+      printf("This neighbors is set as far, %d\n", eik_g->current_states[neighborsIndex]);
       onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex, &That1, &regionIndex);
+      printf("Neighbor %d,    with coordinates   (%fl, %fl)    , the one point update is   %fl \n", neighborsIndex, eik_g->triM_2D->points->x[neighborsIndex], eik_g->triM_2D->points->y[neighborsIndex], That1);
       insert(eik_g->p_queueG, That1 , neighborsIndex); // insert this one point update to the priority queue
       eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
       // now we add the approximated value of the gradient of the eikonal (this is kind of a trial of such gradient)
@@ -277,6 +285,9 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
       eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
       eik_g->parents_path[neighborsIndex][0] = index_accepted; // it was updated directly from the newly accepted node
       // we don't update the lambdas because currently they're set to 0, i.e. the update is set directly from parents_path[neighborsIndex][0].
+    }
+    else{
+      printf("The current state of that neighbor is %d\n", eik_g->current_states[neighborsIndex]);
     }
   }
 }
@@ -316,6 +327,7 @@ void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int ind
   double norm_div, twoPointVal, lambda_opt, temp_substraction[2], xlam[2], xhat[2];
   xhat[0] = eik_g->triM_2D->points->x[neighborTrial];
   xhat[1] = eik_g->triM_2D->points->y[neighborTrial];
+  printf("The coordinates of xhat are: (%fl, %fl)", xhat[0], xhat[1]);
   twoPointUpdate_eikValue(eik_g, index_accepted, &neighborValid, neighborTrial, &lambda_opt, xlam, &twoPointVal, &regionIndex);
   update(eik_g->p_queueG, twoPointVal, neighborTrial); // this function takes care, if its smaller it will update the new value
   if( twoPointVal < eik_g->eik_vals[neighborTrial] ){ // if we actually have a better update
@@ -343,6 +355,7 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
   // we iterate through those faces
   for (int i = 0; i<nFaces; i++){
     faceIndex = eik_g->triM_2D->incidentFaces[index_accepted].neis_i[i]; // i-th incident face 
+    printf("For the incident face %d    which is made up from    %d, %d, %d\n", faceIndex, eik_g->triM_2D->faces->points[faceIndex][0], eik_g->triM_2D->faces->points[faceIndex][1], eik_g->triM_2D->faces->points[faceIndex][2]);
     // now we get the two other points that belong to that face
     k = 0;
     for (int j = 0; j<3; j++) {
@@ -356,6 +369,8 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
     if( eik_g->current_states[neis[0]] == 2 &  eik_g->current_states[neis[1]] == 1 ) {
       // neis[0] is valid, neis[1] is trial
       // two point update considered
+      printf("The valid neighbor is %d with coordinates (%fl, %fl)\n", neis[0], eik_g->triM_2D->points->x[neis[0]], eik_g->triM_2D->points->y[neis[0]]);
+      printf("The trial neighbor (we might update) is %d with coordinates (%fl, %fl)\n", neis[1], eik_g->triM_2D->points->x[neis[1]], eik_g->triM_2D->points->y[neis[1]]);
       neighborValid = neis[0];
       neighborTrial = neis[1];
       update_step(eik_g, neighborValid, neighborTrial, index_accepted);
@@ -363,6 +378,8 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
     if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
       // neis[0] is trial, neis[1] is valid
       // two point update considered
+      printf("The valid neighbor is %d with coordinates (%fl, %fl)\n", neis[1], eik_g->triM_2D->points->x[neis[1]], eik_g->triM_2D->points->y[neis[1]]);
+      printf("The trial neighbor (we might update) is %d with coordinates (%fl, %fl)\n", neis[0], eik_g->triM_2D->points->x[neis[0]], eik_g->triM_2D->points->y[neis[0]]);
       neighborValid = neis[1];
       neighborTrial = neis[0];
       update_step(eik_g, neighborValid, neighborTrial, index_accepted);
@@ -372,12 +389,27 @@ void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
 }
 
 void popAddNeighbors(eik_gridS *eik_g){
+  int nNeighs;
   int minIndex = indexRoot(eik_g->p_queueG);
   double minEikVal = valueRoot(eik_g->p_queueG);
+  printf("Initially the queue looks like this: \n");
+  printeik_queue(eik_g->p_queueG);
+  printf("\n");
   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
   eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
+  printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
+  printf("Its neighbors are: \n");
+  nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
+  for(int i=0; i<nNeighs; i++){
+    printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
+  }
+  printf("\n");
+  for(int i=0; i<nNeighs; i++){
+    printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
+  }
+  printf("\n");
 }
 
 int currentMinIndex(eik_gridS *eik_g) {
