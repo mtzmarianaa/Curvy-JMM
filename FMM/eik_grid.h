@@ -11,27 +11,19 @@ void eik_grid_dealloc(eik_gridS **eik_g );
 
 void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_2D) ;
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions);
+void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions);
 
 void printGeneralInfo(eik_gridS *eik_g);
 
 void printAllInfoMesh(eik_gridS *eik_g);
 
-void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, double *That1, int *regionIndex);
+void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double T1, double indexRef, double *That2, double *lambda);
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex);
+void initializePointsNear(eik_gridS *eik_g, double rBall);
 
-void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, int x0_ind, int *x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex);
- 
-void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted);
 
-void updateWithArtificial(eik_gridS *eik_g, int index_accepted);
 
-void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted);
-
-void update_afterAccepted(eik_gridS *eik_g, int index_accepted);
-
-void popAddNeighbors(eik_gridS *eik_g);
+// void popAddNeighbors(eik_gridS *eik_g);
 
 int currentMinIndex(eik_gridS *eik_g);
 

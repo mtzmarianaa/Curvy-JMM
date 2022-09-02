@@ -16,19 +16,19 @@ int main()
 
     const char *pathPoints, *pathNeighbors, *pathIncidentFaces, *pathBoundaryPoints, *pathFacets, *pathFaces, *pathIndexRegions, *pathToSaveTr_, *pathSaveGradientsTr_;
     const char *pathSavePath, *pathSaveLambdas, *pathTimes;
-    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_MeshPoints.txt";
-    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_Neigh.txt";
-    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_IncidentFaces.txt";
-    pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_BoundaryPoints.txt";
-    pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_Facets.txt";
-    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_Faces.txt";
-    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_FacesLabel.txt";
+    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_MeshPoints.txt";
+    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Neigh.txt";
+    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_IncidentFaces.txt";
+    pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_BoundaryPoints.txt";
+    pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Facets.txt";
+    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Faces.txt";
+    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_FacesLabel.txt";
 
-    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_ComputedValues_ARTIFICIAL.bin";
-    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_ComputedGradients_ARTIFICIAL.bin";
-    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_Parents_ARTIFICIAL.bin";
-    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_LambdasOpt_ARTIFICIAL.bin";
-    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H1/H1_Times_ARTIFICIAL.bin";
+    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedValues_ARTIFICIAL.bin";
+    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_ComputedGradients_ARTIFICIAL.bin";
+    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Parents_ARTIFICIAL.bin";
+    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_LambdasOpt_ARTIFICIAL.bin";
+    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H1/H1_Times_ARTIFICIAL.bin";
 
     int *start;
     int nstart, s;
@@ -74,19 +74,19 @@ int main()
 
     // // SECOND
 
-    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_MeshPoints.txt";
-    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_Neigh.txt";
-    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_IncidentFaces.txt";
-    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_BoundaryPoints.txt";
-    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_Facets.txt";
-    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_Faces.txt";
-    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_FacesLabel.txt";
+    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_MeshPoints.txt";
+    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_Neigh.txt";
+    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_IncidentFaces.txt";
+    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_BoundaryPoints.txt";
+    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_Facets.txt";
+    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_Faces.txt";
+    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_FacesLabel.txt";
 
-    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_ComputedValues_ARTIFICIAL.bin";
-    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_ComputedGradients_ARTIFICIAL.bin";
-    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_Parents_ARTIFICIAL.bin";
-    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_LambdasOpt_ARTIFICIAL.bin";
-    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H103/H103_Times_ARTIFICIAL.bin";
+    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_ComputedValues_ARTIFICIAL.bin";
+    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_ComputedGradients_ARTIFICIAL.bin";
+    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_Parents_ARTIFICIAL.bin";
+    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_LambdasOpt_ARTIFICIAL.bin";
+    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H103/H103_Times_ARTIFICIAL.bin";
 
 
     // s = 0;
@@ -129,19 +129,19 @@ int main()
 
     // // THIRD
 
-    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_MeshPoints.txt";
-    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_Neigh.txt";
-    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_IncidentFaces.txt";
-    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_BoundaryPoints.txt";
-    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_Facets.txt";
-    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_Faces.txt";
-    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_FacesLabel.txt";
+    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_MeshPoints.txt";
+    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_Neigh.txt";
+    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_IncidentFaces.txt";
+    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_BoundaryPoints.txt";
+    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_Facets.txt";
+    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_Faces.txt";
+    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_FacesLabel.txt";
 
-    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_ComputedValues_ARTIFICIAL.bin";
-    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_ComputedGradients_ARTIFICIAL.bin";
-    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_Parents_ARTIFICIAL.bin";
-    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_LambdasOpt_ARTIFICIAL.bin";
-    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H102/H102_Times_ARTIFICIAL.bin";
+    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_ComputedValues_ARTIFICIAL.bin";
+    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_ComputedGradients_ARTIFICIAL.bin";
+    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_Parents_ARTIFICIAL.bin";
+    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_LambdasOpt_ARTIFICIAL.bin";
+    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H102/H102_Times_ARTIFICIAL.bin";
 
 
     // s = 0;
@@ -184,19 +184,19 @@ int main()
 
     // // FOURTH
 
-    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_MeshPoints.txt";
-    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_Neigh.txt";
-    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_IncidentFaces.txt";
-    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_BoundaryPoints.txt";
-    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_Facets.txt";
-    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_Faces.txt";
-    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_FacesLabel.txt";
+    // pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_MeshPoints.txt";
+    // pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_Neigh.txt";
+    // pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_IncidentFaces.txt";
+    // pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_BoundaryPoints.txt";
+    // pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_Facets.txt";
+    // pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_Faces.txt";
+    // pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_FacesLabel.txt";
 
-    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_ComputedValues_ARTIFICIAL.bin";
-    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_ComputedGradients_ARTIFICIAL.bin";
-    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_Parents_ARTIFICIAL.bin";
-    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_LambdasOpt_ARTIFICIAL.bin";
-    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquareTriangle/H101/H101_Times_ARTIFICIAL.bin";
+    // pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_ComputedValues_ARTIFICIAL.bin";
+    // pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_ComputedGradients_ARTIFICIAL.bin";
+    // pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_Parents_ARTIFICIAL.bin";
+    // pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_LambdasOpt_ARTIFICIAL.bin";
+    // pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H101/H101_Times_ARTIFICIAL.bin";
 
 
     // s = 0;

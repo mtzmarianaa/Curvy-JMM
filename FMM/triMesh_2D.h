@@ -1,7 +1,6 @@
 #pragma once
 
 #include "coord.h"
-#include "facets.h"
 #include "faces.h"
 #include "neighbors.h"
 #include "files_methods.h"
@@ -12,8 +11,6 @@ typedef struct {
     // inspiration: what we might need + what might be useful to plot the mesh using triplot in Python
   coordS *points; // these are ALL the coordinates + number of points in the mesh
   neighborsRS *neighbors; // for each point i, its neighbors (i.e. there is a face that includes both points)
-  coordS *boundaryPoints;  // these are just the coordinates of the boundary points + number of boundary points
-  facetsS *facets; // these are the "instructions on how to connect indexed dots"
   neighborsRS *incidentFaces; // for each point i, its incident faces
   facesS *faces; // these are the faces, the triangles in the mesh
   int nPoints;
@@ -24,9 +21,9 @@ void triMesh_2Dalloc(triMesh_2Ds **triM_2D);
 
 void triMesh_2Ddalloc(triMesh_2Ds **triM_2D);
 
-void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints, int *indexRegions);
-
-void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions);
+void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, facesS *faces, int nPoints, int *indexRegions);
+ 
+void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions);
 
 void printGeneralInfoMesh(triMesh_2Ds *triM_2D);
 
@@ -34,6 +31,8 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D);
 
 int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to);
 
-void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int index_neighNeigh, int *trA, int *trB);
-
 int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3);
+
+void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int possibleTriangles[2], int possibleThirdVertices[2]);
+
+void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, int *xChange_ind, double *angle_xHat, double *angle_xChange);

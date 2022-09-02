@@ -5,6 +5,7 @@ meshpy is given
 */
 
 #include "triMesh_2D.h"
+#include "linAlg.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,19 +23,17 @@ void triMesh_2Ddalloc(triMesh_2Ds **triM_2D) {
     *triM_2D = NULL;
 }
 
-void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, coordS *boundaryPoints, facetsS *facets, facesS *faces, int nPoints, int *indexRegions){
+void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, facesS *faces, int nPoints, int *indexRegions){
     triM_2D->nPoints = nPoints;
     triM_2D->indexRegions = indexRegions;
     triM_2D->points = points;
     triM_2D->neighbors = neighbors;
     triM_2D->incidentFaces = incidentFaces;
-    triM_2D->boundaryPoints = boundaryPoints;
-    triM_2D->facets = facets;
     triM_2D->faces = faces;
     triM_2D->indexRegions = indexRegions;
 }
 
-void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions){
+void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions){
     // there are a lot of files needed to be opened
 
     int nPoints;
@@ -50,12 +49,6 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
     neighborsRS *incidentFaces;
     neighborsRSalloc_n(&incidentFaces, nPoints);
 
-    coordS *boundaryPoints;
-    coord_alloc(&boundaryPoints);
-
-    facetsS *facets;
-    facets_alloc(&facets);
-
     facesS *faces;
     faces_alloc(&faces);
 
@@ -65,18 +58,12 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
     // For the coordS structs
     coord_initFromFile(points, pathPoints);
     triM_2D->points = points;
-    coord_initFromFile(boundaryPoints, pathBoundaryPoints);
-    triM_2D->boundaryPoints = boundaryPoints;
 
     // For the neighborsRS structs
     neighbors_init(neighbors, pathNeighbors, nPoints);
     triM_2D->neighbors = neighbors;
     neighbors_init(incidentFaces, pathIncidentFaces, nPoints);
     triM_2D->incidentFaces = incidentFaces;
-
-    // For the facetsS struct
-    facets_initFromFile(facets, pathFacets);
-    triM_2D->facets = facets;
 
     // For the facesS struct
     faces_initFromFile(faces, pathFaces);
@@ -93,7 +80,6 @@ void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, cha
 void printGeneralInfoMesh(triMesh_2Ds *triM_2D) {
     printf("\n GENERAL INFORMATION ABOUT THIS MESH \n\n");
     printf("Number of points in the mesh:  %d.\n", triM_2D->nPoints);
-    printf("Number of points that conform the boundary:  %d.\n", triM_2D->boundaryPoints->nPoints);
     printf("Number of faces or triangles in the mesh:  %d.\n", triM_2D->faces->nFaces);
 }
 
@@ -114,15 +100,6 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
     printf("INCIDENT FACES\n");
     printf("The incident faces for each indexed point in this mesh: \n");
     printAllNeighbors(triM_2D->incidentFaces, triM_2D->nPoints);
-    printf("\n\n---------------------------------------\n");
-    printf("BOUNDARY POINTS\n");
-    printf("Number of points that conform the boundary:  %d.\n", triM_2D->boundaryPoints->nPoints);
-    printf("Such boundary points are the following: \n");
-    print_coord(triM_2D->boundaryPoints);
-    printf("\n\n---------------------------------------\n");
-    printf("FACETS\n");
-    printf("The facets conforming the boundary are: \n");
-    print_facets(triM_2D->facets);
     printf("\n\n---------------------------------------\n");
     printf("FACES\n");
     printf("Number of faces or triangles in the mesh:  %d.\n", triM_2D->faces->nFaces);
@@ -153,129 +130,153 @@ int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
     return region;
 }
 
-void findTrATrB(triMesh_2Ds *triM_2D, int index_xHat, int index_newAccepted, int index_neighNeigh, int *trA, int *trB) {
-    // function to find the two triangles trA and trB for when we want to disable updates with nonzero lagrange
-    // we need these triangles in order to determine if the imaginary triangle we are going to consider
-    // with edges (index_xHat, index_newAccepted, inedex_neighNeigh) is all contained in just one region (if it is
-    // then we don't have to worry with a two part line segment)
-    int current_face,j, thirdIndex, possibleThirdIndex[2], possibleTrB[2];
-    j = 0;
-    // printf("\n\nIndex new accepted: %d,   Index neighbor neighbor  %d,   index xHat: %d\n", index_newAccepted, index_neighNeigh, index_xHat);
-    // Initialize just that it doesnt crash, there might be only one possible TrB but if we dont initialize
-    // this with something sensible then this is going to try to acces to a possible face with an index that doesnt exist
 
-    possibleTrB[0] = triM_2D->incidentFaces[index_newAccepted].neis_i[0];
-    possibleTrB[1] = triM_2D->incidentFaces[index_newAccepted].neis_i[0];
-
-    // there are only two possible third points for trB, we find them both
-    for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
-        current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
-        if ( (triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_neighNeigh) | (triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_neighNeigh) ) {
-            possibleThirdIndex[j] = triM_2D->faces->points[current_face][2];
-            possibleTrB[j] = current_face;
-            j ++;
-        }
-        else if ( (triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_neighNeigh) |  (triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_neighNeigh) ) {
-            possibleThirdIndex[j] = triM_2D->faces->points[current_face][0];
-            possibleTrB[j] = current_face;
-            j ++;
-        }
-        else if ( (triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_neighNeigh) | (triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_neighNeigh) ) {
-            possibleThirdIndex[j] = triM_2D->faces->points[current_face][1];
-            possibleTrB[j] = current_face;
-            j ++;
-        }
-    }
-
-    // printf("\nPossible trB %d, %d", possibleTrB[0], possibleTrB[1]);
-    // printf("\nThe nodes in those triangles are:\n");
-    // printf("First:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[0]][0], triM_2D->faces->points[possibleTrB[0]][1], triM_2D->faces->points[possibleTrB[0]][2]);
-    // printf("Second:   %d   | %d   | %d\n", triM_2D->faces->points[possibleTrB[1]][0], triM_2D->faces->points[possibleTrB[1]][1], triM_2D->faces->points[possibleTrB[1]][2]);
-    // printf("The possibilities for the third index are: %d   %d\n", possibleThirdIndex[0], possibleThirdIndex[1]);
-    // initialize
-    *trA = -1;
-    *trB = -1;
-    thirdIndex = -1;
-    // now we have two candidates for f1, the winner is going to be that point that is also in a triangle containing xhat at p1
-    for( int i = 0; i< triM_2D->incidentFaces[index_newAccepted].len; i++ ) {
-        current_face = triM_2D->incidentFaces[index_newAccepted].neis_i[i]; // current incident face considered
-        // printf("Considering this triangle for trA %d   | %d   | %d\n", triM_2D->faces->points[current_face][0], triM_2D->faces->points[current_face][1], triM_2D->faces->points[current_face][2]);
-        for (j = 0; j<2; j++){
-            if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-            else if( triM_2D->faces->points[current_face][0] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-            else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][2] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-            else if( triM_2D->faces->points[current_face][1] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][2] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-            else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][0] == index_xHat & triM_2D->faces->points[current_face][1] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-            else if( triM_2D->faces->points[current_face][2] == index_newAccepted & triM_2D->faces->points[current_face][1] == index_xHat & triM_2D->faces->points[current_face][0] == possibleThirdIndex[j]  ){
-                thirdIndex = possibleThirdIndex[j]; // this IS the third index (f1)
-                *trB = possibleTrB[j];
-                *trA = current_face;
-                // printf("The option selected was:\n");
-                // printf("For the third index: %d ", thirdIndex);
-                // printf("For trB %d, set as %d\n", possibleTrB[j], *trB);
-                // printf("For trA %d, set as %d\n", current_face, *trA);
-            }
-        }
-    }
-    // printf("TrA  %d\n", *trA);
-    // printf("TrB  %d\n", *trB);
-}
 
 int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3){
-    // given 3 points that share a face it outputs the index of such face
+    // given 3 points that share a face it outputs the index of such face if found, if not found it outputs -1
     int faceIndex;
-    faceIndex = triM_2D->faces->nFaces;
+    faceIndex = -1;
     int currentFace;
     for(int i = 0; i<triM_2D->incidentFaces[index1].len; i++){
         currentFace = triM_2D->incidentFaces[index1].neis_i[i];
         if( triM_2D->faces->points[currentFace][0] == index2 | triM_2D->faces->points[currentFace][1] == index2 | triM_2D->faces->points[currentFace][2] == index2  ){
             if(   triM_2D->faces->points[currentFace][0] == index3 | triM_2D->faces->points[currentFace][1] == index3 | triM_2D->faces->points[currentFace][2] == index3   ){
                 faceIndex = currentFace;
-                //printf("Face between points %d  %d  %d  is  %d", index1, index2, index3, faceIndex);
                 break;
             }
         }
     }
-    assert(faceIndex != triM_2D->faces->nFaces);
     return faceIndex;
+}
+
+void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int possibleTriangles[2], int possibleThirdVertices[2]){
+    int j, currentTriangle;
+    j = 0;
+    for(int i = 0; i<triM_2D->incidentFaces[index0].len; i++){  // we loop through the incident faces of x0
+        currentTriangle = triM_2D->incidentFaces[index0].neis_i[i]; // current incident face to x0
+        if( triM_2D->faces->points[currentTriangle][0] == index0 & triM_2D->faces->points[currentTriangle][1] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][2];
+            j++;
+        }
+        else if ( triM_2D->faces->points[currentTriangle][1] == index0 & triM_2D->faces->points[currentTriangle][0] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][2];
+            j++;
+        }
+        else if ( triM_2D->faces->points[currentTriangle][0] == index0 & triM_2D->faces->points[currentTriangle][2] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][1];
+            j++;
+        }
+        else if ( triM_2D->faces->points[currentTriangle][2] == index0 & triM_2D->faces->points[currentTriangle][0] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][1];
+            j++;
+        }
+        else if ( triM_2D->faces->points[currentTriangle][1] == index0 & triM_2D->faces->points[currentTriangle][2] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][0];
+            j++;
+        }
+        else if ( triM_2D->faces->points[currentTriangle][2] == index0 & triM_2D->faces->points[currentTriangle][1] == index1 ){
+            possibleTriangles[j] = currentTriangle;
+            possibleThirdVertices[j] = triM_2D->faces->points[currentTriangle][0];
+            j++;
+        }
+        // printf("\n\nOne of the possible triangles is: %d    with third edge %d\n", possibleTriangles[0], possibleThirdVertices[0]);
+        // printf("One of the possible triangles is: %d    with third edge %d\n", possibleTriangles[1], possibleThirdVertices[1]);
+    }
+}
+
+void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, int *xChange_ind, double *angle_xHat, double *angle_xChange) {
+    // given the indices of x0, x1, and xHat we "march" along the triangles with x0 as one of their vertices
+    // such that we start at a triangle with x0,x1 as part of their vertices to a triangle that has x0, xHat
+    // as part of their vertices. If there is a change in region this function outputs the index of a vertex such
+    // that the edge x0 xChange defines the edge of the domain, if no change in region is found, this function outputs -1
+    // directionToStart is either 0 or 1, the triangle on which to start marching, since there are two triangles
+    // in the mesh that have x0, x1 as one of their edges.
+    int previousTriangle, currentTriangle, initialTriangles[2], initialx2[2], x2_ind, previous_x2_ind, iterationTriangles[2], iterationx2[2];
+    double x0[2], x2[2], x2_prev[2], xhatC[2];
+
+    x0[0] = triM_2D->points->x[x0_ind];
+    x0[1] = triM_2D->points->y[x0_ind];
+    x2_prev[0] = triM_2D->points->x[x1_ind];
+    x2_prev[1] = triM_2D->points->y[x1_ind];
+    xhatC[0] = triM_2D->points->x[xHat];
+    xhatC[1] = triM_2D->points->y[xHat];
+    
+    // printf("The coordinates of x0 are: (   %fl   |   %fl   )\n", x0[0], x0[1] );
+    // printf("The coordinates of x1 are: (   %fl   |   %fl   )\n", x2_prev[0], x2_prev[1] );
+    // printf("The coordinates of xHat are: (   %fl   |   %fl   )\n", xhatC[0], xhatC[1] );
+
+    *xChange_ind = -1; // so far no change in region
+    *angle_xHat = 0;
+    *angle_xChange = 0;
+
+    // we get the first triangle we're marching along (depends on directionToStart)
+    twoTrianglesFromEdge(triM_2D, x0_ind, x1_ind, initialTriangles, initialx2);
+
+    // define the starting triangle depending on the value of directionToStart
+    if(directionToStart == 0){
+        currentTriangle = initialTriangles[0];
+        x2_ind = initialx2[0];
+        // printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        previousTriangle = initialTriangles[1];
+    }
+    else{
+        currentTriangle = initialTriangles[1];
+        x2_ind = initialx2[1];
+        // printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        previousTriangle = initialTriangles[0];
+    }
+    // get the coordinates of this x0 and add the angle
+    x2[0] = triM_2D->points->x[x2_ind];
+    x2[1] = triM_2D->points->y[x2_ind];
+    *angle_xHat += angleThreePoints(x2, x0, x2_prev);
+    *angle_xChange += angleThreePoints(x2, x0, x2_prev);
+
+
+
+    // march along the other triangles
+    while( x2_ind != xHat  ) { // while we haven't marched along ALL the possible triangles to go from x0x1 to x0xHat:
+        // get the next triangle 
+        twoTrianglesFromEdge(triM_2D, x0_ind, x2_ind, iterationTriangles, iterationx2);
+        if ( iterationTriangles[0] == currentTriangle ){
+            // then the next triangle should be iterationTriangles[1] and the previous triangles now changes to the current one
+            previousTriangle = currentTriangle;
+            previous_x2_ind = x2_ind;
+            currentTriangle = iterationTriangles[1];
+            x2_ind = iterationx2[1];
+        }
+        else {
+            // then the next triangle should be iterationTriangles[0] and the previous triangle now changes to the current one
+            previousTriangle = currentTriangle;
+            previous_x2_ind = x2_ind;
+            currentTriangle = iterationTriangles[0];
+            x2_ind = iterationx2[0];
+        }
+        if( triM_2D->indexRegions[currentTriangle] != triM_2D->indexRegions[previousTriangle] ){
+            // if this happens then there was a change in region refined by the edge x0 previous_x2
+            // this is an opportunity if we want to consider more than one change of region
+            *xChange_ind = previous_x2_ind;
+        }
+        // we also need to update the coordinates of x2 and x2_prev
+        x2_prev[0] = x2[0];
+        x2_prev[1] = x2[1];
+        x2[0] = triM_2D->points->x[x2_ind];
+        x2[1] = triM_2D->points->y[x2_ind];
+        if (*xChange_ind == -1){
+            // meaning that we haven't found an edge where the region changes
+            *angle_xChange += angleThreePoints(x2, x0, x2_prev);
+        }
+        *angle_xHat += angleThreePoints(x2, x0, x2_prev); // but we still add this angle because x2 is not yet xHat
+        // printf("In this iteration the previous triangle is %d\n", previousTriangle);
+        // printf("The current triangle is %d\n", currentTriangle);
+        // printf("The previous x2 is %d with coordinates   (   %fl   |   %fl   )\n", previous_x2_ind, triM_2D->points->x[previous_x2_ind], triM_2D->points->y[previous_x2_ind]);
+        // printf("The current x2 is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        // printf("The current angle being considered is: %fl\n", *angle_xHat);
+    }
+
+
 }

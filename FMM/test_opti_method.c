@@ -5,66 +5,29 @@
 #include <math.h>
 
 int main(){
+    void projectedGradientDescent(double optimizers[2], double T0, double T1, double x0[2], double x1[2], double x2[2], double xHat[2], double tol, int maxIter, double indexRef_01, double indexRef_02);
 
-
-    double lambda0, lambda1, x0[2], x1[2], xHat[2], tol, lamb_opt, T0, T1, twoOpt1, twoOpt2;
+    double optimizers[2], T0, T1, x0[2], x1[2], x2[2], xHat[2], tol, indexRef_01, indexRef_02;
     int maxIter;
-    lambda0 = 0.1;
-    lambda1 = 0.8;
 
-    x0[0] = 1;
-    x0[1] = 0;
-    T0 = 1;
+    maxIter = 50;
+    tol = 0.0000001;
+    indexRef_01 = 1.0;
+    indexRef_02 = 1.453;
 
-    x1[0] = 0;
-    x1[1] = 1;
-    T1 = 1;
+    x0[0] = -2.0;
+    x0[1] = 1.0;
+    x1[0] = 0.0;
+    x1[1] = 1.0;
+    x2[0] = 0.0;
+    x2[1] =2.0;
+    xHat[0] = -1.0;
+    xHat[1] = 3.0;
 
-    xHat[0] = 1;
-    xHat[1] = 1;
+    T0 = sqrt(2);
+    T1 = sqrt(2);
 
-    tol = 0.001;
-    maxIter = 25 ;
-    lamb_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
-    printf("The optimum lambda should be 0.5 (middle point of the base of the triangle)\n");
-    printf("x0: %f, %f \n", x0[0], x0[1]);
-    printf("T(x0): %f \n", T0);
-    printf("x1: %f, %f \n", x1[0], x1[1]);
-    printf("T(x0): %f \n", T0);
-    printf("Lambda 1: %f \n", lambda1);
-    printf("Lambda 2: %f \n", lambda0);
-    printf("Optimum lambda: %f \n", lamb_opt);
-    twoOpt1 = eikApproxLin(T1, T0, lamb_opt, x0, x1, xHat);
-    printf("Two point update would be: %fl  (should be sqrt(2) ~= 1.4142)\n", twoOpt1);
-
-    printf("\n\n\n");
-
-    lambda0 = 0.0;
-    lambda1 = 1.0;
-
-    x0[0] = 1;
-    x0[1] = 0;
-    T0 = 1;
-
-    x1[0] = 2;
-    x1[1] = 1;
-    T1 = sqrt(5);
-
-    xHat[0] = 2;
-    xHat[1] = 0;
-    tol = 0.001;
-    maxIter = 25 ;
-    lamb_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter);
-    printf("The optimum lambda should be 0\n");
-    printf("x0: %f, %f \n", x0[0], x0[1]);
-    printf("T(x0): %f \n", T0);
-    printf("x1: %f, %f \n", x1[0], x1[1]);
-    printf("T(x1): %f \n", T1);
-    printf("Lambda 1: %f \n", lambda1);
-    printf("Lambda 2: %f \n", lambda0);
-    printf("Optimum lambda: %f \n", lamb_opt);
-    twoOpt2 = eikApproxLin(T1, T0, lamb_opt, x0, x1, xHat);
-    printf("Two point update would be: %fl  (should be 2)\n", twoOpt2);
+    projectedGradientDescent(optimizers, T0, T1, x0, x1, x2, xHat, tol, maxIter, indexRef_01, indexRef_02);
 
 
 

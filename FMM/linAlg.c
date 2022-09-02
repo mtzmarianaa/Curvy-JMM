@@ -9,9 +9,37 @@ USEFUL LINEAR ALGEBRA COMPUTATIONS
 double l2norm(double x[])
 {
     double result;
-    result = 0.0;
-    result += sqrt( pow(x[0], 2) + pow(x[1], 2)  );
+    result = sqrt( pow(x[0], 2) + pow(x[1], 2)  );
     return result;
+}
+
+double lInfnorm(double x[])
+{
+    double result;
+    result = fabs(x[0]);
+    if(fabs(x[0]) < fabs(x[1]) ){
+        result = fabs(x[1]);
+    }
+    return result;
+}
+
+void projection01Cube(double x[], double projectedx[]){
+    // projection of x in R2 onto the square 0 1 in R2
+    double lInfNormx;
+    projectedx[0] = x[0];
+    projectedx[1] = x[1];
+    if( x[0] < 0 ){
+        projectedx[0] = 0;
+    }
+    if( x[1] < 0) {
+        projectedx[1] = 0;
+    }
+    if( x[0] > 1  ){
+        projectedx[0] = 1;
+    }
+    if( x[1] > 1){
+        projectedx[1] = 1;
+    }
 }
 
 double dotProd(double x[], double y[])
@@ -38,6 +66,16 @@ void vec2_substraction(double x[], double y[], double output[])
 {
     output[0] = x[0] - y[0];
     output[1] = x[1] - y[1];
+}
+
+double angleThreePoints(double A[], double B[], double C[]) {
+    double BA[2], BC[2];
+    vec2_substraction( A, B, BA );
+    vec2_substraction( C, B, BC );
+    double normBA, normBC;
+    normBA = l2norm(BA);
+    normBC = l2norm(BC);
+    return acos(dotProd(BA, BC)/(normBA*normBC));
 }
 
 

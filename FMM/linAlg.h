@@ -10,6 +10,10 @@ typedef matrix_2x1 matrix_2x2[2]; // these are 2 2x1 vectors to form a 2x2 matri
 
 double l2norm(double x[]);
 
+double lInfnorm(double x[]);
+
+void projection01Cube(double x[], double projectedx[]);
+
 double dotProd(double x[], double y[]);
 
 void scalar_times_2vec(double alpha, double x[], double output[]);
@@ -17,6 +21,8 @@ void scalar_times_2vec(double alpha, double x[], double output[]);
 void vec2_addition(double x[], double y[], double output[]);
 
 void vec2_substraction(double x[], double y[], double output[]);
+
+double angleThreePoints(double A[], double B[], double C[]);
 
 double toc();
 

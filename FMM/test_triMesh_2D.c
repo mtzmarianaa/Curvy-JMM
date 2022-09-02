@@ -1,28 +1,28 @@
 #include "coord.h"
 #include "triMesh_2D.h"
-#include "facets.h"
 #include "faces.h"
 #include "neighbors.h"
 #include "files_methods.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 
 int main(){
+    double pi;
+    pi = acos(-1.0);
 
     triMesh_2Ds *triMesh;
     triMesh_2Dalloc(&triMesh);
     const char *pathPoints, *pathNeighbors, *pathIncidentFaces, *pathBoundaryPoints, *pathFacets, *pathFaces, *pathIndexRegions;
     int trA, trB;
-    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_MeshPoints.txt";
-    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_Neigh.txt";
-    pathIncidentFaces =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_IncidentFaces.txt";
-    pathBoundaryPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_BoundaryPoints.txt";
-    pathFacets = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_Facets.txt";
-    pathFaces =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_Faces.txt";
-    pathIndexRegions =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestSquare/H1_FacesLabel.txt";
-    triMesh2_init_from_meshpy(triMesh, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces, pathIndexRegions);
+    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H0_1/H0_1_MeshPoints.txt";
+    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H0_1/H0_1_Neigh.txt";
+    pathIncidentFaces =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H0_1/H0_1_IncidentFaces.txt";
+    pathFaces =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H0_1/H0_1_Faces.txt";
+    pathIndexRegions =  "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/H0_1/H0_1_FacesLabel.txt";
+    triMesh2_init_from_meshpy(triMesh, pathPoints, pathNeighbors, pathIncidentFaces, pathFaces, pathIndexRegions);
 
     printf("GENERAL INFO \n\n");
     printGeneralInfoMesh(triMesh);
@@ -30,20 +30,32 @@ int main(){
     printf("\n\n\n\nALL INFO \n\n");
     printEverythingInMesh(triMesh);
 
-    printf("\n\n Testing the face index stuff \n\n");
+    printf("\nTesting the marching along triangles thing\n\n");
 
-    printf( "\n Should be 1 %d \n", regionBetweenTwoPoints(triMesh, 4, 28)  );
+    int change;
+    double angle_xHat, angle_xChange;
 
-    printf("\n Should be 6 %d \n", faceBetween3Points(triMesh, 5, 10, 12));
+    pointWhereRegionChanges(triMesh, 5, 33, 16, 1, &change, &angle_xHat, &angle_xChange);
 
-    findTrATrB(triMesh, 5, 10, 14, &trA, &trB);
+    printf("\n\n\n");
 
-    printf("\n Triangle 1 should be 6 %d \n", trA);
+    printf("If there was a change in region %d \n", change);
 
-    printf("\n Should be 10, 12, 5: %d | %d | %d", triMesh->faces->points[trA][0], triMesh->faces->points[trA][1], triMesh->faces->points[trA][2]);
+    printf("The angle from x0x1 to xHat is: %fl\n", angle_xHat/pi);
 
-    printf("\n Triangle 2 should be 13 %d \n", trB);
+    printf("The angle from x0x1 to xChange is: %fl\n", angle_xChange/pi);
 
-    printf("\n Should be 10, 12, 14: %d | %d | %d", triMesh->faces->points[trB][0], triMesh->faces->points[trB][1], triMesh->faces->points[trB][2]);
+    printf("\n\n\n\n\nTrying the other way\n\n");
+
+    pointWhereRegionChanges(triMesh, 5, 33, 16, 0, &change, &angle_xHat, &angle_xChange);
+
+    printf("\n\n\n");
+
+    printf("If there was a change in region %d \n", change);
+
+    printf("The angle from x0x1 to xHat is: %fl\n", angle_xHat/pi);
+
+    printf("The angle from x0x1 to xChange is: %fl\n", angle_xChange/pi);
+
 
 }

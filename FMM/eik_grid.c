@@ -85,11 +85,11 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   assert(&eik_g != NULL); // eik_g should not be null
 }
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathBoundaryPoints, char const *pathFacets, char const *pathFaces, char const *pathIndexRegions) {
+void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions) {
   // the only difference between this and the previous method is that in here we do need to initialize the Mesh structure
   triMesh_2Ds *triM_2D;
   triMesh_2Dalloc(&triM_2D);
-  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathBoundaryPoints, pathFacets, pathFaces, pathIndexRegions);
+  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathFaces, pathIndexRegions);
   // and then we can use the previous method
   eik_grid_init( eik_g, start, nStart, triM_2D); // voila
 }
@@ -117,300 +117,84 @@ void printAllInfoMesh(eik_gridS *eik_g){
   printEverythingInMesh(eik_g->triM_2D);
 }
 
-// same principle as one point updates from square grid just that the length of the "arch" is not h, is not the same everywhere
-void onePointUpdate_eikValue(eik_gridS *eik_g, int indexFrom, int indexTo, double *That1, int *regionIndex){
-  double dist;
-  double x1Minx0[2], x0[2], x1[0];
-  // since we don't have a uniform square grid, we need to know how to handle these one point updates
-  x0[0] = eik_g->triM_2D->points->x[indexFrom];
-  x0[1] = eik_g->triM_2D->points->y[indexFrom];
-  x1[0] = eik_g->triM_2D->points->x[indexTo];
-  x1[1] = eik_g->triM_2D->points->y[indexTo];
-  vec2_substraction(x0, x1, x1Minx0);
-  dist = l2norm(x1Minx0);
-  *regionIndex = regionBetweenTwoPoints(eik_g->triM_2D, indexFrom, indexTo);
-  printf("\n Region %d \n", *regionIndex);
-  *That1 = eik_g->eik_vals[indexFrom] + s_function_threeSections(x0, *regionIndex)*dist; // 
-}
+void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double T1, double indexRef, double *That2, double *lambda) {
+  // this is a simple two point update, meaning that there are no change in regions considered
+  // uses optimization to find xLam, which is on the line defined from x0 to x1 parametrized by lambda
 
-void twoPointUpdate_eikValue(eik_gridS *eik_g, int x0_ind, int *x1_ind_original, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex){
-  // this is where we use the optimization problem (we find lambda and then update it)
-  double lambda_opt, lambda0, lambda1, T0, T1, tol;
-  double x0[2], x1[2], xHat[2], xlamNeigh[2];
-  int maxIter, faceBetweenPoints, neighNeigh_ind, x1_ind;
-  printf("\n\n\n\n\nStarting a two point update\n\n\n");
-  x1_ind = *x1_ind_original;
-  lambda0 = 0.0;
-  lambda1 = 1.0;
-  maxIter = 25;
-  tol = 0.0005;
-  T0 = eik_g->eik_vals[x0_ind];
-  T1 = eik_g->eik_vals[x1_ind];
-  faceBetweenPoints = faceBetween3Points(eik_g->triM_2D, x0_ind, x1_ind, xHat_ind ); // get the face that is defined by these 3 points
-  *regionIndex = eik_g->triM_2D->indexRegions[ faceBetweenPoints ]; // get the region where this face belongs to
-  printf("The triangle defined by this three points belongs to this region: %d\n", *regionIndex);
-  // get the coordinates of the points x0, x1, xHat
-  x0[0] = eik_g->triM_2D->points->x[x0_ind];
-  // printf("\n");
-  // printf("\nx0 %fl\n", x0[0]);
-  x0[1] = eik_g->triM_2D->points->y[x0_ind];
-  // printf("\ny0 %fl\n", x0[1]);
-  x1[0] = eik_g->triM_2D->points->x[x1_ind];
-  // printf("\nx1 %fl\n", x1[0]);
-  x1[1] = eik_g->triM_2D->points->y[x1_ind];
-  // printf("\ny1 %fl\n", x1[1]);
-  xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
-  // printf("\nxHat %fl\n", xHat[0]);
-  xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
-  // printf("\nyHat %fl\n", xHat[1]);
-  // compute the optimum lambda from  the linear model
-  lambda_opt = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, *regionIndex);
-  *lambda = lambda_opt;
-  printf("Interpolating from %d to %d \n", x0_ind, x1_ind);
-  printf("Lambda found %fl\n", lambda_opt);
-  // save the xlam 
-  xlam[0] = (1-lambda_opt)*x0[0] + lambda_opt*x1[0];
-  xlam[1] = (1-lambda_opt)*x0[1] + lambda_opt*x1[1];
-  // get the possible eikonal value for this two point update
-  *That2 = eikApproxLin(T1, T0, lambda_opt, x0, x1, xHat, *regionIndex);
-  printf("Eikonal value before %fl\n", get_valueAtIndex(eik_g->p_queueG, xHat_ind));
-  printf("Eikonal value with two point update %fl\n", *That2);
-  printf("\n\n\n");
-  
-}
-
-void lambdaWithArtificialTriangleAllowed(eik_gridS *eik_g, int x0_ind, int *x1_ind, int xHat_ind, double *lambda, double xlam[2], double *That2, int *regionIndex){
-  // this is where it gets creative and allow two types of updates: with an artificial triangle (if both triangles involved 
-  // belong to the same region or with a two piecewise linear update)
-  // lambda0, lambda1 are the possible initial values for lambda T0 is the eikonal at x0, 
-  // x0 is the newly accepted node, xhat is the node we want to update, x1_ind is the neighbor of x0 that is used for this weird two point update
-  // we set the initial minimum value as the current value of xhat (which is just the one point update that was done from adding the neighbors of x0)
-  
-  // set the initial parameters
-  double lambda0, lambda1, tol;
+  // first we find the optimal lambda
+  double tol, lambda0, lambda1;
   int maxIter;
+  tol = 0.00001;
+  maxIter = 25;
   lambda0 = 0;
   lambda1 = 1;
-  tol = 0.0005;
-  maxIter = 25;
-  // printf("\n\n\n\nStarting to consider an artificial triangle update\n");
-  int indexNeighNeigh, trA, trB; // indices of the neighbor of the neighbor (i.e. neighbor of x1)
-  double xNeighNeigh[2], x0[2], xHat[2], TNeighNeigh, lambda_optNeighNeigh, ThatCurrent, T0;
-  T0 = eik_g->eik_vals[x0_ind];
-  *That2 = eik_g->eik_vals[xHat_ind]; // this is the value that we want to minimize using an artificial triangle
-  *x1_ind = x0_ind; // and originally such value was just a one point update
-  x0[0] = eik_g->triM_2D->points->x[x0_ind];
-  x0[1] = eik_g->triM_2D->points->y[x0_ind]; 
-  xlam[0] = x0[0];
-  xlam[1] = x0[1]; 
-  xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
-  xHat[1] = eik_g->triM_2D->points->y[xHat_ind]; 
-  *lambda = 0; // because it was a one point update
-  *regionIndex = regionBetweenTwoPoints(eik_g->triM_2D, x0_ind, xHat_ind); // the original one point update region is the region from this two points
-  // first, we have to iterate through the neighbors of the newly accepted node that are set to valid
-  for(int i = 0; i<eik_g->triM_2D->neighbors[x0_ind].len; i++ ){
-    indexNeighNeigh = eik_g->triM_2D->neighbors[x0_ind].neis_i[i];
-    if(eik_g->current_states[indexNeighNeigh] == 2){ // just look at the neighbors of x0 that are set to valid
-      findTrATrB(eik_g->triM_2D, xHat_ind, x0_ind, indexNeighNeigh, &trA, &trB); // find the region(s) of the articial triangle
-      if (trA != -1 & trB!= -1){
-        // it means that we are considering triangles that are together, we don't want to consider triangles that don't share a side because that could imply that more than 2 regions
-        // are involved and that gets messy ASK
-        if(eik_g->triM_2D->indexRegions[trA] == eik_g->triM_2D->indexRegions[trB]){
-          // if this happens then we are not changing regions, it is "easier"/less difficult because we can just use an artificial triangle
-          // the corners of such artificial triangle are x0, indexNeighNeigh, xHat
-          *regionIndex = eik_g->triM_2D->indexRegions[ trA ];
-          // get the coordinates of the neighbor of the neighbor
-          xNeighNeigh[0] = eik_g->triM_2D->points->x[indexNeighNeigh];
-          xNeighNeigh[1] = eik_g->triM_2D->points->y[indexNeighNeigh];
-          TNeighNeigh = eik_g->eik_vals[indexNeighNeigh];
-          // compute the artificial triangle update
-          lambda_optNeighNeigh = secant_2D(lambda0, lambda1, T0, TNeighNeigh, x0, xNeighNeigh, xHat, tol, maxIter, *regionIndex);
-          ThatCurrent = eikApproxLin(TNeighNeigh, T0, lambda_optNeighNeigh, x0, xNeighNeigh, xHat, *regionIndex);
-          // printf("\n Current ThatCurren: %fl for index %d,  comes from the parents (%d,%d)  that have valid state with eikonal (%fl, %fl)\n", ThatCurrent, xHat_ind, x0_ind, indexNeighNeigh, T0, TNeighNeigh);
-          if( ThatCurrent < *That2){
-            // printf("The current value %fl has been subsituted by this new value %fl\n", *That2, ThatCurrent);
-            *That2 = ThatCurrent; // we found an update that is better
-            *x1_ind = indexNeighNeigh; // we set this as the index neigh neigh (we need to save this to save the parents of xhat)
-            *lambda = lambda_optNeighNeigh;
-            // printf("\nThere was an artificial triangle used here\n");
-            }
-        }
-        else{
-          // if this happens then we ARE changing regions (horrible, we dont like this and we need a 2D optimization method gggg)
-          // ASK SAM HOW TO SAVE THIS TWO PARAMETERS FOR THE PATH
-          ThatCurrent = 6000;
-          if( ThatCurrent < *That2){
-            xlam[0] = 0;
-            xlam[1] = 0;
-            *x1_ind = -5;
-            *That2 = 6000;
-            }
-          }
-      }
 
-    }
-  }
+  *lambda = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
+  // compute the approximation to That2
+  *That2 = eikApproxLin(T1, T0, *lambda, x0, x1, xHat, indexRef);
+
 }
 
 
-// once accepted a node (i.e. we deleated the root from the priority queue)
-// we need to add its un taged neighbors to the priority queue
-// WE JUST ADD THEM IF THEY ARE CURRENTLY FAR
-// ADD TO QUEUE != UPDATE (which might include a 2 node update)
-void addNeighbors_fromAccepted(eik_gridS *eik_g, int index_accepted){
-  // we iterate through its neighbors and those with current state = 0 we add them to the priority queue
-  int neighborsIndex, nNei, regionIndex;
-  double norm_div, That1, temp_substraction[2], xhat[2], xlam[2];
-  temp_substraction[0] = 0;
-  temp_substraction[1] = 0;
-  xlam[0] = eik_g->triM_2D->points->x[index_accepted];
-  xlam[1] = eik_g->triM_2D->points->y[index_accepted];
-  nNei = eik_g->triM_2D->neighbors[index_accepted].len;
-  printf("After accepting %d we add its neighbors with a one point update\n", index_accepted);
-  for(int i = 0; i<nNei; i++){
-    neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // a neighbor
-    printf("Now considering this neighbor: %d\n", neighborsIndex);
-    if(eik_g->current_states[neighborsIndex] == 0) { // meaning that we just add the neighbors which are currently set as far
-      printf("This neighbors is set as far, %d\n", eik_g->current_states[neighborsIndex]);
-      onePointUpdate_eikValue(eik_g, index_accepted, neighborsIndex, &That1, &regionIndex);
-      printf("Neighbor %d,    with coordinates   (%fl, %fl)    , the one point update is   %fl \n", neighborsIndex, eik_g->triM_2D->points->x[neighborsIndex], eik_g->triM_2D->points->y[neighborsIndex], That1);
-      insert(eik_g->p_queueG, That1 , neighborsIndex); // insert this one point update to the priority queue
-      eik_g->current_states[neighborsIndex] = 1; // set this to TRIAL
-      // now we add the approximated value of the gradient of the eikonal (this is kind of a trial of such gradient)
-      xhat[0] = eik_g->triM_2D->points->x[neighborsIndex];
-      xhat[1] = eik_g->triM_2D->points->y[neighborsIndex];
-      vec2_substraction(xhat, xlam, temp_substraction);
-      norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-      eik_g->parents_path[neighborsIndex][0] = index_accepted; // it was updated directly from the newly accepted node
-      // we don't update the lambdas because currently they're set to 0, i.e. the update is set directly from parents_path[neighborsIndex][0].
-    }
-    else{
-      printf("The current state of that neighbor is %d\n", eik_g->current_states[neighborsIndex]);
-    }
-  }
-}
-
-void updateWithArtificial(eik_gridS *eik_g, int index_accepted){
-  // once we added the neighbors of index_accepted to the queue we can update them considering artificial triangles
-  int neighborsIndex, nNei, regionIndex, x1_ind;
-  double lambda, xlam[2], That2, xhat[2], temp_substraction[2], norm_div;
-  nNei = eik_g->triM_2D->neighbors[index_accepted].len; // get the number of neighbors we might update
-  for(int i = 0; i<nNei; i ++){
-    neighborsIndex = eik_g->triM_2D->neighbors[index_accepted].neis_i[i]; // the current neighbor being considered
-    if(eik_g->current_states[neighborsIndex] == 1) { // WE JUST UPDATE NODES THAT ARE CURRENTLY SET TO TRIAL
-      lambdaWithArtificialTriangleAllowed(eik_g, index_accepted, &x1_ind, neighborsIndex, &lambda, xlam, &That2, &regionIndex);
-      // we update the current eikonal values and add that to the queue
-      update(eik_g->p_queueG, That2, neighborsIndex);
-      if (That2 < eik_g->eik_vals[neighborsIndex]){
-        eik_g->eik_vals[neighborsIndex] = That2;
-        // we add the approximated value of the gradient of the eikonal
-        xhat[0] = eik_g->triM_2D->points->x[neighborsIndex];
-        xhat[1] = eik_g->triM_2D->points->y[neighborsIndex];
-        vec2_substraction(xhat, xlam, temp_substraction);
-        norm_div = l2norm(temp_substraction);
-        eik_g->eik_grad[neighborsIndex][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-        eik_g->eik_grad[neighborsIndex][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-        eik_g->parents_path[neighborsIndex][0] = index_accepted;
-        eik_g->parents_path[neighborsIndex][1] = x1_ind;
-        eik_g->lambdas[neighborsIndex] = lambda;
+void initializePointsNear(eik_gridS *eik_g, double rBall) {
+  // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL
+  // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the
+  // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that
+  // all those balls belong to the same regions of indices of refraction
+  // no neighbors are added or considered here
+  double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction;
+  int indexStart;
+  for(int j = 0; j<eik_g->nStart; j++){
+    indexStart = eik_g->start[j];
+    xStart[0] = eik_g->triM_2D->points->x[ indexStart ];
+    xStart[1] = eik_g->triM_2D->points->y[ indexStart];
+    initialIndexRefraction = s_function_threeSections(xStart, eik_g->triM_2D->indexRegions[ eik_g->triM_2D->incidentFaces[indexStart].neis_i[0] ]);
+    for(int i = 0; i<eik_g->triM_2D->nPoints; i++){
+      xCurrent[0] = eik_g->triM_2D->points->x[i];
+      xCurrent[1] = eik_g->triM_2D->points->y[i];
+      vec2_substraction( xCurrent, xStart, xMinxStart );
+      normCurrent = l2norm(xMinxStart);
+      if(normCurrent < rBall ){
+        // if this happens, this point is "close enough" to the starting point so that we can initialize it
+        eik_g->current_states[i] = 2; // we initialized it directly
+        eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value
+        eik_g->parents_path[i][0] = indexStart;
+        eik_g->parents_path[i][1] = indexStart; // both of its parents are the starting point
+        eik_g->lambdas[i] = 0; // could also be 1, same thing
+        eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient
+        eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent;
       }
     }
   }
+  // now we need to add the neighbors of all the points that are 
+
 }
 
-void update_step(eik_gridS *eik_g, int neighborValid, int neighborTrial, int index_accepted){
-  // after accepting a node, if it has a valid neighbor and a trial neighbor we might perform an update in the 
-  // current eikonal value of that trial neighbor using the newly accepted node and the valid neighbor (two point update)
-  int regionIndex;
-  double norm_div, twoPointVal, lambda_opt, temp_substraction[2], xlam[2], xhat[2];
-  xhat[0] = eik_g->triM_2D->points->x[neighborTrial];
-  xhat[1] = eik_g->triM_2D->points->y[neighborTrial];
-  printf("The coordinates of xhat are: (%fl, %fl)", xhat[0], xhat[1]);
-  twoPointUpdate_eikValue(eik_g, index_accepted, &neighborValid, neighborTrial, &lambda_opt, xlam, &twoPointVal, &regionIndex);
-  update(eik_g->p_queueG, twoPointVal, neighborTrial); // this function takes care, if its smaller it will update the new value
-  if( twoPointVal < eik_g->eik_vals[neighborTrial] ){ // if we actually have a better update
-      vec2_substraction(xhat, xlam, temp_substraction);
-      norm_div = l2norm(temp_substraction);
-      eik_g->eik_grad[neighborTrial][0] = s_function_threeSections(xhat, regionIndex)*temp_substraction[0]/norm_div;
-      eik_g->eik_grad[neighborTrial][1] = s_function_threeSections(xhat, regionIndex)*temp_substraction[1]/norm_div;
-      eik_g->parents_path[neighborTrial][0] = index_accepted;
-      eik_g->parents_path[neighborTrial][1] = neighborValid;
-      eik_g->lambdas[neighborTrial] = lambda_opt;
-  }
-}
 
-// after accepting the neighboring nodes and putting them into the priority queue (their updates were all computed with
-// either a one point update (if they were previously far) or stayed with their pre computed eikonal value)
-// now we need to update those nodes that can be updated via a two point update
-void update_afterAccepted(eik_gridS *eik_g, int index_accepted){
-  // we need to first find the incident faces to the index_accepted point, then we iterate through those
-  // faces to find the 2 other points that belong to the same face, if one of them is set as valid then we might consider performing
-  // a two point update
-  int nFaces, faceIndex, k, regionIndex, neighborValid, neighborTrial;
-  int neis[2];
-  double twoPointVal;
-  nFaces = eik_g->triM_2D->incidentFaces[index_accepted].len; // get the number of incident faces to the newly accepted point
-  // we iterate through those faces
-  for (int i = 0; i<nFaces; i++){
-    faceIndex = eik_g->triM_2D->incidentFaces[index_accepted].neis_i[i]; // i-th incident face 
-    printf("For the incident face %d    which is made up from    %d, %d, %d\n", faceIndex, eik_g->triM_2D->faces->points[faceIndex][0], eik_g->triM_2D->faces->points[faceIndex][1], eik_g->triM_2D->faces->points[faceIndex][2]);
-    // now we get the two other points that belong to that face
-    k = 0;
-    for (int j = 0; j<3; j++) {
-      if( eik_g->triM_2D->faces->points[faceIndex][j] != index_accepted ) { // we want the point in the face that are not index_accepted
-        neis[k] = eik_g->triM_2D->faces->points[faceIndex][j];
-        k++;
-      }
-    }
-    // once we have the other two points that form part of that face (and should at least be trial)
-    // if one of them is valid and the other one is trial we consider doing a two point update
-    if( eik_g->current_states[neis[0]] == 2 &  eik_g->current_states[neis[1]] == 1 ) {
-      // neis[0] is valid, neis[1] is trial
-      // two point update considered
-      printf("The valid neighbor is %d with coordinates (%fl, %fl)\n", neis[0], eik_g->triM_2D->points->x[neis[0]], eik_g->triM_2D->points->y[neis[0]]);
-      printf("The trial neighbor (we might update) is %d with coordinates (%fl, %fl)\n", neis[1], eik_g->triM_2D->points->x[neis[1]], eik_g->triM_2D->points->y[neis[1]]);
-      neighborValid = neis[0];
-      neighborTrial = neis[1];
-      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
-    }
-    if( eik_g->current_states[neis[0]] == 1 & eik_g->current_states[neis[1]] == 2  ) {
-      // neis[0] is trial, neis[1] is valid
-      // two point update considered
-      printf("The valid neighbor is %d with coordinates (%fl, %fl)\n", neis[1], eik_g->triM_2D->points->x[neis[1]], eik_g->triM_2D->points->y[neis[1]]);
-      printf("The trial neighbor (we might update) is %d with coordinates (%fl, %fl)\n", neis[0], eik_g->triM_2D->points->x[neis[0]], eik_g->triM_2D->points->y[neis[0]]);
-      neighborValid = neis[1];
-      neighborTrial = neis[0];
-      update_step(eik_g, neighborValid, neighborTrial, index_accepted);
-    }
-    // if both of them are trial it means that they were recently added as the neighbors of index_accepted, no two point update can be done in this case
-  }
-}
 
-void popAddNeighbors(eik_gridS *eik_g){
-  int nNeighs;
-  int minIndex = indexRoot(eik_g->p_queueG);
-  double minEikVal = valueRoot(eik_g->p_queueG);
-  printf("Initially the queue looks like this: \n");
-  printeik_queue(eik_g->p_queueG);
-  printf("\n");
-  deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
-  eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
-  eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
-  addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
-  printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
-  printf("Its neighbors are: \n");
-  nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
-  for(int i=0; i<nNeighs; i++){
-    printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
-  }
-  printf("\n");
-  for(int i=0; i<nNeighs; i++){
-    printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
-  }
-  printf("\n");
-}
+// void popAddNeighbors(eik_gridS *eik_g){
+//   int nNeighs;
+//   int minIndex = indexRoot(eik_g->p_queueG);
+//   double minEikVal = valueRoot(eik_g->p_queueG);
+//   printf("Initially the queue looks like this: \n");
+//   printeik_queue(eik_g->p_queueG);
+//   printf("\n");
+//   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
+//   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
+//   eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
+//   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
+//   printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
+//   printf("Its neighbors are: \n");
+//   nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
+//   for(int i=0; i<nNeighs; i++){
+//     printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
+//   }
+//   printf("\n");
+//   for(int i=0; i<nNeighs; i++){
+//     printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
+//   }
+//   printf("\n");
+// }
 
 int currentMinIndex(eik_gridS *eik_g) {
   return indexRoot(eik_g->p_queueG);
