@@ -245,7 +245,7 @@ double backtracking(double optimizers[2], double gradient[2], double T0, double 
     direction[1] = -gradient[1];
     t = 0.05;
     alpha = 0.05;
-    beta = 0.25;
+    beta = 0.1;
     Tval_t = eikApproxLin_2Regions(T0, T1, optimizers[0] + t*direction[0], optimizers[1] + t*direction[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
     Tval = eikApproxLin_2Regions(T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
     gradient_2Regions(grad, T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
