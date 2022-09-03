@@ -125,7 +125,7 @@ void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double
   double tol, lambda0, lambda1;
   int maxIter;
   tol = 0.00001;
-  maxIter = 25;
+  maxIter = 30;
   lambda0 = 0;
   lambda1 = 1;
 
@@ -133,6 +133,33 @@ void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double
   // compute the approximation to That2
   *That2 = eikApproxLin(T1, T0, *lambda, x0, x1, xHat, indexRef);
 
+}
+
+void twoStepUpdate(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1, double indexRef_01, double indexRef_02, double *That_step2, double *mu){
+  // a two step update, there is a change of the index of refraction from indexRef_01 to indexRef_02 from the triangles
+  // x2 x0 x1 to the triangle xHat x0 x2
+  double tol, optimizers[2];
+  int maxIter;
+  tol = 0.00001;
+  maxIter = 30;
+  // we use the projected gradient descent method to get both lambda and mu optimal
+  projectedGradientDescent(optimizers, T0, T1, x0, x1, x2, xHat, tol, maxIter, indexRef_01, indexRef_02);
+  // use them to get the minimum path and the approximated eikonal
+  *That_step2 = eikApproxLin_2Regions(T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
+  // and extract the optimal mu from the optimizers found (we're going to use this to approximate the gradient)
+  *mu = optimizers[1];
+}
+
+void approximateEikonalGradient(double x0[2], double x1[2], double parameterization, double indexRefraction, double grad[2]){
+  // given two points in a base with its corresponding parameterization we approximate the gradient of the Eikonal
+  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase;
+  MinParametrization = 1 - parameterization;
+  scalar_times_2vec( MinParametrization, x0, xBasePart1 );
+  scalar_times_2vec( parameterization, x1, xBasePart2 );
+  vec2_addition( xBasePart1, xBasePart2, xBase );
+  normBase = l2norm(xBase);
+  grad[0] = indexRefraction*xBase[0]/normBase;
+  grad[1] = indexRefraction*xBase[1]/normBase;
 }
 
 
@@ -169,7 +196,6 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
   // now we need to add the neighbors of all the points that are 
 
 }
-
 
 
 // void popAddNeighbors(eik_gridS *eik_g){

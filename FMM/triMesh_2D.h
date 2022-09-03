@@ -17,9 +17,22 @@ typedef struct {
   int *indexRegions; // this is the "indicator function" of the type of region that each FACE is in
 } triMesh_2Ds;
 
+typedef struct{
+  // information regarding a two piece update (change in region)
+  int xChange_ind; // the index where the edge x0xChange changes region
+  double angle_xHat; // the angle of the triangle xHat x0 x1
+  double angle_xChange; // the angle of the triangle x2 x0 x1
+  double indexRef_01; // index of refraction in the triangle x2 x0 x1
+  double indexRef_02; // index of refraction in the triangle xHat x0 x2
+} infoTwoPartUpdate;
+
 void triMesh_2Dalloc(triMesh_2Ds **triM_2D);
 
 void triMesh_2Ddalloc(triMesh_2Ds **triM_2D);
+
+void infoTwoPartUpdate_alloc(infoTwoPartUpdate **infoOut);
+
+void infoTwoPartUpdate_dalloc(infoTwoPartUpdate **infoOut);
 
 void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors, neighborsRS *incidentFaces, facesS *faces, int nPoints, int *indexRegions);
  
@@ -35,4 +48,4 @@ int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3)
 
 void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int possibleTriangles[2], int possibleThirdVertices[2]);
 
-void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, int *xChange_ind, double *angle_xHat, double *angle_xChange);
+void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, infoTwoPartUpdate *infoOut);

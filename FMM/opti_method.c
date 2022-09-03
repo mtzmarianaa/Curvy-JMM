@@ -222,7 +222,7 @@ void projectedGradientDescent(double optimizers[2], double T0, double T1, double
         // then we need to project it back to the feasible set
         projection01Cube(yk, optimizers);
         // printf("Optimizers at this step: %fl    , %fl\n", optimizers[0], optimizers[1]);
-        Tcurrent = eikApproxLin_2Regions(T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
+        // Tcurrent = eikApproxLin_2Regions(T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
         // printf("Current value of T: %fl\n", Tcurrent);
         gradient_2Regions(grad, T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
         // printf("Gradient: (%fl, %fl)  with norm %fl\n", grad[0], grad[1], l2norm(grad));

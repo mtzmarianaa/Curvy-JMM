@@ -32,30 +32,41 @@ int main(){
 
     printf("\nTesting the marching along triangles thing\n\n");
 
-    int change;
-    double angle_xHat, angle_xChange;
+    infoTwoPartUpdate *infoOut;
 
-    pointWhereRegionChanges(triMesh, 5, 33, 16, 1, &change, &angle_xHat, &angle_xChange);
+    infoTwoPartUpdate_alloc(&infoOut);
+
+    pointWhereRegionChanges(triMesh, 5, 33, 16, 1, infoOut);
 
     printf("\n\n\n");
 
-    printf("If there was a change in region %d \n", change);
+    // printf("If there was a change in region %d \n", infoOut->xChange_ind);
 
-    printf("The angle from x0x1 to xHat is: %fl\n", angle_xHat/pi);
+    printf("\n  %fl  \n", infoOut->indexRef_01);
+    printf("\n  %fl  \n", infoOut->indexRef_02);
 
-    printf("The angle from x0x1 to xChange is: %fl\n", angle_xChange/pi);
+    printf("The index of refraction changed from   %fl   to  %fl\n\n", infoOut->indexRef_01, infoOut->indexRef_02);
+
+    printf("The angle from x0x1 to xHat is: %fl\n", infoOut->angle_xHat/pi);
+
+    printf("The angle from x0x1 to xChange is: %fl\n", infoOut->angle_xChange/pi);
 
     printf("\n\n\n\n\nTrying the other way\n\n");
 
-    pointWhereRegionChanges(triMesh, 5, 33, 16, 0, &change, &angle_xHat, &angle_xChange);
+    pointWhereRegionChanges(triMesh, 5, 33, 16, 0, infoOut);
 
     printf("\n\n\n");
 
-    printf("If there was a change in region %d \n", change);
+    // printf("If there was a change in region %d \n", infoOut->xChange_ind);
 
-    printf("The angle from x0x1 to xHat is: %fl\n", angle_xHat/pi);
+    printf("\n  %fl  \n", infoOut->indexRef_01);
+    printf("\n  %fl  \n", infoOut->indexRef_02);
 
-    printf("The angle from x0x1 to xChange is: %fl\n", angle_xChange/pi);
+    printf("The index of refraction changed from   %fl   to  %fl\n\n", infoOut->indexRef_01, infoOut->indexRef_02);
+
+    printf("The angle from x0x1 to xHat is: %fl\n", infoOut->angle_xHat/pi);
+
+    printf("The angle from x0x1 to xChange is: %fl\n", infoOut->angle_xChange/pi);
 
 
 }
