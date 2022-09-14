@@ -9,9 +9,11 @@ from matplotlib.patches import Arc
 import numpy.linalg as la
 from matplotlib.colors import ListedColormap
 
-h = 0.75
-h_string = str(h)
+plt.ion()
 
+h = 0.18
+h_string = str(h)
+currentH = "H9"
 
 ############# Generate the two circles
 
@@ -146,7 +148,7 @@ plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
 plt.title('Delaunay triangulation of test geometry (just base) with rectangle, H = '+h_string)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_TriangulationWhite.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H9/H9_TriangulationWhite.png', dpi=my_dpi * 10)
 plt.show(block=False)
 
 
@@ -167,38 +169,38 @@ plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tr
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
 plt.title('Delaunay triangulation of test geometry (just base), H = '+h_string)
 plt.show(block = False)
-#plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H1/H1_Triangulation.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/H9/H9_Triangulation.png', dpi=my_dpi * 10)
 
 
 ## Save them as well
 
-# np.savetxt('TestBaseSnow/H1/H1_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestBaseSnow/H9/H9_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
-# facets_arr = np.array(facets_square)
-# np.savetxt('TestBaseSnow/H1/H1_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+facets_arr = np.array(facets_square)
+np.savetxt('TestBaseSnow/H9/H9_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-# np.savetxt('TestBaseSnow/H1/H1_MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
-# print("Amount of new points: ", len(mesh_square_points))
-# np.savetxt('TestBaseSnow/H1/H1_Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestBaseSnow/H9/H9_MeshPoints.txt', mesh_square_points, delimiter =', ', fmt = '%.8f' )
+print("Amount of new points: ", len(mesh_square_points))
+np.savetxt('TestBaseSnow/H9/H9_Faces.txt', mesh_square_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-# np.savetxt('TestBaseSnow/H1/H1_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('TestBaseSnow/H9/H9_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
-# separator = "," 
+separator = "," 
 
-# with open("TestBaseSnow/H1/H1_Neigh.txt", "w") as out_file:
-#     for l in mesh_square_neigh:
-#         out_string = separator.join(str(x) for x in l) + "\n"
-#         out_file.write(out_string)
+with open("TestBaseSnow/H9/H9_Neigh.txt", "w") as out_file:
+    for l in mesh_square_neigh:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
         
-# with open("TestBaseSnow/H1/H1_IncidentFaces.txt", "w") as out_file:
-#     for l in mesh_IncidentFaces_sq:
-#         out_string = separator.join(str(x) for x in l) + "\n"
-#         out_file.write(out_string)
+with open("TestBaseSnow/H9/H9_IncidentFaces.txt", "w") as out_file:
+    for l in mesh_IncidentFaces_sq:
+        out_string = separator.join(str(x) for x in l) + "\n"
+        out_file.write(out_string)
         
-# with open("TestBaseSnow/H1/H1_FacesLabel.txt", "w") as out_file:
-#     for l in faces_label:
-#         out_string = separator.join(str(l)) + "\n"
-#         out_file.write(out_string)
+with open("TestBaseSnow/H9/H9_FacesLabel.txt", "w") as out_file:
+    for l in faces_label:
+        out_string = separator.join(str(l)) + "\n"
+        out_file.write(out_string)
         
 
 plt.show()

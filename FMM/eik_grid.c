@@ -18,18 +18,6 @@ This is the Eikonal grid with different specifications
 #include <math.h>
 #include <string.h>
 
-struct eik_grid {
-  int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
-  int nStart; // number of points in start
-  triMesh_2Ds *triM_2D; // mesh structure that includes coordinates, neighbors, incident faces, etc.
-  double *eik_vals; // the current Eikonal values for each indexed point in the mesh
-  double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
-  p_queue *p_queueG; // priority queue struct
-  int *current_states; // 0 far, 1 trial, 2 valid
-  int (*parents_path)[2]; // this are the two parent nodes (their indices) from which each node has been updated
-  double *lambdas; // lambdas from which (using the two parents) the node was updated
-} ;
-
 void eik_grid_alloc(eik_gridS **eik_g ) {
   *eik_g = malloc(sizeof(eik_gridS));
   assert(*eik_g != NULL);
@@ -131,7 +119,7 @@ void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double
 
   *lambda = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
   // compute the approximation to That2
-  *That2 = eikApproxLin(T1, T0, *lambda, x0, x1, xHat, indexRef);
+  *That2 = eikApproxLin(T0, T1, *lambda, x0, x1, xHat, indexRef);
 
 }
 
@@ -150,16 +138,17 @@ void twoStepUpdate(double x0[2], double x1[2], double x2[2], double xHat[2], dou
   *mu = optimizers[1];
 }
 
-void approximateEikonalGradient(double x0[2], double x1[2], double parameterization, double indexRefraction, double grad[2]){
+void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]) {
   // given two points in a base with its corresponding parameterization we approximate the gradient of the Eikonal
-  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase;
+  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase, direction[2];
   MinParametrization = 1 - parameterization;
   scalar_times_2vec( MinParametrization, x0, xBasePart1 );
   scalar_times_2vec( parameterization, x1, xBasePart2 );
   vec2_addition( xBasePart1, xBasePart2, xBase );
-  normBase = l2norm(xBase);
-  grad[0] = indexRefraction*xBase[0]/normBase;
-  grad[1] = indexRefraction*xBase[1]/normBase;
+  vec2_substraction(xHat, xBase, direction);
+  normBase = l2norm(direction);
+  grad[0] = indexRefraction*direction[0]/normBase;
+  grad[1] = indexRefraction*direction[1]/normBase;
 }
 
 
@@ -168,10 +157,10 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
   // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the
   // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that
   // all those balls belong to the same regions of indices of refraction
-  // no neighbors are added or considered here
   double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction;
   int indexStart;
   for(int j = 0; j<eik_g->nStart; j++){
+    deleteRoot(eik_g->p_queueG);
     indexStart = eik_g->start[j];
     xStart[0] = eik_g->triM_2D->points->x[ indexStart ];
     xStart[1] = eik_g->triM_2D->points->y[ indexStart];
@@ -182,6 +171,10 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
       vec2_substraction( xCurrent, xStart, xMinxStart );
       normCurrent = l2norm(xMinxStart);
       if(normCurrent < rBall ){
+        if( eik_g->current_states[i] == 1 ){
+          // if it was previously considered as trial we need to delete this from the queue directly
+          delete_findIndex(eik_g->p_queueG, i);
+        }
         // if this happens, this point is "close enough" to the starting point so that we can initialize it
         eik_g->current_states[i] = 2; // we initialized it directly
         eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value
@@ -190,37 +183,160 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
         eik_g->lambdas[i] = 0; // could also be 1, same thing
         eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient
         eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent;
+        addNeighbors_fromAccepted(eik_g, i); // we add its neighbors
       }
     }
   }
-  // now we need to add the neighbors of all the points that are 
 
 }
 
+void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, int parent2, double param, double TFound, double indexRefraction) {
+  double grad[2], x0[2], x1[2], xHat[2];
+  // if it was previously far then we add this to the queue directly, if it was trial we just update the queue
+  if(eik_g->current_states[indexToBeUpdated] == 0){
+    eik_g->current_states[indexToBeUpdated] = 1;
+    insert(eik_g->p_queueG, TFound, indexToBeUpdated);
+  }
+  else if (eik_g->current_states[indexToBeUpdated] == 1)
+  {
+    update(eik_g->p_queueG, TFound, indexToBeUpdated);
+  }
+  eik_g->current_states[indexToBeUpdated] = 1;
+  eik_g->lambdas[indexToBeUpdated] = param;
+  eik_g->eik_vals[indexToBeUpdated] = TFound;
+  eik_g->parents_path[indexToBeUpdated][0] = parent1;
+  eik_g->parents_path[indexToBeUpdated][1] = parent2;
+  // calculate the gradient
+  x0[0] = eik_g->triM_2D->points->x[parent1];
+  x0[1] = eik_g->triM_2D->points->y[parent1];
+  x1[0] = eik_g->triM_2D->points->x[parent2];
+  x1[1] = eik_g->triM_2D->points->y[parent2];
+  xHat[0] = eik_g->triM_2D->points->x[indexToBeUpdated];
+  xHat[1] = eik_g->triM_2D->points->y[indexToBeUpdated];
+  approximateEikonalGradient(x0, x1, xHat, param, indexRefraction, grad);
+  eik_g->eik_grad[indexToBeUpdated][0] = grad[0];
+  eik_g->eik_grad[indexToBeUpdated][1] = grad[1];
 
-// void popAddNeighbors(eik_gridS *eik_g){
-//   int nNeighs;
-//   int minIndex = indexRoot(eik_g->p_queueG);
-//   double minEikVal = valueRoot(eik_g->p_queueG);
-//   printf("Initially the queue looks like this: \n");
-//   printeik_queue(eik_g->p_queueG);
-//   printf("\n");
-//   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
-//   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
-//   eik_g->eik_vals[minIndex] = minEikVal; // add the computed eikonal value to the list of eikonal values
-//   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
-//   printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
-//   printf("Its neighbors are: \n");
-//   nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
-//   for(int i=0; i<nNeighs; i++){
-//     printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
-//   }
-//   printf("\n");
-//   for(int i=0; i<nNeighs; i++){
-//     printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
-//   }
-//   printf("\n");
-// }
+}
+
+void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
+  // from the point indexAccepted which was recently set to valid we update its neighbors that are not set to valid
+  int nNeis, x1_ind, x2_ind, xHat_ind;
+  double x0[2], x1[2], x2[2], xHat[2], grad[2], pi, currentTHat, param, T0, T1;
+  pi = acos(-1.0);
+  nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
+  x0[0] = eik_g->triM_2D->points->x[indexAccepted];
+  x0[1] = eik_g->triM_2D->points->y[indexAccepted];
+  T0 = eik_g->eik_vals[indexAccepted];
+  // printf("\n\n\nAdding neighbors from index accepted %d, with coordinates (%fl,   %fl)\n\n", indexAccepted, x0[0], x0[1]);
+  for( int i = 0; i < nNeis; i++ ){
+    // iterate on the possible xHats
+    xHat_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[i];
+    if( eik_g->current_states[xHat_ind] != 2 ){
+      // we can only update those neighbors that are not valid at the moment
+      xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
+      xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
+      // printf("The coordinates of xHat: %d    are    (%fl, %fl)\n", xHat_ind, xHat[0], xHat[1]);
+      for( int j = 0; j < nNeis; j++ ){
+        x1_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[j];
+        // printf("\nFrom x0 (index accepted): %d we are considering x1: %d   to update xHat:  %d\n\n", indexAccepted, x1_ind, xHat_ind);
+        T1 = eik_g->eik_vals[x1_ind];
+        // iterate on the possible bases 
+        if( i != j & eik_g->current_states[x1_ind] == 2 ){
+          // the base should include another point different from both x0 and xHat but x1 SHOULD BE VALID
+          x1[0] =  eik_g->triM_2D->points->x[x1_ind];
+          x1[1] =  eik_g->triM_2D->points->y[x1_ind];
+          // first we need to know if its going to be a simple update or a two step update
+          infoTwoPartUpdate *infoOut;
+          infoTwoPartUpdate_alloc(&infoOut);
+
+          // FIRST DIRECTION
+          pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
+          // two options, either it changes region or it doesn't but we much watch out for the angles here
+          if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){
+            // this means that there is no change in direction + we can build a straight line from x0x1 to xHat
+            // printf("\n\nThere is no change in index of refraction, trying a simple update\n");
+            simple_Update(x0, x1, xHat, T0, T1, infoOut->indexRef_01, &currentTHat, &param);
+            if(currentTHat < eik_g->eik_vals[xHat_ind]){
+              // we've found a better value
+              // printf("We found a better value with lamdba: %fl\n", param);
+              updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, param, currentTHat, infoOut->indexRef_01);
+              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
+            }
+          }
+          if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){
+            // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat
+            // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n");
+            x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind];
+            x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind];
+            twoStepUpdate(x0, x1, x2, xHat, T0, T1, infoOut->indexRef_01, infoOut->indexRef_02, &currentTHat, &param);
+            if(currentTHat < eik_g->eik_vals[xHat_ind]){
+              // we've found a better value
+              // printf("We found a better value with mu: %fl\n", param);
+              updateCurrentValues(eik_g, xHat_ind, indexAccepted, infoOut->xChange_ind, param, currentTHat, infoOut->indexRef_02);
+              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
+            }
+          }
+
+          // GO ON THE OTHER DIRECTION
+          pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
+          // two options, either it changes region or it doesn't but we much watch out for the angles here
+          if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){
+            // this means that there is no change in direction + we can build a straight line from x0x1 to xHat
+            // printf("\n\nThere is no change in index of refraction, trying a simple update\n");
+            simple_Update(x0, x1, xHat, T0, T1, infoOut->indexRef_01, &currentTHat, &param);
+            if(currentTHat < eik_g->eik_vals[xHat_ind]){
+              // we've found a better value
+              // printf("We found a better value with lamdba: %fl\n", param);
+              updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, param, currentTHat, infoOut->indexRef_01);
+              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
+            }
+          }
+          if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){
+            // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat
+            // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n");
+            x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind];
+            x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind];
+            twoStepUpdate(x0, x1, x2, xHat, T0, T1, infoOut->indexRef_01, infoOut->indexRef_02, &currentTHat, &param);
+            if(currentTHat < eik_g->eik_vals[xHat_ind]){
+              // we've found a better value
+              // printf("We found a better value with mu: %fl\n", param);
+              updateCurrentValues(eik_g, xHat_ind, indexAccepted, infoOut->xChange_ind, param, currentTHat, infoOut->indexRef_02);
+              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
+            }
+          }
+          infoTwoPartUpdate_dalloc(&infoOut); // deallocate this struct
+        }
+      }
+    }
+  }
+}
+
+
+void popAddNeighbors(eik_gridS *eik_g){
+  // int nNeighs;
+  int minIndex = indexRoot(eik_g->p_queueG);
+  // double minEikVal = valueRoot(eik_g->p_queueG);
+  // printf("Initially the queue looks like this: \n");
+  // printeik_queue(eik_g->p_queueG);
+  // printf("\n");
+  deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
+  // printf("We've eliminated the root from the queue successfully\n");
+  eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
+  // printf("We've updated the current state of %d to valid\n", minIndex);
+  addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
+  // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
+  // printf("Its neighbors are: \n");
+  // nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
+  // for(int i=0; i<nNeighs; i++){
+  //   printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
+  // }
+  // printf("\n");
+  // for(int i=0; i<nNeighs; i++){
+  //   printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
+  // }
+  // printf("\n");
+}
 
 int currentMinIndex(eik_gridS *eik_g) {
   return indexRoot(eik_g->p_queueG);
@@ -230,14 +346,14 @@ int nStillInQueue(eik_gridS *eik_g) {
   return getSize(eik_g->p_queueG);
 }
 
-void saveComputedValues(eik_gridS *eik_g, const char *pathFile){
+void saveComputedValues(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
   fwrite(eik_g->eik_vals, sizeof(double), eik_g->triM_2D->nPoints, fp);
   fclose(fp);
 }
 
-void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
+void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) {
     FILE *fp;
     fp = fopen(pathFile, "wb");
     
@@ -248,7 +364,7 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile){
     fclose(fp);
 }
 
-void saveComputedParents(eik_gridS *eik_g, const char *pathFile){
+void saveComputedParents(eik_gridS *eik_g, const char *pathFile) {
     FILE *fp;
     fp = fopen(pathFile, "wb");
     
@@ -259,7 +375,7 @@ void saveComputedParents(eik_gridS *eik_g, const char *pathFile){
     fclose(fp);
 }
 
-void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile){
+void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
   fwrite(eik_g->lambdas, sizeof(double), eik_g->triM_2D->nPoints, fp);

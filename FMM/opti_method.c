@@ -111,6 +111,7 @@ double secant_2D(double lambda0, double lambda1, double T0, double T1, double x0
     }
     // printf("Optimum lambda found %fl\n", lambda1);
     // printf("With gPrime value of: %fl\n", gPrime(T0, T1, lambda1, x0, x1, xHat, indexRef));
+    // printf("With the secant method, the optimal lambda found (for a simple update) is: %fl\n", lambda1);
     return lambda1;
 }
 
@@ -233,7 +234,7 @@ void projectedGradientDescent(double optimizers[2], double T0, double T1, double
         }
     }
 
-    // printf("Optimizers at end of iteration: %fl    , %fl\n", optimizers[0], optimizers[1]);
+    // printf("With the projected gradient method the value of lambda: %fl    , the value of mu: %fl\n", optimizers[0], optimizers[1]);
 
 }
 

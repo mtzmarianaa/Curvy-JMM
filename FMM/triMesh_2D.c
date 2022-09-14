@@ -198,6 +198,11 @@ void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int poss
         // printf("\n\nOne of the possible triangles is: %d    with third edge %d\n", possibleTriangles[0], possibleThirdVertices[0]);
         // printf("One of the possible triangles is: %d    with third edge %d\n", possibleTriangles[1], possibleThirdVertices[1]);
     }
+    if( j == 1){
+        // this happens when the point is on an edge, we can't march via two directions
+        possibleTriangles[1] = possibleTriangles[0];
+        possibleThirdVertices[1] = possibleThirdVertices[0];
+    }
 }
 
 void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, infoTwoPartUpdate *infoOut) {
@@ -217,15 +222,15 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     xhatC[0] = triM_2D->points->x[xHat];
     xhatC[1] = triM_2D->points->y[xHat];
     
-    printf("The coordinates of x0 are: (   %fl   |   %fl   )\n", x0[0], x0[1] );
-    printf("The coordinates of x1 are: (   %fl   |   %fl   )\n", x2_prev[0], x2_prev[1] );
-    printf("The coordinates of xHat are: (   %fl   |   %fl   )\n", xhatC[0], xhatC[1] );
+    // printf("The coordinates of x0 are: (   %fl   |   %fl   )\n", x0[0], x0[1] );
+    // printf("The coordinates of x1 are: (   %fl   |   %fl   )\n", x2_prev[0], x2_prev[1] );
+    // printf("The coordinates of xHat are: (   %fl   |   %fl   )\n", xhatC[0], xhatC[1] );
 
     infoOut->xChange_ind = -1; // so far no change in region
     infoOut->angle_xHat = 0;
     infoOut->angle_xChange = 0;
 
-    printf("Try to find the first triangle\n");
+    // printf("Try to find the first triangle\n");
 
     // we get the first triangle we're marching along (depends on directionToStart)
     twoTrianglesFromEdge(triM_2D, x0_ind, x1_ind, initialTriangles, initialx2);
@@ -234,15 +239,15 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     if(directionToStart == 0){
         currentTriangle = initialTriangles[0];
         x2_ind = initialx2[0];
-        printf("The initial triangle is %d with index of refraction %fl\n", currentTriangle, s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
-        printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        // printf("The initial triangle is %d with index of refraction %fl\n", currentTriangle, s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
+        // printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
         previousTriangle = initialTriangles[1];
     }
     else{
         currentTriangle = initialTriangles[1];
         x2_ind = initialx2[1];
-        printf("The initial triangle is %d with index of refraction %fl\n", currentTriangle, s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
-        printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        // printf("The initial triangle is %d with index of refraction %fl\n", currentTriangle, s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
+        // printf("The initial third point is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
         previousTriangle = initialTriangles[0];
     }
     // get the coordinates of this x0 and add the angle, initialize the indices of refraction
@@ -250,11 +255,11 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     x2[1] = triM_2D->points->y[x2_ind];
     infoOut->angle_xHat += angleThreePoints(x2, x0, x2_prev);
     infoOut->angle_xChange += angleThreePoints(x2, x0, x2_prev);
-    printf("The initial indices of refraction are:   %fl    %fl\n", s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ), s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
+    // printf("The initial indices of refraction are:   %fl    %fl\n", s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ), s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
     infoOut->indexRef_01 = s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle]);
-    printf("%fl\n", infoOut->indexRef_01);
+    // printf("%fl\n", infoOut->indexRef_01);
     infoOut->indexRef_02 = s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle]);
-    printf("%fl\n", infoOut->indexRef_02);
+    // printf("%fl\n", infoOut->indexRef_02);
 
 
     // march along the other triangles
@@ -292,11 +297,11 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
             infoOut->angle_xChange += angleThreePoints(x2, x0, x2_prev);
         }
         infoOut->angle_xHat += angleThreePoints(x2, x0, x2_prev); // but we still add this angle because x2 is not yet xHat
-        printf("In this iteration the previous triangle is %d\n", previousTriangle);
-        printf("The current triangle is %d\n", currentTriangle);
-        printf("The previous x2 is %d with coordinates   (   %fl   |   %fl   )\n", previous_x2_ind, triM_2D->points->x[previous_x2_ind], triM_2D->points->y[previous_x2_ind]);
-        printf("The current x2 is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
-        printf("The current angle being considered is: %fl\n", infoOut->angle_xHat);
+        // printf("In this iteration the previous triangle is %d\n", previousTriangle);
+        // printf("The current triangle is %d\n", currentTriangle);
+        // printf("The previous x2 is %d with coordinates   (   %fl   |   %fl   )\n", previous_x2_ind, triM_2D->points->x[previous_x2_ind], triM_2D->points->y[previous_x2_ind]);
+        // printf("The current x2 is %d with coordinates   (   %fl   |   %fl   )\n", x2_ind, triM_2D->points->x[x2_ind], triM_2D->points->y[x2_ind]);
+        // printf("The current angle being considered is: %fl\n", infoOut->angle_xHat);
     }
 
 

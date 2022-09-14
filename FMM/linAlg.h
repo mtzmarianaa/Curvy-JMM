@@ -29,3 +29,5 @@ double toc();
 double determinant(matrix_2x2 const A);
 
 void inverse2x2(matrix_2x2 const A, matrix_2x2 Ainv);
+
+void matrixXvec2x2(matrix_2x2 const A, double x[2], double sol[2]);

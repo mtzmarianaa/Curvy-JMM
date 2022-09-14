@@ -27,10 +27,10 @@ double s_function_threeSections(double x[], int region){
         SpoS = 1.0;
     }
     else if( region == 2 ){
-        SpoS = 1.452; // for the micro wasp: 1.348
+        SpoS = 1.0*1.452; // for the micro wasp: 1.348
     }
     else if(region == 3){
-        SpoS = 1.452; // for the micro wasp: 1.452
+        SpoS = 1.0*1.452; // for the micro wasp: 1.452
     }
     else{
         SpoS = 100;

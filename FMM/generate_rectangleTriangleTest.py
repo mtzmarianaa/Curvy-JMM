@@ -8,9 +8,10 @@ from math import floor
 import pandas as pd
 
 my_dpi=96
-h = 10
+h = 0.075
 h_string = str(h)
-# h_stringPrev = "H0_1"
+name = "H9_1"
+# h_stringPrev = "H9_1"
 
 # previousPoints = np.genfromtxt("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTriangleSquare/" + h_stringPrev + "/" + h_stringPrev + "_MeshPoints.txt", delimiter=",")
 # previousPoints = previousPoints
@@ -94,7 +95,7 @@ ax = fig.gca()
 plt.gca().set_aspect('equal')
 plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#6800ff')
 plt.title('Delaunay triangulation of test square')
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H0_1/H0_1_TriangulationWhite.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H9_1/H9_1_TriangulationWhite.png', dpi=my_dpi * 10)
 plt.show(block = False)
 
 viridis = plt.get_cmap('magma', 256)
@@ -112,8 +113,8 @@ fig = plt.gcf()
 plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, colors, cmap = newcmp)
 plt.triplot(mesh_points[:, 0], mesh_points[:, 1], mesh_tris, '-.', lw=0.5, c='#00fffb')
-plt.title('Delaunay triangulation of test square, H0_1, h=' + h_string )
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H0_1/H0_1_Triangulation.png', dpi=my_dpi * 10)
+plt.title('Delaunay triangulation of test square, H9_1, h=' + h_string )
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestSquareTriangle/H9_1/H9_1_Triangulation.png', dpi=my_dpi * 10)
 plt.show(block = False)
 
 
@@ -124,32 +125,32 @@ plt.show()
 
 # # # Now we save this triangulation to a bin file so that we can read it later from C
 
-np.savetxt('TestTriangleSquare/H0_1/H0_1_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestTriangleSquare/H9_1/H9_1_BoundaryPoints.txt', np.array(edges_square), delimiter =', ', fmt = '%.8f' )
 
 facets_arr = np.array(facets)
-np.savetxt('TestTriangleSquare/H0_1/H0_1_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestTriangleSquare/H9_1/H9_1_Facets.txt', facets_arr.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestTriangleSquare/H0_1/H0_1_MeshPoints.txt', mesh_points, delimiter =', ', fmt = '%.8f' )
+np.savetxt('TestTriangleSquare/H9_1/H9_1_MeshPoints.txt', mesh_points, delimiter =', ', fmt = '%.8f' )
 print("Amount of new points:  ", len(mesh_points))
 
-np.savetxt('TestTriangleSquare/H0_1/H0_1_Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt('TestTriangleSquare/H9_1/H9_1_Faces.txt', mesh_tris.astype(int), delimiter =', ', fmt ='%.0f' )
 
-np.savetxt('TestTriangleSquare/H0_1/H0_1_NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
+np.savetxt('TestTriangleSquare/H9_1/H9_1_NeighTriangles.txt', mesh_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
 # Save the list of lists into a txt file
 separator = "," 
 
-with open("TestTriangleSquare/H0_1/H0_1_Neigh.txt", "w") as out_file:
+with open("TestTriangleSquare/H9_1/H9_1_Neigh.txt", "w") as out_file:
     for l in mesh_neigh:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestTriangleSquare/H0_1/H0_1_IncidentFaces.txt", "w") as out_file:
+with open("TestTriangleSquare/H9_1/H9_1_IncidentFaces.txt", "w") as out_file:
     for l in mesh_IncidentFaces:
         out_string = separator.join(str(x) for x in l) + "\n"
         out_file.write(out_string)
         
-with open("TestTriangleSquare/H0_1/H0_1_FacesLabel.txt", "w") as out_file:
+with open("TestTriangleSquare/H9_1/H9_1_FacesLabel.txt", "w") as out_file:
     for l in faces_label:
         out_string = separator.join(str(l)) + "\n"
         out_file.write(out_string)

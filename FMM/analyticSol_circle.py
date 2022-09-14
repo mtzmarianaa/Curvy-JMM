@@ -173,12 +173,26 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
         if(tau_optOriginal < tau_optCreepingRay):
             tau = tau_optOriginal
             px_opt, py_opt = paramCircle(opt_thetaOriginal, x0, center, R)
-            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi]]
+            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, yi]]
+            grad = [ xi - px_opt, yi - py_opt  ]
+            normG = sqrt(grad[0]**2 + grad[1]**2)
+            if( normG == 0 ):
+                grad[0], grad[1] = 0, 0
+            else:
+                grad[0] = eta2/(normG)*grad[0]
+                grad[1] = eta2/(normG)*grad[1]
             type_path = 1
         else:
             tau = tau_optCreepingRay
             px_opt, py_opt = paramCircle(opt_thetaShedRay, x0, center, R)
-            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, xi], opt_thetaShedRay, angle_z]
+            path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, yi], opt_thetaShedRay, angle_z]
+            grad = [ xi - px_opt, yi - py_opt  ]
+            normG = sqrt(grad[0]**2 + grad[1]**2)
+            if( normG == 0 ):
+                grad[0], grad[1] = 0, 0
+            else:
+                grad[0] = eta2/(normG)*grad[0]
+                grad[1] = eta2/(normG)*grad[1]
             type_path = 2
     else: 
         tau3 = sqrt( (xi-x0[0])**2 + (yi - x0[1])**2 )
@@ -186,6 +200,13 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
             tau = tau3
             type_path = 3
             path_taken = [[x0[0], xi], [x0[1], yi]]
+            grad = [xi - x0[0], yi - x0[1]]
+            normG = sqrt(grad[0]**2 + grad[1]**2)
+            if( normG == 0 ):
+                grad[0], grad[1] = 0, 0
+            else:
+                grad[0] = eta1/(normG)*grad[0]
+                grad[1] = eta1/(normG)*grad[1]
         else: # if xhat is in x0 but the ray has to go trough reg3 to get to xhat
             tau4, theta1, px_1, py_1, theta2, px_2, py_2 = outsideThroughCircle(xi, yi, angle_Source, thtan, x0, center, R, eta1, eta2)
             tau5, zx, zy, px, py, opt_theta = outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source, x0, center, R, eta1)
@@ -193,12 +214,26 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
                 tau = tau4
                 type_path = 4
                 path_taken = [ [x0[0], px_1, px_2, xi], [x0[1], py_1, py_2, yi] ]
+                grad = [xi - px_1, yi - py_2]
+                normG = sqrt(grad[0]**2 + grad[1]**2)
+                if( normG == 0 ):
+                    grad[0], grad[1] = 0, 0
+                else:
+                    grad[0] = eta1/(normG)*grad[0]
+                    grad[1] = eta1/(normG)*grad[1]
             else:
                 tau = tau5
                 type_path = 5
                 px, py = paramCircle(opt_theta, x0, center, R)
                 path_taken = [ [x0[0], zx, px, xi], [x0[1], zy, py, yi], opt_theta ]
+                grad = [xi - px, yi - py]
+                normG = sqrt(grad[0]**2 + grad[1]**2)
+                if( normG == 0 ):
+                    grad[0], grad[1] = 0, 0
+                else:
+                    grad[0] = eta1/(normG)*grad[0]
+                    grad[1] = eta1/(normG)*grad[1]
     if path:
-        return tau, path_taken, type_path
+        return tau, path_taken, type_path, grad
     else:
-        return tau, type_path
+        return tau, type_path, grad
