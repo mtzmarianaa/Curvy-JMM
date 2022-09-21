@@ -1,0 +1,74 @@
+# Similar to generate_BaseSnowTest but here we generate all the plots that go on a geometry, i.e.
+# plots that are specific for each mesh. Although there is an option to plot for a list of meshes
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.linalg import norm
+from math import sqrt, log, exp, acos, atan
+import matplotlib.animation as animation
+from tabulate import tabulate
+from matplotlib.patches import Arc
+from analyticSol_circle import trueSolution
+import matplotlib.tri as tri
+import pandas as pd
+import colorcet as cc
+
+# Previous useful definitions
+
+colormap1 = plt.cm.get_cmap('BuPu')
+sm1 = plt.cm.ScalarMappable(cmap=colormap1)
+colormap2 = plt.cm.get_cmap('magma')
+sm2 = plt.cm.ScalarMappable(cmap=colormap2)
+colormap3 = plt.cm.get_cmap('cet_diverging_bwg_20_95_c41')
+sm3 = plt.cm.ScalarMappable(cmap=colormap3)
+
+saveFigures = True
+spacingGrid = 10
+nx = 36*spacingGrid
+ny = 42*spacingGrid
+my_dpi=96
+eta1 = 1.0
+eta2 = 1.452
+x0 = np.array([-15, -10])
+center = np.array([0,0])
+R = 10.0
+eps = np.finfo(np.float64).resolution
+
+# Now useful functions to plot
+
+def angle_error( trueGradient, numericalGradient  ):
+    '''
+    This function calculates the error (angle) between the true gradient and the numerical gradient
+    '''
+    if ( norm(trueGradient) == 0.0 or norm(numericalGradient) == 0.0  ):
+        angle_between = 0.0
+    else:
+        dProd = np.dot( trueGradient, numericalGradient  )/(  norm(trueGradient)*norm(numericalGradient)  )
+        if( dProd<-1.0 or dProd>1.0  ):
+            dProd = max( -1.0, min( 1.0, dProd  )  )
+        angle_between = acos( dProd  ) # the angle between the two vectors
+    return angle_between
+    
+
+def rotate(angle):
+    ax.view_init(azim=angle)
+
+def generatePlotsOnGeometry(H, eta1 = eta1, eta2 = eta2, x0 = x0, center = center, R = R,
+                            spacingGrid = spacingGrid, errorsOnGeometry = True,
+                            saveFigures = saveFigures, true_solGrid = 0, type_solution = 0):
+    '''
+    Function to generate plots regarding the numerical solution to the Eikonal in the geometry
+    with the circle.
+    :param str H: name of the mesh to use, including the H
+    :param float eta1: index of refraction outside the circle
+    :param float eta2: index of refraction inside the circle
+    :param ndarray x0: source point
+    :param ndarray center: center of the circle
+    :param float R: radius of the circle
+    :param int spacingGrid: number of points per unit (i.e. number of points in [0,1])
+    :param bool errorsOnGeometry: true if also plot the errors for both the eikonal and the grad
+    :param bool saveFigures: true if the figures should be saved locally
+    '''
+    
+    if(errorsOnGeometry):

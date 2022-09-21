@@ -5,8 +5,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.linalg import norm 
-from math import sqrt, log, exp
+from numpy.linalg import norm
+from math import sqrt, log, exp, acos, atan
 import matplotlib.animation as animation
 from tabulate import tabulate
 from matplotlib.patches import Arc
@@ -18,7 +18,7 @@ import colorcet as cc
 #plt.ion()
 
 
-colormap1 = plt.cm.get_cmap('plasma')
+colormap1 = plt.cm.get_cmap('BuPu')
 sm1 = plt.cm.ScalarMappable(cmap=colormap1)
 colormap2 = plt.cm.get_cmap('magma')
 sm2 = plt.cm.ScalarMappable(cmap=colormap2)
@@ -33,14 +33,32 @@ eta1 = 1.0
 eta2 = 1.452
 x0 = np.array([-15, -10])
 center = np.array([0,0])
-R = 10
+R = 10.0
 eps = np.finfo(np.float64).resolution
 
-#Hs = ["H1", "H8_5", "H2", "H3", "H4_5", "H3_5", "H4", "H13_5", "H2_5", "H5", "H1_5" , "H12_5" ,"H11_5" ,    "H10_5",  "H14_5", "H15_5", "H16_5", "H17_5"  ,"H6", "H5_5", "H6_5", "H7_5", "H20_5", "H8", "H19_5", "H18_5", "H9_5", "H11",  "H12", "H13", "H14",  "H15" , "H9", "H16", "H17", "H18", "H20", "H21"]
-# #     1.75,  1.72,   1.6,  1.4,  1.35,   1.27,   1.2,  1.1,  1.05,   1.0,  0.95,   0.975,   0.9,    0.85,    0.8,    0.75,    0.7,      0.65   ,  0.6,    0.55,   0.5 ,  0.45,   0.4,  0.375,  0.35,  0.325,  0.3,   0.29,  0.28 ,0.275,  0.25, ,0.225,  0.2,  0.19,  0.18,  0.15,  0.05,  0.04
-Hs = ["H12","H13","H14","H15","H16", "H9", "H17", "H18", "H20", "H21"]
+#Hs = ["H1", "H2", "H3", "H4_5", "H3_5", "H13_5", "H2_5", "H1_5" , "H12_5" ,"H11_5" ,    "H10_5",  "H14_5", "H15_5", "H16_5", "H17_5"  ,"H6", "H5_5", "H6_5", "H7_5", "H20_5", "H8", "H19_5", "H18_5", "H9_5", "H11",  "H12", "H13", "H14",  "H15" , "H9", "H16", "H17","H2","H0_5", "H18", "H0", "H5", "H4", "H21_5", "H19", "H20", "H21"]
+# #     1.75,   1.6,  1.4,  1.35,   1.27,  1.1,  1.05,  0.95,   0.975,   0.9,    0.85,    0.8,    0.75,    0.7,      0.65   ,  0.6,    0.55,   0.5 ,  0.45,   0.4,  0.375,  0.35,  0.325,  0.3,   0.29,  0.28 ,0.275,  0.25, ,0.225,  0.2,  0.19,  0.18,  0.15, 0.095, 0.09, 0.87, 0.85  0.08, 0.075,  0.07  0.05,  0.04
+
+Hs = ["H0", "H0_5", "H2", "H5", "H4", "H21_5", "H19",  "H11", "H12", "H13", "H14", "H15", "H16", "H9", "H17", "H18", "H20_5", "H19",  "H20",  "H21" ]
+
+#Hs = ["H21_5"]
+
 #########################################################
 ####### USEFUL FUNCTIONS
+
+def angle_error( trueGradient, numericalGradient  ):
+    '''
+    This function calculates the error (angle) between the true gradient and the numerical gradient
+    '''
+    if ( norm(trueGradient) == 0.0 or norm(numericalGradient) == 0.0  ):
+        angle_between = 0.0
+    else:
+        dProd = np.dot( trueGradient, numericalGradient  )/(  norm(trueGradient)*norm(numericalGradient)  )
+        if( dProd<-1.0 or dProd>1.0  ):
+            dProd = max( -1.0, min( 1.0, dProd  )  )
+        angle_between = acos( dProd  ) # the angle between the two vectors
+    return angle_between
+    
 
 def rotate(angle):
     ax.view_init(azim=angle)
@@ -48,6 +66,7 @@ def rotate(angle):
 def average_edge_length(eik_coords, faces):
     #for each edge we calculate its length and then we calculate the average edge length for a triangulation
     sum = 0
+
     nEdges = 0
     n_points = len(eik_coords)
     counted = np.zeros((n_points, n_points))
@@ -124,7 +143,6 @@ def getPathFromIndex(eik_coords, index_to_get_path_from, parents_path, lambdas):
     return path
         
 
-# times = np.fromfile("/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/Times.bin")
 # Compute the analytic solution in a grid
 
 xi, yi = np.meshgrid(np.linspace(-18, 18, nx), np.linspace(-18, 24, ny))
@@ -147,6 +165,7 @@ times_artf_vec = []
 errorGrad = []
 errorl1_eik = []
 errorl1_grad = []
+angleError_grad = []
         
 for stringPart in Hs:
     # We want to plot for each of the H's we're considering
@@ -174,6 +193,7 @@ for stringPart in Hs:
     normTrueGrads = []
     errorl1GradH = []
     norml1TrueGrads = []
+    point_errors_grads = []  # these are going to be the true gradients in the mesh points
     
     for i in range(len(eik_coords_artf)):
         xi_coords = eik_coords_artf[i, 0]
@@ -188,6 +208,8 @@ for stringPart in Hs:
         exact_values_artf += [sol]
         errorsAbs_artf += [ abs( sol - eik_vals_artf[i] ) ]
         errors_artf += [ sol - eik_vals_artf[i] ]
+        point_errors_grads += [ angle_error( trueGradN, eik_grads_artf[i, :]  ) ]
+        
     
     #The first one belongs to the source, no gradient there
     errorGradH.pop(0)
@@ -298,6 +320,16 @@ for stringPart in Hs:
     if (saveFigures):
         plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/' + stringPart + "/" + stringPart + '_LinearInt_Grad_A_D.png', dpi=my_dpi * 10)
 
+    # Plot the errors for the gradients
+    fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
+    plt.axis('equal')
+    #plt.triplot( eik_coords_artf[:, 0], eik_coords_artf[:, 1], triangles_artf, '-', c = "#d4bdff", lw = 0.3 )
+    imError = plt.scatter(eik_coords_artf[:, 0], eik_coords_artf[:, 1], s = 2 + round(7500/len(eik_coords_artf)), c = point_errors_grads, cmap = colormap1)
+    plt.colorbar(imError)
+    plt.title("Angle error in gradients, " + stringPart)
+    if (saveFigures):
+        plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/' + stringPart + "/" + stringPart + '_GradAngleErrors_D.png', dpi=my_dpi * 10)
+
 
     averageH_artf += [average_edge_length(eik_coords_artf, triangles_artf)]
     errorNorm_artf += [norm( errorsAbs_artf  )/norm( exact_values_artf )]
@@ -306,7 +338,8 @@ for stringPart in Hs:
     times_artf_vec += [times_artf[0]]
     errorGrad += [ norm(errorGradH) /norm(normTrueGrads) ]
     errorl1_grad += [ norm(errorl1GradH)/norm(norml1TrueGrads)    ]
-    plt.close('all')
+    angleError_grad += [ norm(point_errors_grads)/len(eik_coords_artf)   ]
+
 ######################################################
 ######################################################
 ######################################################
@@ -333,6 +366,7 @@ logL2ErrorEik = np.log(info_frameErrors['l2 error Eikonal'])
 logL1ErrorEik = np.log(info_frameErrors['l1 error Eikonal'])
 logL2ErrorGrad = np.log(info_frameErrors['l2 error gradients'])
 logL1ErrorGrad = np.log(info_frameErrors['l1 error gradients'])
+logAngleErrorGrad = np.log( info_frameErrors['angle error gradients']  )
 logH = np.log(info_frameErrors['Edge Length'])
 logN = np.log(info_frameErrors['nPoints'])
 
@@ -519,5 +553,5 @@ print("\n\n\n\nNice table coefficients from fitting\n\n")
 print(tabulate(table_polynomialCoefs, headers = "keys", tablefmt = "latex"))
 
 
-plt.close('all')
+
 #plt.show()

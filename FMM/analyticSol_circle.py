@@ -29,7 +29,7 @@ def regA1Bool(xi, yi, zx, zy, inner_angleSource, tau3, x0, center, R,):
 
 def paramCircle(theta, x0, center, R):
     '''
-    Parametrization of the boundary - the circle with radius R centered at center
+    Parametrization of the boundary - the circle with radius R centered at center, from (1, 0) counterclockwise
     '''
     return R*cos(theta) + center[0], R*sin(theta) + center[1]
 
@@ -40,7 +40,7 @@ def pointsTangentFromSource(xSource, ySource, xCenter, yCenter, R):
     '''
     rSource = sqrt( (xSource - xCenter)**2 + (ySource - yCenter)**2  ) # distance from the source point to the center of the circle
     angle_Source = np.arctan2( ySource - yCenter, xSource - xCenter ) # signed angle from (1, 0) to the source point
-    thtan = np.arccos(R/rSource)
+    thtan = np.arccos( max( -1.0, min( 1.0,  R/rSource)))
     zx_1, zy_1 = R*np.cos( angle_Source + thtan  ), R*np.sin( angle_Source + thtan  )
     zx_2, zy_2 = R*np.cos( angle_Source - thtan  ), R*np.sin( angle_Source - thtan  )
     inner_angleSource = pi - pi/2 - thtan # Angle between ray from Source to center and the tangents (since the inner angles of a triangle must add up pi)
@@ -165,12 +165,12 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
     # print("First tangent point", zx_1, zy_1)
     # print("Second tangent point", zx_2, zy_2)
     # print("inner_angleSource", inner_angleSource)
-    if( xi**2 + yi**2 <= R**2 ): #xHat is outside the circle
+    if( round(xi**2 + yi**2, 3) < R**2 ): 
         # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
         tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan, x0, center, R, eta1, eta2, eps) # reached with 2 segments of straight lines
         tau_optCreepingRay, opt_thetaShedRay, angle_z = insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source, x0, center, R, eta1, eta2, eps) # reached by going around the circle
         tau = min(tau_optOriginal, tau_optCreepingRay)
-        if(tau_optOriginal < tau_optCreepingRay):
+        if(tau_optOriginal <= tau_optCreepingRay):
             tau = tau_optOriginal
             px_opt, py_opt = paramCircle(opt_thetaOriginal, x0, center, R)
             path_taken = [[x0[0], px_opt, xi], [x0[1], py_opt, yi]]
@@ -178,7 +178,13 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
             normG = sqrt(grad[0]**2 + grad[1]**2)
             if( normG == 0 ):
                 grad[0], grad[1] = 0, 0
+            elif( round(xi**2 + yi**2, 3) >= R**2  ):
+                grad = [ xi - x0[0], yi - x0[1]   ]
+                normG = sqrt( grad[0]**2 + grad[1]**2   )
+                grad[0] = eta1/(normG)*grad[0]
+                grad[1] = eta1/(normG)*grad[1]
             else:
+                grad = [ xi - px_opt, yi - py_opt  ]
                 grad[0] = eta2/(normG)*grad[0]
                 grad[1] = eta2/(normG)*grad[1]
             type_path = 1
@@ -194,7 +200,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
                 grad[0] = eta2/(normG)*grad[0]
                 grad[1] = eta2/(normG)*grad[1]
             type_path = 2
-    else: 
+    else: # this is the case then the target is OUTSIDE the circle
         tau3 = sqrt( (xi-x0[0])**2 + (yi - x0[1])**2 )
         if(regA1Bool(xi, yi, zx_1, zy_1, inner_angleSource, tau3, x0, center, R,)): # if xhat is directly accesible from x0 just via reg1
             tau = tau3
@@ -211,6 +217,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
             tau4, theta1, px_1, py_1, theta2, px_2, py_2 = outsideThroughCircle(xi, yi, angle_Source, thtan, x0, center, R, eta1, eta2)
             tau5, zx, zy, px, py, opt_theta = outsideShedRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source, x0, center, R, eta1)
             if (tau4 < tau5):
+                # This means that the shortest distance is achieved by going THROUGH the circle
                 tau = tau4
                 type_path = 4
                 path_taken = [ [x0[0], px_1, px_2, xi], [x0[1], py_1, py_2, yi] ]
@@ -222,6 +229,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
                     grad[0] = eta1/(normG)*grad[0]
                     grad[1] = eta1/(normG)*grad[1]
             else:
+                # This means that the shortest distance is achieved by going AROUND the circle
                 tau = tau5
                 type_path = 5
                 px, py = paramCircle(opt_theta, x0, center, R)
@@ -230,6 +238,20 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
                 normG = sqrt(grad[0]**2 + grad[1]**2)
                 if( normG == 0 ):
                     grad[0], grad[1] = 0, 0
+                if(  round(xi**2 + yi**2, 3) <= R**2 ):
+                    # This means that the point is on the boundary
+                    option1 = (-yi)*(-x0[0]) + (xi)*(-x0[1])
+                    option2 = (yi)*(-x0[0]) + (-xi)*(-x0[1])
+                    normG = sqrt( xi**2 + yi**2  )
+                    if( option1 > 0  ):
+                        grad[0] = eta1/normG*(-yi)
+                        grad[1] = eta1/normG*(xi)
+                    elif( option2 > 0):
+                        grad[0] = eta1/normG*(yi)
+                        grad[1] = eta1/normG*(-xi)
+                    else:
+                        grad[0] = 0
+                        grad[1] = 0
                 else:
                     grad[0] = eta1/(normG)*grad[0]
                     grad[1] = eta1/(normG)*grad[1]
