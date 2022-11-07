@@ -37,9 +37,8 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
     char * line = NULL; // each line of the file
     size_t len = 0; // length of each line of the file
     ssize_t read; // reading each line in the file
-    int nNei, nPoints;
+    int nNei;
     int i = 0;
-    char c;
     int k = 0;
 
     printf("\ntrying to open to file\n");

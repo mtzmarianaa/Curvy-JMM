@@ -200,11 +200,13 @@ newcmp = ListedColormap(new_colors)
 
 
 plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-fig = plt.gcf()
-plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, faces_label, cmap = "magma")
-plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
-plt.title('Delaunay triangulation of test geometry, H = '+h_string)
+plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#909090')
+plt.title('Delaunay triangulation of test square')
+ax = plt.gca()
+ax.set_aspect('equal')
+ax.set_xlim(-18,18) 
+ax.set_ylim(-18, 24)
 plt.show(block = False)
 plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/Mesh_generation/TestIndex/Triangulation.png', dpi=my_dpi * 10)
 

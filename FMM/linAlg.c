@@ -25,7 +25,6 @@ double lInfnorm(double x[])
 
 void projection01Cube(double x[], double projectedx[]){
     // projection of x in R2 onto the square 0 1 in R2
-    double lInfNormx;
     projectedx[0] = x[0];
     projectedx[1] = x[1];
     if( x[0] < 0 ){
@@ -44,9 +43,6 @@ void projection01Cube(double x[], double projectedx[]){
 
 double dotProd(double x[], double y[])
 {
-    double result;
-    result = 0.0;
-    result += x[0]*y[0] + x[1]*y[1];
     return x[0]*y[0] + x[1]*y[1];
 }
 

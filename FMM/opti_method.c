@@ -45,7 +45,7 @@ double eikApproxLin(double T0, double T1, double lambda, double x0[2], double x1
 double gPrime(double T0, double T1, double lambda, double x0[2], double x1[2], double xHat[2], double indexRef){
     // auxiliary function to compute the function gPrime
     double x1Minx0[2], dotProduct, normAux, gPrim;
-    double xlambda[2], firstPartxLambda[2], secondPartxLambda[2], xLamMinxHat[2], min1Lambda, gApprox;
+    double xlambda[2], firstPartxLambda[2], secondPartxLambda[2], xLamMinxHat[2], min1Lambda;
 
     xlambda[0] = 0;
     xlambda[1] = 0;
@@ -153,7 +153,7 @@ double eikApproxLin_2Regions(double T0, double T1, double lambda, double mu, dou
 void gradient_2Regions(double grad[2], double T0, double T1, double lambda, double mu, double x0[2], double x1[2], double x2[2], double xHat[2], double indexRef_01, double indexRef_02) {
     // auxiliary function to calculate the gradient of eikApproxLin_2Regions, the first entry corresponds to the partial with respect to lambda
     // and the second entry to the partial with respect to mu
-    double xlambda[2], firstPartxLambda[2], secondPartxLambda[2], xMuMinxLam[2], normAux1, min1Lambda, gApprox;
+    double xlambda[2], firstPartxLambda[2], secondPartxLambda[2], xMuMinxLam[2], normAux1, min1Lambda;
     double xmu[2], firstPartxMu[2], seconPartxMu[2], xHatMinxMu[2], normAux2, min1Mu;
     double x1Minx0[2], x2Minx0[2], dotProd1, dotProd2, dotProd3;
 
@@ -195,7 +195,7 @@ void projectedGradientDescent(double optimizers[2], double T0, double T1, double
     // x0x2 defined the change in region from index of refraction indexRef_01 to index of refraction indexRef_02
     // optimizers[0] = lambda, optimizers[1] = mu
     // this is the projected gradient descent method with step sizes equal to 0.01
-    double lambda, mu, grad[2], step[2], yk[2], projectedGradient[2], Tcurrent, t;
+    double grad[2], step[2], yk[2], projectedGradient[2], t;
     int iter;
     iter = 0;
     optimizers[0] = 1.0;
