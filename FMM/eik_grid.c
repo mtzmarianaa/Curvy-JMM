@@ -221,8 +221,8 @@ void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, in
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
   // from the point indexAccepted which was recently set to valid we update its neighbors that are not set to valid
-  int nNeis, x1_ind, x2_ind, xHat_ind;
-  double x0[2], x1[2], x2[2], xHat[2], grad[2], pi, currentTHat, param, T0, T1;
+  int nNeis, x1_ind, xHat_ind;
+  double x0[2], x1[2], x2[2], xHat[2], pi, currentTHat, param, T0, T1;
   pi = acos(-1.0);
   nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
   x0[0] = eik_g->triM_2D->points->x[indexAccepted];

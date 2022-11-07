@@ -16,17 +16,17 @@ int main()
 
     const char *pathPoints, *pathNeighbors, *pathIncidentFaces, *pathFaces, *pathIndexRegions, *pathToSaveTr_, *pathSaveGradientsTr_;
     const char *pathSavePath, *pathSaveLambdas, *pathTimes;
-    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_MeshPoints.txt";
-    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_Neigh.txt";
-    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_IncidentFaces.txt";
-    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_Faces.txt";
-    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_FacesLabel.txt";
+    pathPoints = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_MeshPoints.txt";
+    pathNeighbors = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_Neigh.txt";
+    pathIncidentFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_IncidentFaces.txt";
+    pathFaces = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_Faces.txt";
+    pathIndexRegions = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_FacesLabel.txt";
 
-    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_ComputedValues.bin";
-    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_ComputedGradients.bin";
-    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_Parents.bin";
-    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_LambdasOpt.bin";
-    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/H8_5/H8_5_Times.bin";
+    pathToSaveTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_ComputedValues.bin";
+    pathSaveGradientsTr_ = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_ComputedGradients.bin";
+    pathSavePath = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_Parents.bin";
+    pathSaveLambdas = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_LambdasOpt.bin";
+    pathTimes = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestTwoPartSquare/H5/H5_Times.bin";
 
     int *start;
     int nstart, s;
