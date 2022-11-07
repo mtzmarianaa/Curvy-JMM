@@ -23,4 +23,7 @@ Since I've never done something like this, the strategy to follow is to implemen
    - Built the mesh structure
    - Built the secant method in C for this particular use
 
-
+### Fourth stage: include higher order approximations
+   - Include a higher order approximation to T(x_lambda) and T(x_mu) using cubic Hermite interpolation
+   - Change the optimization problems (solve with secant and with projected gradient descent as well)
+   - Compare this with the linear approximation we used to have
