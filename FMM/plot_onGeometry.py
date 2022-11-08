@@ -151,7 +151,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig( path_to_save + stringPart + "/" + stringPart + '_PointErrors.png', dpi=my_dpi * 10)
+        plt.savefig( path_to_save + H + "/" + H + '_PointErrors.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -163,7 +163,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig( path_to_save + stringPart + "/" + stringPart + '_SignPointErrors.png', dpi=my_dpi * 10)
+        plt.savefig( path_to_save + H + "/" + H + '_SignPointErrors.png', dpi=my_dpi * 10)
 
     # ABSOLUTE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -176,7 +176,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_PointErrors_Mesh.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -189,7 +189,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_SignedPointErrors_Mesh.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_SignedPointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -201,7 +201,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -214,7 +214,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets_Mesh.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + COMPUTED GRADIENTS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -227,7 +227,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets_Grad.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_Grad.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -239,7 +239,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_ylim([-18,24])
     plt.colorbar(im2_8)
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -252,7 +252,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt_Mesh.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + COMPUTED GRADIETNS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -265,7 +265,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt_Grad.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_Grad.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
@@ -277,7 +277,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_GradAngleErrors.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrors.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS + TRIANGULATION ON TOP
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
@@ -290,8 +290,52 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + stringPart + "/" + stringPart + '_GradAngleErrors.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrors.png', dpi=my_dpi * 10)
 
     if(show):
         plt.show()
+        
+# With this function we can now just define another one that plots everything with just
+# defining the H to plot
+
+def plotEverthing_H(H, saveFigures = True):
+    '''
+    :param str H: name of the triangulation we want to plot everything for
+    '''
+    path_general = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/"
+    path_information = path_general + H + "/" + H 
+    path_figures = "/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
+    xi, yi = np.meshgrid(np.linspace(-18, 18, nx_default), np.linspace(-18, 24, ny_default))
+    eik_vals = np.fromfile(path_information + "_ComputedValues.bin")
+    eik_coords = np.genfromtxt(path_information + "_MeshPoints.txt", delimiter=",")
+    eik_grads = np.fromfile(path_information + "_ComputedGradients.bin")
+    eik_grads = eik_grads.reshape(len(eik_coords), 2)
+    triangles_points = np.genfromtxt(path_information + "_Faces.txt", delimiter=",")
+    true_solGrid = np.genfromtxt(path_general + "true_solGrid_" + str(nx_default) + "_" + str(ny_default) + ".txt", delimiter = ',')
+    true_grads = np.genfromtxt(path_information + "_true_grads.txt" , delimiter = ',')
+    type_Sol = np.genfromtxt(path_information + "_true_type.txt" , delimiter = ',', dtype = np.int32)
+    # We can compute the point_errors_grads
+    point_errors_grads = []
+    for i in range(len(eik_coords)):
+        point_errors_grads +=  [ angle_error( true_grads[i, :], eik_grads[i, :]  ) ]
+    point_errors_grads[0] = 0
+    # Now we need to define the triangulation to be able to linearly interpolate
+    triang = tri.Triangulation(eik_coords[:,0], eik_coords[:,1], triangles_points)
+    interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
+    zi_lin = interp_lin(xi, yi)
+    # With the triangulation defined we can compute the signed and absolute errors
+    errors_inter = true_solGrid - zi_lin
+    errorsAbs_inter = abs( true_solGrid - zi_lin )
+    generatePlotsOnGeometryCircle(H, xi, yi,
+                                  eik_vals, eik_coords, eik_grads, triangles_points,
+                                  x0 = None, center = None, R = R_default,
+                                  eta1 = eta1_default, eta2 = eta2_default,
+                                  true_solGrid = true_solGrid, type_Sol = type_Sol,
+                                  true_grads = true_grads,
+                                  errorsAbs_inter = errorsAbs_inter,
+                                  errors_inter = errors_inter,
+                                  zi_lin = zi_lin, point_errors_grads = point_errors_grads,
+                                  saveFigures = saveFigures,
+                                  show = True, 
+                                  path_to_save = path_figures)
         
