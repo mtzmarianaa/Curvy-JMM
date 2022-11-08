@@ -185,7 +185,7 @@ plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris
 circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
 ax.add_patch(circle_b)
 ax.add_patch(Arc((0,  5*sqrt(2)), (5*sqrt(2))*2,  (5*sqrt(2))*2, theta1=0.0, theta2=180, edgecolor="#000536", lw=1.5))
-plt.title('Delaunay triangulation of test geometry with rectangle, H = '+h_string)
+plt.title('Delaunay triangulation of test geometry with rectangle')
 plt.show(block=False)
 
 

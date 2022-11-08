@@ -1,3 +1,4 @@
+
 # Similar to generate_BaseSnowTest but here we generate all the plots that go on a geometry, i.e.
 # plots that are specific for each mesh. Although there is an option to plot for a list of meshes
 
@@ -99,8 +100,8 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     :param str path_to_save: path on which to save the figures generated
     '''
     # Depending on the information given. If no essential information is given we have to compute it
-    if true_solGrid == None:
-        if x0 == None:
+    if true_solGrid is None:
+        if x0 is None:
             x0 = x0_default
             center = center_default
             R = R_default
@@ -114,7 +115,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
                 sol, typeSol, trueGrad = trueSolution( xi[i,j], yi[i,j], x0, center, R, eta1, eta2  )
                 true_solGrid[i,j] = sol
                 type_solution[i,j] = typeSol
-    if errorsAbs_inter == None:
+    if errorsAbs_inter is None:
         true_grads = np.zeros(eik_grads.shape)
         point_errors_grads = []
         # We compute the solution at the nodes of the triangulation
@@ -133,158 +134,161 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
         # We can compute the errors and the absolute point wise errors
         errors_inter = true_solGrid - zi_lin
         errorsAbs_inter = abs( true_solGrid - zi_lin )
-        # For the errors we need to get the range so that white is plotted exactly in the middle (error = 0)
-        vMaxAbs = np.amax(errorsAbs_inter)
+        
+    # For the errors we need to get the range so that white is plotted exactly in the middle (error = 0)
+    vMaxAbs = np.amax(errorsAbs_inter)
         
     # Now we have all the date (either it was given or we computed it here)
     # We can now plot
 
     # ABSOLUTE ERRORS (POINT-WISE)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_1 = plt.imshow( errorsAbs_inter, cmap = colormap2, extent=[-5, 5, -5, 5], origin='lower', vmin = 0, vmax = vMaxAbs  )
+    im2_1 = plt.imshow( errorsAbs_inter, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower', vmin = 0, vmax = vMaxAbs  )
     plt.title("Point wise absolute errors")
     plt.colorbar(im2_1)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig( path_to_save + stringPart + "/" + stringPart + '_PointErrors.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_2 = plt.imshow( errors_inter, cmap = colormap3, extent=[-5, 5, -5, 5], origin='lower', vmin=-vMaxAbs, vmax=vMaxAbs  )
+    im2_2 = plt.imshow( errors_inter, cmap = colormap3, extent=[-18, 18, -18, 24], origin='lower', vmin=-vMaxAbs, vmax=vMaxAbs  )
     plt.title("Signed point wise errors")
     plt.colorbar(im2_2)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig( path_to_save + stringPart + "/" + stringPart + '_SignPointErrors.png', dpi=my_dpi * 10)
 
     # ABSOLUTE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#ffffff')
-    im2_3 = plt.imshow( errorsAbs_inter, cmap = colormap2, extent=[-5, 5, -5, 5], origin='lower', vmin = 0, vmax = vMaxAbs  )
+    im2_3 = plt.imshow( errorsAbs_inter, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower', vmin = 0, vmax = vMaxAbs  )
     plt.title("Point wise absolute errors and triangulation")
     plt.colorbar(im2_3)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#ffffff')
-    im2_4 = plt.imshow( errors_inter, cmap = colormap3, extent=[-5, 5, -5, 5], origin='lower', vmin = -vMaxAbs, vmax = vMaxAbs)
+    im2_4 = plt.imshow( errors_inter, cmap = colormap3,  extent=[-18, 18, -18, 24], origin='lower', vmin = -vMaxAbs, vmax = vMaxAbs)
     plt.title("Point wise absolute errors and triangulation")
     plt.colorbar(im2_4)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_SignedPointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_5 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2, levels = 20)
+    im2_5 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 20)
     plt.title("Level sets" )
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
     plt.colorbar(im2_5)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_6 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2, levels = 30)
+    im2_6 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 30)
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#6800ff')
     plt.title("Level sets and triangulation")
     plt.colorbar(im2_6)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + COMPUTED GRADIENTS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_6 = plt.contourf(xi, -yi, zi_lin, cmap = colormap2, levels = 30)
+    im2_6 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 30)
     plt.quiver(eik_coords[:, 0], eik_coords[:, 1], eik_grads[:, 0], eik_grads[:, 1])
     plt.title("Level sets and computed gradients")
     plt.colorbar(im2_6)
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LevelSets_Grad.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_8 = plt.imshow( zi_lin, cmap = colormap2, extent=[-5, 5, -5, 5], origin='lower'  )
+    im2_8 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower'  )
     plt.title("Linear interpolation")
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     plt.colorbar(im2_8)
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-5, 5, -5, 5], origin='lower'  )
+    im2_9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower'  )
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#6800ff')
     plt.title("Linear interpolation and triangulation")
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
     plt.colorbar(im2_9)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + COMPUTED GRADIETNS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
-    plt.axis('equal')
-    ax = plt.gca()
-    im2_10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-5, 5, -5, 5], origin='lower'  )
+    im2_10 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower'  )
     plt.quiver(eik_coords[:, 0], eik_coords[:, 1], eik_grads[:, 0], eik_grads[:, 1])
     plt.title("Linear interpolation and computed gradients")
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
     plt.colorbar(im2_10)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_LinearInt_Grad.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
-    plt.axis('equal')
     im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap2)
     plt.colorbar(im2_10)
     plt.title("Angle error in gradients")
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_GradAngleErrors.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS + TRIANGULATION ON TOP
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
-    plt.axis('equal')
     #plt.triplot( eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-', c = "#d4bdff", lw = 0.3 )
     im2_12 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap2)
     plt.colorbar(im2_12)
     plt.title("Angle error in gradients and triangulation")
-    plt.xlim([-18,18])
-    plt.ylim([-18,24])
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + stringPart + "/" + stringPart + '_GradAngleErrors.png', dpi=my_dpi * 10)
 
