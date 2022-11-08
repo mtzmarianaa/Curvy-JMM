@@ -191,6 +191,8 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
 }
 
 void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, int parent2, double param, double TFound, double indexRefraction) {
+  // this void manages the updates, it doesn't compute them. Once computed the necessary updated (in another funcion)
+  // updateCurrentValues changes everything inside (updates the current eikonal value, its parents, the paramenter used, etc
   double grad[2], x0[2], x1[2], xHat[2];
   // if it was previously far then we add this to the queue directly, if it was trial we just update the queue
   if(eik_g->current_states[indexToBeUpdated] == 0){
@@ -221,6 +223,8 @@ void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, in
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
   // from the point indexAccepted which was recently set to valid we update its neighbors that are not set to valid
+  // one point updates are skipped (since we have initialized points near the source we don't need one point updates
+  // anymore. This function manages all the cases (if its a simple update or a two step update,
   int nNeis, x1_ind, xHat_ind;
   double x0[2], x1[2], x2[2], xHat[2], pi, currentTHat, param, T0, T1;
   pi = acos(-1.0);
