@@ -39,7 +39,7 @@ path_trueSol = 'TestBaseSnow/'
 #Hs = ["H1", "H2", "H3", "H4_5", "H3_5", "H13_5", "H2_5", "H1_5" , "H12_5" ,"H11_5" ,    "H10_5",  "H14_5", "H15_5", "H16_5", "H17_5"  ,"H6", "H5_5", "H6_5", "H7_5", "H20_5", "H8", "H19_5", "H18_5", "H9_5", "H11",  "H12", "H13", "H14",  "H15" , "H9", "H16", "H17","H2","H0_5", "H18", "H0", "H5", "H4", "H21_5", "H19", "H20", "H21"]
 # #     1.75,   1.6,  1.4,  1.35,   1.27,  1.1,  1.05,  0.95,   0.975,   0.9,    0.85,    0.8,    0.75,    0.7,      0.65   ,  0.6,    0.55,   0.5 ,  0.45,   0.4,  0.375,  0.35,  0.325,  0.3,   0.29,  0.28 ,0.275,  0.25, ,0.225,  0.2,  0.19,  0.18,  0.15, 0.095, 0.09, 0.87, 0.85  0.08, 0.075,  0.07  0.05,  0.04
 
-Hs = ["H0", "H0_5", "H2", "H5", "H4", "H21_5", "H19",  "H11", "H12", "H13", "H14", "H15", "H16", "H9", "H17", "H18", "H20_5", "H19",  "H20",  "H21" ]
+Hs = ["H0", "H2", "H0_5", "H18", "H9", "H17", "H16", "H15", "H14", "H13", "H12", "H11", "H20_5"]
 
 #Hs = ["H21_5"]
 
@@ -165,15 +165,15 @@ for stringPart in Hs:
     print(stringPart)
     ######
     ######      READ EVERYTHING
-    times = np.fromfile(path_read + stringPart + "/" + stringPart + "_Times.bin")
-    eik_vals = np.fromfile(path_read + stringPart + "/" + stringPart + "_ComputedValues.bin")
+    times = np.fromfile(path_read + stringPart + "/" + stringPart + "_TimesCubic.bin")
+    eik_vals = np.fromfile(path_read + stringPart + "/" + stringPart + "_ComputedValuesCubic.bin")
     eik_coords = np.genfromtxt(path_read + stringPart + "/" + stringPart + "_MeshPoints.txt", delimiter=",")
     triangles_points = np.genfromtxt(path_read + stringPart + "/" + stringPart + "_Faces.txt", delimiter=",")
-    eik_grads = np.fromfile(path_read + stringPart + "/" + stringPart + "_ComputedGradients.bin")
+    eik_grads = np.fromfile(path_read + stringPart + "/" + stringPart + "_ComputedGradientsCubic.bin")
     eik_grads = eik_grads.reshape(len(eik_coords), 2)
-    eik_parents = np.fromfile(path_read + stringPart + "/" + stringPart + "_Parents.bin", dtype=np.int32)
+    eik_parents = np.fromfile(path_read + stringPart + "/" + stringPart + "_ParentsCubic.bin", dtype=np.int32)
     eik_parents = eik_parents.reshape(len(eik_coords), 2)
-    eik_lambdas = np.fromfile(path_read + stringPart + "/" + stringPart + "_LambdasOpt.bin")
+    eik_lambdas = np.fromfile(path_read + stringPart + "/" + stringPart + "_LambdasOptCubic.bin")
     faces_label = np.genfromtxt(path_read + stringPart + "/" + stringPart + "_FacesLabel.txt", dtype=np.int32)
     mesh_tris = np.genfromtxt(path_read + stringPart + "/" + stringPart + "_Faces.txt", dtype=np.int32, delimiter = ",")
     mesh_tris = mesh_tris.reshape(len(faces_label), 3)
@@ -492,7 +492,7 @@ plt.title("Relative l2 errors Eikonal and average edge length, circle two indice
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'] , info_frameErrors['l1 error Eikonal'], c = '#008ade', marker='o')
@@ -511,7 +511,7 @@ plt.title("Relative l2 errors Eikonal and average edge length, circle one index 
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_Errors_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -523,7 +523,7 @@ plt.title("Relative l2 errors Eikonal and number of points in triangulation, cir
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['nPoints'], info_frameErrors['l1 error Eikonal'], c = '#5badd6', marker='o')
@@ -534,7 +534,7 @@ plt.title("Relative l1 errors Eikonal and number of points in triangulation, cir
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_nPointsCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -546,7 +546,7 @@ plt.title("Relative l2 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'] , info_frameErrors['l1 error gradients'], c = '#4500c4', marker='o')
@@ -557,7 +557,7 @@ plt.title("Relative l1 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.plot(info_frameErrors['Edge Length'] , info_frameErrors['l2 error gradients'], c = '#5993b3', linestyle='--', marker='o')
@@ -565,7 +565,7 @@ plt.title("Relative l2 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_ErrorsGrad_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -577,7 +577,7 @@ plt.title("Relative l2 errors gradients and number of points in triangulation, c
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['nPoints'], info_frameErrors['l1 error gradients'], c = '#754ebd', marker='o')
@@ -588,7 +588,7 @@ plt.title("Relative l1 errors gradients and number of points in triangulation, c
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'], info_frameErrors['angle error gradients'], c = '#754ebd', marker='o')
@@ -599,7 +599,7 @@ plt.title("Relative angle errors gradients and average edge length, circle two i
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_EdgeLength.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -611,7 +611,7 @@ plt.title("Relative angle errors gradients and number of points in triangulation
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_nPoints.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -620,7 +620,7 @@ plt.title("Average edge length and time taken to solve, circle two indices of re
 plt.ylabel("Time taken to solve (sec)")
 plt.xlabel("Average edge length")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_times.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_timesCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -629,7 +629,7 @@ plt.title("Time taken to solve and l2 errors Eikonal, circle two indices of refr
 plt.xlabel("Time taken to solve (sec)")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errors.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_ErrorsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Time to solve (s)'], info_frameErrors['l1 error Eikonal'], c = '#5993b3', linestyle='--', marker='o')
@@ -637,7 +637,7 @@ plt.title("Time taken to solve and l1 errors Eikonal, circle two indices of refr
 plt.xlabel("Time taken to solve (sec)")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errorsl1.png', dpi=my_dpi * 10)
+plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errorsl1Cubic.png', dpi=my_dpi * 10)
 
 
 table = {"Average h": info_frameErrors["Edge Length"], "Time taken (s)": info_frameErrors["Time to solve (s)"], 
@@ -656,4 +656,9 @@ print(tabulate(table_polynomialCoefs, headers = "keys", tablefmt = "latex"))
 
 
 #plt.show()
+
+
+
+
+
 

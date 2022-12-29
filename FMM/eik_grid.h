@@ -53,3 +53,17 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);
 void saveComputedParents(eik_gridS *eik_g, const char *pathFile);
 
 void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile);
+
+// For the methods associated with the cubic hermite interpolation:
+
+void simple_UpdateCubic(double x0[2], double x1[2], double xHat[2], double T0, double T1,
+			double grad0[2], double grad1[2], double indexRef, double *That2, double *lambda);
+
+void twoStepUpdateCubic(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1,
+			double grad0[2], double grad1[2],
+			double indexRef_01, double indexRef_02, double *That_step2, double *mu);
+
+void addNeighbors_fromAcceptedCubic(eik_gridS *eik_g, int indexAccepted);
+
+void popAddNeighborsCubic(eik_gridS *eik_g);
+

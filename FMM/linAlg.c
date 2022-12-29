@@ -58,7 +58,7 @@ void vec2_addition(double x[], double y[], double output[])
     output[1] = x[1] + y[1];
 }
 
-void vec2_substraction(double x[], double y[], double output[])
+void vec2_subtraction(double x[], double y[], double output[])
 {
     output[0] = x[0] - y[0];
     output[1] = x[1] - y[1];
@@ -66,8 +66,8 @@ void vec2_substraction(double x[], double y[], double output[])
 
 double angleThreePoints(double A[], double B[], double C[]) {
     double BA[2], BC[2];
-    vec2_substraction( A, B, BA );
-    vec2_substraction( C, B, BC );
+    vec2_subtraction( A, B, BA );
+    vec2_subtraction( C, B, BC );
     double normBA, normBC;
     normBA = l2norm(BA);
     normBC = l2norm(BC);

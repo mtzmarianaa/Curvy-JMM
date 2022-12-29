@@ -20,7 +20,7 @@ void scalar_times_2vec(double alpha, double x[], double output[]);
 
 void vec2_addition(double x[], double y[], double output[]);
 
-void vec2_substraction(double x[], double y[], double output[]);
+void vec2_subtraction(double x[], double y[], double output[]);
 
 double angleThreePoints(double A[], double B[], double C[]);
 
