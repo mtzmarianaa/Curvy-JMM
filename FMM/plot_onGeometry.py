@@ -104,6 +104,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     :param bool show: if the figures should be shown after computed
     :param str path_to_save: path on which to save the figures generated
     '''
+    nPoints = len(eik_vals)
     # Depending on the information given. If no essential information is given we have to compute it
     if x0 is None:
         x0 = x0_default
@@ -126,7 +127,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
                 sol, typeSol, trueGrad = trueSolution( xi[i,j], yi[i,j], x0, center, R, eta1, eta2  )
                 true_solGrid[i,j] = sol
                 type_solution[i,j] = typeSol
-    if true_sol is None and point_errors_grads is None:
+    if true_sol is None and true_grads is None:
         # IF WE DONT HAVE THE TRUE SOLUTION ON THE MESH AND WE DONT HAVE THE POINT WISE ERRORS
         nPoints = len(eik_coords) # number of points on the mesh
         true_sol = np.zeros((nPoints))
@@ -142,13 +143,22 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
             point_errors_eik[i] = sol - eik_vals[i]
             point_errors_grads[i] = angle_error( trueGrad, eik_grads[i, :])
         point_errors_grads[0] = 0 # source
+    if point_errors_grads is None and true_grads is not None:
+         point_errors_grads = np.zeros((nPoints))
+         for i in range(nPoints):
+             point_errors_grads[i] = angle_error(true_grads[i], eik_grads[i, :])
+         point_errors_grads[0] = 0
+    if point_errors_eik is None and true_sol is not None:
+        point_errors_eik = np.zeros((nPoints))
+        for i in range(nPoints):
+            point_errors_eik = true_sol[i] - eik_vals[i]
+    # We need the following in order to plot the triangulation
+    triang = tri.Triangulation(eik_coords[:,0], eik_coords[:, 1], triangles_points)
+    interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
+    zi_lin = interp_lin(xi, yi)
     if errors_inter is None:
         # We can now compute the interpolation error since we have the true solution on the grid
         # and we can interpolate linearly the solution from the mesh to the grid
-        # Now we need to linearly interpolate the solver's output in order to compare it with the true solution on the grid
-        triang = tri.Triangulation(eik_coords[:,0], eik_coords[:,1], triangles_points)
-        interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
-        zi_lin = interp_lin(xi, yi)
         # We can compute the errors and the absolute point wise errors
         errors_inter = true_solGrid - zi_lin
         errorsAbs_inter = abs( true_solGrid - zi_lin )
@@ -212,7 +222,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_5 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 20)
-    plt.title("Level sets" )
+    plt.title("Level sets computed solution" )
     plt.colorbar(im2_5)
     ax = plt.gca()
     ax.set_aspect('equal')
@@ -221,11 +231,23 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     if (saveFigures):
         plt.savefig(path_to_save + H + "/" + H + '_LevelSetsCubic.png', dpi=my_dpi * 10)
 
-    # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + TRIANGULATION ON TOP
+    # LEVEL SETS OF EXACT SOLUTION
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    im2_5 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 20)
+    plt.title("Level sets exact solution" )
+    plt.colorbar(im2_5)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSetsCubicExact.png', dpi=my_dpi * 10)
+
+    # LEVEL SETS OF COMPUTED SOLUTION (SOLVER) + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_6 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 30)
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#6800ff')
-    plt.title("Level sets and triangulation")
+    plt.title("Level sets computed solution and triangulation")
     plt.colorbar(im2_6)
     ax = plt.gca()
     ax.set_aspect('equal')
@@ -234,7 +256,21 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     if (saveFigures):
         plt.savefig(path_to_save + H + "/" + H + '_LevelSets_MeshCubic.png', dpi=my_dpi * 10)
 
-    # LEVEL SETS OF COMPUTES SOLUTION (SOLVER) + COMPUTED GRADIENTS
+    # LEVEL SETS OF EXACT SOLUTION  + TRIANGULATION ON TOP
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    im2_6 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 30)
+    plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#6800ff')
+    plt.title("Level sets exact solution and triangulation")
+    plt.colorbar(im2_6)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_MeshCubicExact.png', dpi=my_dpi * 10)
+    
+
+    # LEVEL SETS OF COMPUTED SOLUTION (SOLVER) + COMPUTED GRADIENTS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_6 = plt.contourf(xi, yi, zi_lin, cmap = colormap2, levels = 30)
     plt.quiver(eik_coords[:, 0], eik_coords[:, 1], eik_grads[:, 0], eik_grads[:, 1])
@@ -247,10 +283,23 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     if (saveFigures):
         plt.savefig(path_to_save + H + "/" + H + '_LevelSets_GradCubic.png', dpi=my_dpi * 10)
 
+    # LEVEL SETS OF EXACT SOLUTION  + EXACT GRADIENTS
+    fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+    im2_6 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 30)
+    plt.quiver(eik_coords[:, 0], eik_coords[:, 1], true_grads[:, 0], true_grads[:, 1])
+    plt.title("Level sets and exact gradients")
+    plt.colorbar(im2_6)
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_GradCubicExact.png', dpi=my_dpi * 10)
+
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_8 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower'  )
-    plt.title("Linear interpolation")
+    plt.title("Linear interpolation computed solution")
     ax = plt.gca()
     ax.set_aspect('equal')
     ax.set_xlim([-18,18])
@@ -263,7 +312,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_9 = plt.imshow( zi_lin, cmap = colormap2, extent=[-18, 18, -18, 24], origin='lower'  )
     plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#6800ff')
-    plt.title("Linear interpolation and triangulation")
+    plt.title("Linear interpolation and triangulation computed solution")
     plt.colorbar(im2_9)
     ax = plt.gca()
     ax.set_aspect('equal')
@@ -286,8 +335,9 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
         plt.savefig(path_to_save + H + "/" + H + '_LinearInt_GradCubic.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS
+    vmaxGrad = np.max(abs(point_errors_grads))
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
-    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap2)
+    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap3, vmin = -vmaxGrad, vmax = vmaxGrad)
     plt.colorbar(im2_10)
     plt.title("Angle error in gradients")
     ax = plt.gca()
@@ -299,8 +349,8 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
 
     # ERRORS IN GRADIENTS + TRIANGULATION ON TOP
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
-    #plt.triplot( eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-', c = "#d4bdff", lw = 0.3 )
-    im2_12 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap2)
+    plt.triplot( eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-', c = "#d4bdff", lw = 0.3 )
+    im2_12 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap3, vmin = -vmaxGrad, vmax = vmaxGrad)
     plt.colorbar(im2_12)
     plt.title("Angle error in gradients and triangulation")
     ax = plt.gca()
@@ -329,14 +379,16 @@ def plotEverthing_H(H, saveFigures = True):
     eik_grads = np.fromfile(path_information + "_ComputedGradientsCubic.bin")
     eik_grads = eik_grads.reshape(len(eik_coords), 2)
     triangles_points = np.genfromtxt(path_information + "_Faces.txt", delimiter=",")
+    true_sol = np.genfromtxt(path_information + "_true_values.txt", delimiter = ',')
     true_solGrid = np.genfromtxt(path_general + "true_solGrid_" + str(nx_default) + "_" + str(ny_default) + ".txt", delimiter = ',')
     true_grads = np.genfromtxt(path_information + "_true_grads.txt" , delimiter = ',')
     type_Sol = np.genfromtxt(path_information + "_true_type.txt" , delimiter = ',', dtype = np.int32)
     # We can compute the point_errors_grads
-    point_errors_grads = []
+    point_errors_grads = np.zeros((len(eik_vals)))
     for i in range(len(eik_coords)):
-        point_errors_grads +=  [ angle_error( true_grads[i, :], eik_grads[i, :]  ) ]
+        point_errors_grads[i] =  angle_error( true_grads[i, :], eik_grads[i, :]  )
     point_errors_grads[0] = 0
+    point_errors_eik = true_sol - eik_vals
     # Now we need to define the triangulation to be able to linearly interpolate
     triang = tri.Triangulation(eik_coords[:,0], eik_coords[:,1], triangles_points)
     interp_lin = tri.LinearTriInterpolator(triang, eik_vals)
@@ -344,16 +396,15 @@ def plotEverthing_H(H, saveFigures = True):
     # With the triangulation defined we can compute the signed and absolute errors
     errors_inter = true_solGrid - zi_lin
     errorsAbs_inter = abs( true_solGrid - zi_lin )
+
     generatePlotsOnGeometryCircle(H, xi, yi,
                                   eik_vals, eik_coords, eik_grads, triangles_points,
-                                  x0 = None, center = None, R = R_default,
-                                  eta1 = eta1_default, eta2 = eta2_default,
-                                  true_solGrid = true_solGrid, type_Sol = type_Sol,
-                                  true_grads = true_grads,
-                                  errorsAbs_inter = errorsAbs_inter,
-                                  errors_inter = errors_inter,
-                                  zi_lin = zi_lin, point_errors_grads = point_errors_grads,
-                                  saveFigures = saveFigures,
+                                  true_sol = true_sol, type_sol = None, true_grads = true_grads,
+                                  true_solGrid = true_solGrid, type_solGrid = None, true_gradsGrid = None,
+                                  errorsAbs_inter = errorsAbs_inter, errors_inter = errors_inter,
+                                  zi_lin = zi_lin, point_errors_eik = point_errors_eik, point_errors_grads = point_errors_grads,
+                                  saveFigures = False,
                                   show = True, 
-                                  path_to_save = path_figures)
+                                  path_to_save = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/')
+
         

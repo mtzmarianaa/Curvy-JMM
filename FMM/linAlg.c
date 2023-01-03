@@ -99,3 +99,13 @@ void matrixXvec2x2(matrix_2x2 const A, double x[2], double sol[2]){
   sol[0] = A[0][0]*x[0] + A[0][1]*x[1];
   sol[1] = A[1][0]*x[0] + A[1][1]*x[1];
 }
+
+double min(double a, double b){
+  if(a <=b){
+    return a;
+  }
+  else{
+    return b;
+  }
+}
+

@@ -12,8 +12,9 @@ typedef struct eik_grid {
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   int *current_states; // 0 far, 1 trial, 2 valid
-  int (*parents_path)[2]; // this are the two parent nodes (their indices) from which each node has been updated
+  int (*parents_path)[3]; // this are the two parent nodes (their indices) from which each node has been updated
   double *lambdas; // lambdas from which (using the two parents) the node was updated
+  double *mus; // mus for the two step update (if not used they are all 0)
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
@@ -36,7 +37,7 @@ void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], doub
 
 void initializePointsNear(eik_gridS *eik_g, double rBall);
 
-void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, int parent2, double param, double TFound, double indexRefraction);
+void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1, int parent2, double lambda, double mu, double TFound, double indexRefraction, double param);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted);
 
@@ -61,7 +62,7 @@ void simple_UpdateCubic(double x0[2], double x1[2], double xHat[2], double T0, d
 
 void twoStepUpdateCubic(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1,
 			double grad0[2], double grad1[2],
-			double indexRef_01, double indexRef_02, double *That_step2, double *mu);
+			double indexRef_01, double indexRef_02, double *That_step2, double *lambda, double *mu);
 
 void addNeighbors_fromAcceptedCubic(eik_gridS *eik_g, int indexAccepted);
 

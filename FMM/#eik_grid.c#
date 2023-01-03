@@ -105,6 +105,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
   }
 }
 
+
 void printAllInfoMesh(eik_gridS *eik_g){
   printEverythingInMesh(eik_g->triM_2D);
 }
