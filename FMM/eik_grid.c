@@ -40,12 +40,14 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   int (*parents_path)[2]; // this is a pointer to a list of the parents that are used to update that node (by indices)
   double *lambdas; // pointer to the lambdas used to update each node using their parents
+  double *mus;
   int *current_states;
   eik_vals = malloc(triM_2D->nPoints*sizeof(double)); 
   current_states = malloc(triM_2D->nPoints*sizeof(int));
   eik_grad = malloc(2*triM_2D->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
   parents_path = malloc(2*triM_2D->nPoints*sizeof(int)); // each node has two parents by index
   lambdas = malloc(triM_2D->nPoints*sizeof(double)); // each node was updated with one lambda which is a double
+  mus = malloc(triM_2D->nPoints*sizeof(double));
   for(int i = 0; i<triM_2D->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
@@ -54,12 +56,14 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
     parents_path[i][0] = i; // initialize both parents as themselves
     parents_path[i][1] = i;
     lambdas[i] = 0; // initialize all lambdas to 0 (meaning that its parent is itself, useful for the starting points)
+    mus[i] = 0;
   }
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
   eik_g->eik_grad = eik_grad;
   eik_g->parents_path = parents_path;
   eik_g->lambdas = lambdas;
+  eik_g->mus = mus;
 
   // we initialize the priority queue, all the elements in start are going to be inserted and their current states set to 1
   // notice that we need to add both the index of the starting points AND their eikonal value (which is 0) to the p_queue struct
@@ -97,7 +101,7 @@ void printGeneralInfo(eik_gridS *eik_g) {
     double x[2];
     x[0] = eik_g->triM_2D->points->x[i];
     x[1] = eik_g->triM_2D->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %d ||  Eik gradient:   (%fl, %fl)||  Parents:   (%d, %d)||  LamOpt:   %fl \n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1], eik_g->parents_path[i][0], eik_g->parents_path[i][1], eik_g->lambdas[i]);
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %d ||  Eik gradient:   (%fl, %fl)||  Parents:   (%d, %d)||  LamOpt:   %fl ||  MuOpt:   %fl \n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1], eik_g->parents_path[i][0], eik_g->parents_path[i][1], eik_g->lambdas[i], eik_g->mus[i]);
   }
 }
 

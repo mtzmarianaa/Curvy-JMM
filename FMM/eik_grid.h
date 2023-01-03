@@ -14,6 +14,7 @@ typedef struct eik_grid {
   int *current_states; // 0 far, 1 trial, 2 valid
   int (*parents_path)[2]; // this are the two parent nodes (their indices) from which each node has been updated
   double *lambdas; // lambdas from which (using the two parents) the node was updated
+  double *mus; // mus from the two step update (if needed)
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
