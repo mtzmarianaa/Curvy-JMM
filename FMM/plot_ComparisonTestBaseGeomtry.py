@@ -1,3 +1,4 @@
+
 # COMPARISON BETWEEN CLASSICAL TRIANGLES AND ARTIFICIAL TRIANGLES
 
 
@@ -6,7 +7,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
-from math import sqrt, log, exp, acos, atan, atan2
+from math import sqrt, log, exp, acos, atan, atan2, pi
 import matplotlib.animation as animation
 from tabulate import tabulate
 from matplotlib.patches import Arc
@@ -19,7 +20,7 @@ from pathlib import Path
 
 # USEFUL THINGS TO CHANGE AND KEEP IN HAND EVERYTIME WE RUN THIS SCRIPT
 
-saveFigures = False
+saveFigures = True
 nx = 36*10
 ny = 42*10
 my_dpi=96
@@ -39,9 +40,10 @@ path_trueSol = 'TestBaseSnow/'
 #Hs = ["H1", "H2", "H3", "H4_5", "H3_5", "H13_5", "H2_5", "H1_5" , "H12_5" ,"H11_5" ,    "H10_5",  "H14_5", "H15_5", "H16_5", "H17_5"  ,"H6", "H5_5", "H6_5", "H7_5", "H20_5", "H8", "H19_5", "H18_5", "H9_5", "H11",  "H12", "H13", "H14",  "H15" , "H9", "H16", "H17","H2","H0_5", "H18", "H0", "H5", "H4", "H21_5", "H19", "H20", "H21"]
 # #     1.75,   1.6,  1.4,  1.35,   1.27,  1.1,  1.05,  0.95,   0.975,   0.9,    0.85,    0.8,    0.75,    0.7,      0.65   ,  0.6,    0.55,   0.5 ,  0.45,   0.4,  0.375,  0.35,  0.325,  0.3,   0.29,  0.28 ,0.275,  0.25, ,0.225,  0.2,  0.19,  0.18,  0.15, 0.095, 0.09, 0.87, 0.85  0.08, 0.075,  0.07  0.05,  0.04
 
-Hs = ["H0", "H2", "H0_5", "H18", "H9", "H17", "H16", "H15", "H14", "H13", "H12", "H11", "H20_5"]
+#Hs = ["H21", "H20", "H19", "H4", "H21_5", "H5", "H0", "H2", "H0_5", "H18", "H17", "H9"]
 
-#Hs = ["H21_5"]
+Hs = ["H26", "H25", "H24", "H23", "H22", "H21", "H20", "H21_5", "H0"]
+
 
 # Colors
 colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
@@ -72,7 +74,10 @@ def angle_error( trueGradient, numericalGradient  ):
         if( dProd<-1.0 or dProd>1.0  ):
             dProd = max( -1.0, min( 1.0, dProd  )  )
         angle_between = acos( dProd  ) # the angle between the two vectors
-    return angle_between
+    if angle_between > pi:
+        return angle_between - pi
+    else:
+        return angle_between
     
 
 def average_edge_length(eik_coords, faces):
@@ -255,42 +260,103 @@ for stringPart in Hs:
     point_errors_grads = [0] + point_errors_grads
     trueAngleGrads = [0] + trueAngleGrads
     # If we are saving the true values and gradients we do so now
+
+    # To improve performance
+    # REGION 1
+    errorsAbs_ind1 = []
+    errorGradH_ind1 = []
+    errorl1GradH_ind1  = []
+    point_errors_grads_ind1 = []
+    true_values_ind1 = []
+    normTrueGrads_ind1 = []
+    norml1TrueGrads_ind1 = []
+    trueAngleGrads_ind1 = []
     
+    for i in indices_1:
+        errorsAbs_ind1.append( errorsAbs[i] )
+        errorGradH_ind1.append( errorGradH[i] )
+        errorl1GradH_ind1.append( errorl1GradH[i] )
+        point_errors_grads_ind1.append( point_errors_grads[i] )
+        true_values_ind1.append( true_values[i] )
+        normTrueGrads_ind1.append( normTrueGrads[i] )
+        norml1TrueGrads_ind1.append(  norml1TrueGrads[i] )
+        trueAngleGrads_ind1.append(  trueAngleGrads[i] )
+
+    # REGION 2
+    errorsAbs_ind2 = []
+    errorGradH_ind2 = []
+    errorl1GradH_ind2  = []
+    point_errors_grads_ind2 = []
+    true_values_ind2 = []
+    normTrueGrads_ind2 = []
+    norml1TrueGrads_ind2 = []
+    trueAngleGrads_ind2 = []
+    
+    for i in indices_2:
+        errorsAbs_ind2.append( errorsAbs[i] )
+        errorGradH_ind2.append( errorGradH[i] )
+        errorl1GradH_ind2.append( errorl1GradH[i] )
+        point_errors_grads_ind2.append( point_errors_grads[i] )
+        true_values_ind2.append( true_values[i] )
+        normTrueGrads_ind2.append( normTrueGrads[i] )
+        norml1TrueGrads_ind2.append(  norml1TrueGrads[i] )
+        trueAngleGrads_ind2.append(  trueAngleGrads[i] )
+
+    # REGION 3
+    errorsAbs_ind3 = []
+    errorGradH_ind3 = []
+    errorl1GradH_ind3  = []
+    point_errors_grads_ind3 = []
+    true_values_ind3 = []
+    normTrueGrads_ind3 = []
+    norml1TrueGrads_ind3 = []
+    trueAngleGrads_ind3 = []
+    
+    for i in indices_3:
+        errorsAbs_ind3.append( errorsAbs[i] )
+        errorGradH_ind3.append( errorGradH[i] )
+        errorl1GradH_ind3.append( errorl1GradH[i] )
+        point_errors_grads_ind3.append( point_errors_grads[i] )
+        true_values_ind3.append( true_values[i] )
+        normTrueGrads_ind3.append( normTrueGrads[i] )
+        norml1TrueGrads_ind3.append(  norml1TrueGrads[i] )
+        trueAngleGrads_ind3.append(  trueAngleGrads[i] )
+
     
     # COMPUTE ALL THE ERRORS AND THE VARIABLE NEEDED TO DO SO
     r_iter = range( len( eik_coords  )  )
     averageH += [average_edge_length(eik_coords, triangles_points)]
     errorl2_eik += [norm( errorsAbs  )/norm( true_values )]
-    errorl2_eikIndex1 += [ norm( [ errorsAbs[i] for i in r_iter if i in indices_1 ]  )/norm( [ true_values[i] for i in r_iter if i in indices_1  ]  )  ]
-    errorl2_eikIndex2 += [ norm( [ errorsAbs[i] for i in r_iter if i in indices_2 ]  )/norm( [ true_values[i] for i in r_iter if i in indices_2  ]  )  ]
-    errorl2_eikIndex3 += [ norm( [ errorsAbs[i] for i in r_iter if i in indices_3 ]  )/norm( [ true_values[i] for i in r_iter if i in indices_3  ]  )  ]
+    errorl2_eikIndex1 += [ norm( errorsAbs_ind1  )/norm( true_values_ind1  )  ]
+    errorl2_eikIndex2 += [ norm( errorsAbs_ind2  )/norm( true_values_ind2  )  ]
+    errorl2_eikIndex3 += [ norm( errorsAbs_ind3  )/norm( true_values_ind3  )  ]
     errorl1_eik += [ norm(errorsAbs, 1)/norm( true_values, 1 )  ]
-    errL1ind1 = norm( [ errorsAbs[i] for i in r_iter if i in indices_1], 1)/norm( [ true_values[i] for i in r_iter if i in indices_1 ], 1  )
-    errL1ind2 = norm( [ errorsAbs[i] for i in r_iter if i in indices_2], 1)/norm( [ true_values[i] for i in r_iter if i in indices_2 ], 1  )
-    errL1ind3 = norm( [ errorsAbs[i] for i in r_iter if i in indices_3], 1)/norm( [ true_values[i] for i in r_iter if i in indices_3 ], 1  )
+    errL1ind1 = norm(  errorsAbs_ind1, 1)/norm( true_values_ind1, 1  )
+    errL1ind2 = norm(  errorsAbs_ind2, 1)/norm( true_values_ind2, 1  )
+    errL1ind3 = norm(  errorsAbs_ind3, 1)/norm( true_values_ind3, 1  )
     errorl1_eikIndex1 += [ errL1ind1 ]
     errorl1_eikIndex2 += [ errL1ind2 ]
     errorl1_eikIndex3 += [ errL1ind3 ]
     nPoints += [len(eik_coords)]
     times_vec += [times[0]]
     errorl2_grad += [ norm(errorGradH) /norm(normTrueGrads) ]
-    errGradL2ind1 = norm( [errorGradH[i] for i in r_iter if i in indices_1  ]  )/norm( [ normTrueGrads[i] for i in r_iter if i in indices_1  ]  )
-    errGradL2ind2 = norm( [errorGradH[i] for i in r_iter if i in indices_2  ]  )/norm( [ normTrueGrads[i] for i in r_iter if i in indices_2  ]  )
-    errGradL2ind3 = norm( [errorGradH[i] for i in r_iter if i in indices_3  ]  )/norm( [ normTrueGrads[i] for i in r_iter if i in indices_3  ]  )
+    errGradL2ind1 = norm( errorGradH_ind1  )/norm( normTrueGrads_ind1  )
+    errGradL2ind2 = norm( errorGradH_ind2  )/norm( normTrueGrads_ind2  )
+    errGradL2ind3 = norm( errorGradH_ind3  )/norm( normTrueGrads_ind3  )
     errorl2_gradIndex1 += [ errGradL2ind1 ]
     errorl2_gradIndex2 += [ errGradL2ind2 ]
     errorl2_gradIndex3 += [ errGradL2ind3 ]
     errorl1_grad += [ norm(errorl1GradH, 1)/norm(norml1TrueGrads, 1)    ]
-    errGradL1ind1 = norm( [errorl1GradH[i] for i in r_iter if i in indices_1], 1  )/norm([ norml1TrueGrads[i] for i in r_iter if i in indices_1], 1 )
-    errGradL1ind2 = norm( [errorl1GradH[i] for i in r_iter if i in indices_2], 1  )/norm([ norml1TrueGrads[i] for i in r_iter if i in indices_2], 1 )
-    errGradL1ind3 = norm( [errorl1GradH[i] for i in r_iter if i in indices_3], 1  )/norm([ norml1TrueGrads[i] for i in r_iter if i in indices_3], 1 )
+    errGradL1ind1 = norm( errorl1GradH_ind1, 1  )/norm( norml1TrueGrads_ind1, 1 )
+    errGradL1ind2 = norm( errorl1GradH_ind2, 1  )/norm( norml1TrueGrads_ind2, 1 )
+    errGradL1ind3 = norm( errorl1GradH_ind3, 1  )/norm( norml1TrueGrads_ind3, 1 )
     errorl1_gradIndex1 += [ errGradL1ind1 ]
     errorl1_gradIndex2 += [ errGradL1ind2 ]
     errorl1_gradIndex3 += [ errGradL1ind3 ]
     angleError_grad += [ norm(point_errors_grads)/norm(trueAngleGrads)   ]
-    errGradAngle1 = norm( [ point_errors_grads[i] for i in r_iter if i in indices_1 ]  )/norm( [ trueAngleGrads[i] for i in r_iter if i in indices_1  ] )
-    errGradAngle2 = norm( [ point_errors_grads[i] for i in r_iter if i in indices_2 ]  )/norm( [ trueAngleGrads[i] for i in r_iter if i in indices_2  ] )
-    errGradAngle3 = norm( [ point_errors_grads[i] for i in r_iter if i in indices_3 ]  )/norm( [ trueAngleGrads[i] for i in r_iter if i in indices_3  ] )
+    errGradAngle1 = norm( point_errors_grads_ind1  )/norm( trueAngleGrads_ind1 )
+    errGradAngle2 = norm( point_errors_grads_ind2  )/norm( trueAngleGrads_ind2 )
+    errGradAngle3 = norm( point_errors_grads_ind3  )/norm( trueAngleGrads_ind3 )
     angleError_gradIndex1 += [ errGradAngle1 ]
     angleError_gradIndex2 += [ errGradAngle2 ]
     angleError_gradIndex3 += [ errGradAngle3 ]
@@ -492,7 +558,8 @@ plt.title("Relative l2 errors Eikonal and average edge length, circle two indice
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'] , info_frameErrors['l1 error Eikonal'], c = '#008ade', marker='o')
@@ -503,7 +570,8 @@ plt.title("Relative l1 errors Eikonal and average edge length, circle two indice
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_EdgeLength.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_EdgeLength.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.plot(info_frameErrors['Edge Length'] , info_frameErrors['l2 error Eikonal'], c = '#5993b3', linestyle='--', marker='o')
@@ -511,7 +579,8 @@ plt.title("Relative l2 errors Eikonal and average edge length, circle one index 
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_Errors_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -523,7 +592,8 @@ plt.title("Relative l2 errors Eikonal and number of points in triangulation, cir
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPointsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errors_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['nPoints'], info_frameErrors['l1 error Eikonal'], c = '#5badd6', marker='o')
@@ -534,7 +604,8 @@ plt.title("Relative l1 errors Eikonal and number of points in triangulation, cir
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_nPointsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Errorsl1_nPointsCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -546,7 +617,8 @@ plt.title("Relative l2 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'] , info_frameErrors['l1 error gradients'], c = '#4500c4', marker='o')
@@ -557,7 +629,8 @@ plt.title("Relative l1 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.plot(info_frameErrors['Edge Length'] , info_frameErrors['l2 error gradients'], c = '#5993b3', linestyle='--', marker='o')
@@ -565,7 +638,8 @@ plt.title("Relative l2 errors gradients and average edge length, circle two indi
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/NOLOG_ErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -577,7 +651,8 @@ plt.title("Relative l2 errors gradients and number of points in triangulation, c
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['nPoints'], info_frameErrors['l1 error gradients'], c = '#754ebd', marker='o')
@@ -588,7 +663,8 @@ plt.title("Relative l1 errors gradients and number of points in triangulation, c
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_nPointsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/ErrorsGradl1_nPointsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Edge Length'], info_frameErrors['angle error gradients'], c = '#754ebd', marker='o')
@@ -599,7 +675,8 @@ plt.title("Relative angle errors gradients and average edge length, circle two i
 plt.xlabel("Average edge length")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_EdgeLengthCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -611,7 +688,8 @@ plt.title("Relative angle errors gradients and number of points in triangulation
 plt.xlabel("Number of points in triangulation")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/AngleErrorsGrad_nPointsCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -620,7 +698,8 @@ plt.title("Average edge length and time taken to solve, circle two indices of re
 plt.ylabel("Time taken to solve (sec)")
 plt.xlabel("Average edge length")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_timesCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/EdgeLength_timesCubic.png', dpi=my_dpi * 10)
 
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -629,7 +708,8 @@ plt.title("Time taken to solve and l2 errors Eikonal, circle two indices of refr
 plt.xlabel("Time taken to solve (sec)")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_ErrorsCubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_ErrorsCubic.png', dpi=my_dpi * 10)
 
 fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 plt.loglog(info_frameErrors['Time to solve (s)'], info_frameErrors['l1 error Eikonal'], c = '#5993b3', linestyle='--', marker='o')
@@ -637,7 +717,8 @@ plt.title("Time taken to solve and l1 errors Eikonal, circle two indices of refr
 plt.xlabel("Time taken to solve (sec)")
 plt.ylabel("Error")
 #plt.show(block = False)
-plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errorsl1Cubic.png', dpi=my_dpi * 10)
+if saveFigures:
+    plt.savefig('/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/Times_Errorsl1Cubic.png', dpi=my_dpi * 10)
 
 
 table = {"Average h": info_frameErrors["Edge Length"], "Time taken (s)": info_frameErrors["Time to solve (s)"], 
@@ -655,7 +736,7 @@ print(tabulate(table_polynomialCoefs, headers = "keys", tablefmt = "latex"))
 
 
 
-#plt.show()
+plt.show()
 
 
 

@@ -42,7 +42,7 @@ void triMesh2_init(triMesh_2Ds *triM_2D, coordS *points, neighborsRS *neighbors,
     triM_2D->incidentFaces = incidentFaces;
     triM_2D->faces = faces;
     triM_2D->indexRegions = indexRegions;
-}
+} 
 
 void triMesh2_init_from_meshpy(triMesh_2Ds *triM_2D, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions){
     // there are a lot of files needed to be opened
