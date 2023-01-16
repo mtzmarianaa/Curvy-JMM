@@ -149,10 +149,12 @@ void printEverythingInMesh(triMesh_2Ds *triM_2D) {
     
 }
 
-int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
+double regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
     // we look in the incidentFaces, both points must share two faces, we are looking for this and for the smaller region (meaning that the index of refraction is smaller there)
     int current_face, i, region, region_test;
-    region = INFINITY;
+    double x0[2];
+    region = 3;
+    region_test = 3;
     for (i = 0; i<triM_2D->incidentFaces[index_from].len; i++){
         // we first iterate through all the points
         current_face = triM_2D->incidentFaces[index_from].neis_i[i];
@@ -164,7 +166,9 @@ int regionBetweenTwoPoints(triMesh_2Ds *triM_2D, int index_from, int index_to){
             }
         }
     }
-    return region;
+    x0[0] = triM_2D->points->x[index_from];
+    x0[1] = triM_2D->points->y[index_to];
+    return s_function_threeSections(x0, region);
 }
 
 

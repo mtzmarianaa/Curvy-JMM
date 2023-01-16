@@ -32,8 +32,8 @@ def circ_base(t):
     tan_points = np.zeros((len(t), 2))
     points[:, 0] = 10*np.cos(t)
     points[:, 1] = 10*np.sin(t)
-    tan_points[:, 0] = -points[:, 1]
-    tan_points[:, 1] = points[:, 0]
+    tan_points[:, 0] = -np.sin(t)
+    tan_points[:, 1] = np.cos(t)
     return points, tan_points
 
 

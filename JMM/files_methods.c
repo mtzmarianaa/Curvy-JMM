@@ -143,7 +143,6 @@ void read_n2File_double(double *flattenMatrix, char const *pathFile) {
       separateARowDb(line, 2, row);
       flattenMatrix[i] = row[0];
       flattenMatrix[i + 1] = row[1];
-      printf("Found: %f, %f  \n", flattenMatrix[i], flattenMatrix[i + 1]);
       i = i + 2;
     }
     fclose(fp);

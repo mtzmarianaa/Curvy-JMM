@@ -9,7 +9,6 @@ This is the Eikonal grid with different specifications
 #include "SoSFunction.h"
 #include "opti_method.h"
 #include "linAlg.h"
-#include "path.h"
 
 
 #include <stdio.h>
