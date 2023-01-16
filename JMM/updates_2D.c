@@ -69,7 +69,9 @@ void print_info_update(info_updateS *info_update){
   printf("Index x2: %d\n", info_update->x2_ind);
   printf("Index xHat: %d\n", info_update->xHat_ind);
   printf("T0: %lf\n", info_update->T0);
+  printf("Grad T0:  %lf   |   %lf \n", info_update->grad0[0], info_update->grad0[1]);
   printf("T1: %lf\n", info_update->T1);
+  printf("Grad T1:  %lf   |   %lf \n", info_update->grad1[0], info_update->grad1[1]);
   printf("THat: %lf\n", info_update->THat);
   printf("Index 01 %lf\n", info_update->indexRef_01);
   printf("Index 02 %lf\n", info_update->indexRef_02);
@@ -146,8 +148,13 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
   xHat[1] = triM_2D->points->y[info_update->xHat_ind];
   indexRef = info_update->indexRef_01;
 
-  info_update->lambda = secantCubic_2D(lambda0, lambda1, T0, T1, grad0, grad1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
-  info_update->THat = eikApproxCubic(T0, T1, grad0, grad1, info_update->lambda, x0, x1, xHat, indexRef);
+  info_update->lambda = secant_freeSpace(lambda0, lambda1, T0, T1, grad0, grad1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
+  info_update->THat = eikApprox_freeSpace(T0, T1, grad0, grad1, info_update->lambda, x0, x1, xHat, indexRef);
+}
+
+void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  // two point update but the segment x0x1 is on the boundary
+  
 }
 
 

@@ -52,25 +52,51 @@ int main()
     info_updateS *info_update;
     info_update_alloc(&info_update);
 
-    int indexAccepted, x1_ind, x2_ind, xHat_ind;
-    double T0, T1, indexRef_01, indexRef_02;
+    /* int indexAccepted, x1_ind, x2_ind, xHat_ind; */
+    /* double T0, T1, indexRef_01, indexRef_02; */
 
-    indexAccepted = 48;
-    x1_ind = 48;
-    x2_ind = 48;
-    xHat_ind = 49;
-    T0 = 14.8753;
-    T1 = -1;
-    indexRef_01 = regionBetweenTwoPoints(eik_g1->triM_2D, indexAccepted, x1_ind);
-    indexRef_02 = regionBetweenTwoPoints(eik_g1->triM_2D, indexAccepted, x2_ind);
+    /* indexAccepted = 48; */
+    /* xHat_ind = 49; */
+    /* T0 = 14.8753; */
+    /* indexRef_01 = regionBetweenTwoPoints(eik_g1->triM_2D, indexAccepted, x1_ind); */
 
-    info_update_initCr(info_update, indexAccepted, xHat_ind, T0, indexRef_01);
+    /* printf("\n\nTESTING CREEPING UPDATE\n\n"); */
+
+    /* info_update_initCr(info_update, indexAccepted, xHat_ind, T0, indexRef_01); */
     
+    /* print_info_update(info_update); */
+
+    /* creepingUpdate(eik_g1->triM_2D, info_update); */
+
+    /* print_info_update(info_update); */
+
+    printf("\n\nTESTING FREE SPACE TWO POINT UPDATE\n\n");
+
+    int indexAccepted, x1_ind, xHat_ind;
+    double T0, T1, grad0[2], grad1[2], indexRef;
+
+    grad0[0] = -0.228191;
+    grad0[1] = -0.973616;
+    grad1[0] = -0.409301;
+    grad1[1] = -0.9124;
+    indexAccepted = 3128;
+    x1_ind = 2942;
+    xHat_ind = 127;
+    T0 = 8.21679;
+    T1 = 7.32957;
+    indexRef = 1.0;
+
+    printf("T1: %lf\n", T1);
+    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef);
+
     print_info_update(info_update);
 
-    creepingUpdate(eik_g1->triM_2D, info_update);
+    simple_TwoPointUpdate(eik_g1->triM_2D, info_update);
 
     print_info_update(info_update);
+
+
+    
 
 
     eik_grid_dealloc(&eik_g1);
