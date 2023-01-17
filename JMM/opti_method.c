@@ -512,13 +512,13 @@ void projectedGradientDescentCubic(double optimizers[2], double T0, double T1, d
     }
 }
 
-double der_fromEdge(double lambda, double T0, double grad0[0], double B0[2], double T1, double grad1[0], double B1[2], double x0[0], double x1[2], double xHat[2], double indexRef){
+double der_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef) {
   // derivative with respect of lambda from the function to minimize for the update in which the
   // segment x0x1 is on the boundary but xHat if fully contained in a region with index indexRef
   double lambda3, lambda2;
   lambda2 = lambda*lambda;
   lambda3 = lambda2*lambda;
-  double x1Minx0[2], B0PlusB1[2], B1Plus2B0[2], twoB0[2], grad0Plusgrad1[2], twoGrad0MinGrad1[2], twoGrad0[2];
+  double x1Minx0[2], B0PlusB1[2], B1Plus2B0[2], twoB0[2], grad0Plusgrad1[2], twoGrad0PlusGrad1[2], twoGrad0[2];
   double lamB0[2], x0MinxHat[2];
   // first time we gather terms
   vec2_subtraction(x1, x0, x1Minx0);
@@ -527,13 +527,13 @@ double der_fromEdge(double lambda, double T0, double grad0[0], double B0[2], dou
   vec2_addition(B1, twoB0, B1Plus2B0);
   vec2_addition(grad0, grad1, grad0Plusgrad1);
   scalar_times_2vec(2, grad0, twoGrad0);
-  vec2_subtraction(twoGrad0, grad1, twoGrad0MinGrad1);
+  vec2_addition(twoGrad0, grad1, twoGrad0PlusGrad1);
   scalar_times_2vec(lambda, B0, lamB0);
   vec2_subtraction(x0, xHat, x0MinxHat);
   // second time gathering terms
   double dotProd1, dotProd2, sixX0minx1[2], threeB0plusB1[2], twoB1Plus2B0[2], twox0Minx1[2], threex0Minx1[2];
   dotProd1 = dotProd(x1Minx0, grad0Plusgrad1);
-  dotProd2 = dotProd(x1Minx0, twoGrad0MinGrad1);
+  dotProd2 = dotProd(x1Minx0, twoGrad0PlusGrad1);
   scalar_times_2vec(-6, x1Minx0, sixX0minx1);
   scalar_times_2vec(3, B0PlusB1, threeB0plusB1);
   scalar_times_2vec(2, B1Plus2B0, twoB1Plus2B0);
@@ -542,7 +542,7 @@ double der_fromEdge(double lambda, double T0, double grad0[0], double B0[2], dou
   // third time gathering terms
   double coeflam2_1[2], coeflam_1[2], coef_lam3_2[2], coef_lam2_2[2], coef_lam_2[2];
   vec2_addition(sixX0minx1, threeB0plusB1, coeflam2_1);
-  vec2_addition(sixX0minx1,  twoB1Plus2B0m, coeflam_1);
+  vec2_addition(sixX0minx1,  twoB1Plus2B0, coeflam_1);
   vec2_addition(twox0Minx1, B0PlusB1, coef_lam3_2);
   vec2_addition(threex0Minx1, B1Plus2B0, coef_lam2_2);
   scalar_times_2vec(lambda, B0, coef_lam_2);
@@ -563,16 +563,120 @@ double der_fromEdge(double lambda, double T0, double grad0[0], double B0[2], dou
   dotProd4 = dotProd(x1Minx0, grad0);
   norm1 = l2norm(xHatMinxLam);
   boundaryPart = indexRef*dotProd3/norm1;
-  tLamPart = 6*T0*lambda2 - 6*T1*lambda2 + 3*lambda2*dotProd1 -6*T0*lambda + 6*T1*lambda + 2*lambda*dotProd2 + dotProd4;
+  tLamPart = 6*T0*lambda2 - 6*T1*lambda2 + 3*lambda2*dotProd1 -6*T0*lambda + 6*T1*lambda - 2*lambda*dotProd2 + dotProd4;
   // Putting everything together
   return tLamPart + boundaryPart;
 }
 
+double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef){
+  // backtracking method for projected gradient descent from updates from the edge of the domain
+  double f_prev, f_cur, alpha;
+  alpha = alpha0;
+  // EVALUATING THE OBJECTIVE FUNCTION
+  f_prev = fobjective_fromEdge(lambda, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+  f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+  while(f_prev < f_cur){
+    alpha = alpha*0.5;
+    f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+  }
+  printf("Objective function currently %lf\n", f_cur);
+  return alpha;
+}
 
-double projectedGradient_fromEdge(double lambda0, double lambda1, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef){
+double fobjective_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef){
+  double lambda3, lambda2;
+  lambda2 = lambda*lambda;
+  lambda3 = lambda2*lambda;
+  double x1Minx0[2], B0PlusB1[2], B1Plus2B0[2], twoB0[2], grad0Plusgrad1[2], twoGrad0PlusGrad1[2], twoGrad0[2];
+  double lamB0[2], x0MinxHat[2];
+  // first time we gather terms
+  vec2_subtraction(x1, x0, x1Minx0);
+  vec2_addition(B0, B1, B0PlusB1);
+  scalar_times_2vec(2, B0, twoB0);
+  vec2_addition(B1, twoB0, B1Plus2B0);
+  vec2_addition(grad0, grad1, grad0Plusgrad1);
+  scalar_times_2vec(2, grad0, twoGrad0);
+  vec2_addition(twoGrad0, grad1, twoGrad0PlusGrad1);
+  scalar_times_2vec(lambda, B0, lamB0);
+  vec2_subtraction(x0, xHat, x0MinxHat);
+  // second time gathering terms
+  double dotProd1, dotProd2, twox0Minx1[2], threex0Minx1[2];
+  dotProd1 = dotProd(x1Minx0, grad0Plusgrad1);
+  dotProd2 = dotProd(x1Minx0, twoGrad0PlusGrad1);
+  scalar_times_2vec(-2, x1Minx0, twox0Minx1);
+  scalar_times_2vec(-3, x1Minx0, threex0Minx1);
+  // third time gathering terms
+  double coef_lam3_2[2], coef_lam2_2[2], coef_lam_2[2];
+  vec2_addition(twox0Minx1, B0PlusB1, coef_lam3_2);
+  vec2_addition(threex0Minx1, B1Plus2B0, coef_lam2_2);
+  scalar_times_2vec(lambda, B0, coef_lam_2);
+  // fourth time gathering terms
+  double lam3_2[2], lam2_2[2], rest1_2[2], rest2_2[2];
+  scalar_times_2vec(lambda3, coef_lam3_2, lam3_2);
+  scalar_times_2vec(lambda2, coef_lam2_2, lam2_2);
+  vec2_addition(lamB0, x0MinxHat, rest2_2);
+  vec2_subtraction(lam3_2, lam2_2, rest1_2);
+  // fifth time gathering terms
+  double xHatMinxLam[2], norm1, boundaryPart, tLamPart, dotProd4;
+  vec2_addition(rest1_2, rest2_2, xHatMinxLam);
+  dotProd4 = dotProd(x1Minx0, grad0);
+  norm1 = l2norm(xHatMinxLam);
+  tLamPart = 2*T0*lambda3 - 2*T1*lambda3 + lambda3*dotProd1 -3*T0*lambda2 + 3*T1*lambda2 - lambda2*dotProd2 + lambda*dotProd4 + T0;
+  return tLamPart + indexRef*norm1;
+}
+
+
+double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef){
   // projected gradient descent for an update in which the segment x0x1 is on the boundary but xHat
   // if fully contained in a region with index indexRef
+  double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
+  int i;
+  i = 1;
+  alpha = 0.001;
+  lam_prev = lambda0;
+  grad_cur = der_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+  grad_prev = der_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+  if(fabs(grad_cur) > tol){
+    test = lam_prev - alpha*grad_cur/fabs(grad_cur);
+  }
+  else{
+    test = lam_prev;
+  }
+  if(test>1){
+    lam_cur = 1;
+  }
+  if(test<0){
+    lam_cur = 0;
+  }
+  else{
+    lam_cur = test;
+  }
+  grad_cur = der_fromEdge(lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+
+  while(i<maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0) {
+    printf("\n\nIteration %d\n", i);
+    alpha = backTr_fromEdge(0.08, grad_cur, lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    printf("Step size %lf\n", alpha);
+    test = lam_prev - alpha*grad_cur/fabs(grad_cur);
+    printf("Direction %lf\n", -alpha*grad_cur/grad_cur);
+    printf("Goes from %lf  to   %lf\n", lam_cur, test);
+    if(test<0){
+      test = 0;
+    }
+    if(test>1){
+      test = 1;
+    }
+    grad_prev = grad_cur;
+    lam_prev = lam_cur;
+    lam_cur = test;
+    grad_cur = der_fromEdge(lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    printf("Lambda previous %lf \n", lam_prev);
+    printf("Lambda current %lf \n", lam_cur);
+    printf("Current derivative: %lf \n", grad_cur);
+    i ++;
+  }
   
+  return lam_cur;
 }
 
 
