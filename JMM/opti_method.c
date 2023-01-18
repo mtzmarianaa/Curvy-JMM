@@ -576,7 +576,7 @@ double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double
   // EVALUATING THE OBJECTIVE FUNCTION
   f_prev = fobjective_fromEdge(lambda, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
   f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-  while(f_prev <= f_cur & i < 50){
+  while(f_prev <= f_cur & i < 10){
     alpha = alpha*0.5;
     f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
     i ++;
@@ -673,7 +673,7 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   return lam_cur;
 }
 
-double der_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+double der_freeSpace(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
   double lambda2;
   lambda2 = lambda*lambda;
   // first time we gather terms
@@ -686,10 +686,10 @@ double der_anchorHatBoundary(double lambda, double TA, double gradA[2], double T
   // second time we gather terms
   double dotProd1, dotProd2, dotProd3, lamxBminxA[2], disxlam[2], dotProd4;
   dotProd1 = dotProd(xBminxA, gradAplusgradB);
-  dotProd2 = dotProd(xBminxA, twoTAplusTB);
+  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
   dotProd3 = dotProd(xBminxA, gradA);
   scalar_times_2vec(lambda, xBminxA, lamxBminxA);
-  vec3_subtraction(xHatMinxA, lamxBminxA, disxlam);
+  vec2_subtraction(xHatMinxA, lamxBminxA, disxlam);
   dotProd4 = dotProd(xBminxA, disxlam);
   // third time we gather terms
   double tLamPart, rayPart;
@@ -698,24 +698,23 @@ double der_anchorHatBoundary(double lambda, double TA, double gradA[2], double T
   return tLamPart - rayPart;
 }
 
-double backTr_anchorHatBoundary(double alpha0, double d, double lambda, double TA, double gradA, double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+double backTr_freeSpace(double alpha0, double d, double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
   double f_prev, f_cur, alpha;
   int i = 0;
   alpha = alpha0;
   // EVALUATING THE OBJECTIVE FUNCTION
-  f_prev = fobjective_anchorHatBoundary(lambda, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
+  f_prev = fobjective_freeSpace(lambda, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
   printf("Objective function before %lf  with lambda %lf\n", f_prev, lambda);
-  f_cur = fobjective_anchorHatBoundary(lambda - alpha*d, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
-  while(f_prev <= f_cur & i < 50){
+  f_cur = fobjective_freeSpace(lambda - alpha*d, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  while(f_prev <= f_cur & i < 10){
     alpha = alpha*0.5;
-    f_cur = fobjective_anchorHatBoundary(lambda - alpha*d, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
+    f_cur = fobjective_freeSpace(lambda - alpha*d, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
     i ++;
   }
-  printf("Objective function currently %lf  with lambda  %lf   and alpha  %lf\n", f_cur, lambda-alpha*d, alpha);
   return alpha;
 }
 
-double fobjective_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+double fobjective_freeSpace(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
   double lambda2, lambda3;
   lambda2 = lambda*lambda;
   lambda3 = lambda2*lambda;
@@ -734,18 +733,18 @@ double fobjective_anchorHatBoundary(double lambda, double TA, double gradA[2], d
   dotProd3 = dotProd(xBminxA, gradA);
   vec2_subtraction(xHatminxA, lamxBminxA, disxlam);
   norm1 = l2norm(disxlam);
-  return (2*TA - 2*TB + dotProd1)*lambda3 + (-3*TA + 3*TB - dotProd2)*lambda2 + dotProd3 + TA + indexRef*norm1;
+  return (2*TA - 2*TB + dotProd1)*lambda3 + (-3*TA + 3*TB - dotProd2)*lambda2 + dotProd3*lambda + TA + indexRef*norm1;
 }
 
-double projectedGradient_anchorHatBoundary(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef){
+double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef){
   // two point optimization problem. xA and xHat are on the boundary and xB is fully contained in one region.
   // With usual notation xA could be either x0 or x1 and xB could be either x0 or x1 (this is more abstract)
   // THIS IS A PROJECTED GRADIENT DESCENT METHOD
   double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
   int i =1;
-  alpha = 0.25;
+  alpha = 1;
   lam_prev = lambda0;
-  grad_cur = der_anchorHatBoundary(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  grad_cur = der_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
   grad_prev = grad_cur;
   if(fabs(grad_cur) > tol){
     test = lam_prev - alpha*grad_cur;
@@ -760,10 +759,12 @@ double projectedGradient_anchorHatBoundary(double lambda0, double lambdaMin, dou
     test = lambdaMin;
   }
   lam_cur = test;
-  grad_cur = der_anchorHatBoundary(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  grad_cur = der_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
 
-  while( i< maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0){
-    alpha = backTr_anchorHatBoundary(0.25, grad_cur, lambda, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  while( i<maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0){
+    alpha = backTr_freeSpace(1, grad_cur, lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    printf("\n\nIteration %d\n", i);
+    printf("Step size %lf   with direction  %lf, hence change is %lf\n", alpha, -grad_cur, -alpha*grad_cur);
     test = lam_cur - alpha*grad_cur;
     if(test > lambdaMax){
       test = lambdaMax;
@@ -775,8 +776,10 @@ double projectedGradient_anchorHatBoundary(double lambda0, double lambdaMin, dou
     grad_prev = grad_cur;
     lam_prev = lam_cur;
     lam_cur = test;
-    grad_cur = der_anchorHatBoundary(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-    i++
+    grad_cur = der_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    printf("Iteration %d   with lam_prev %lf  and lam_cur %lf   with objective value: %lf   and derivative  %lf \n\n\n", i, lam_prev, lam_cur, fobjective_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef), grad_cur);
+    
+    i++;
   }
 
   return lam_cur;

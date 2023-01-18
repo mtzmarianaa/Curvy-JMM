@@ -97,41 +97,76 @@ int main()
     /* print_info_update(info_update); */
 
 
-    printf("\n\nTESTING UPDATE FROM EDGE\n\n");
+    /* printf("\n\nTESTING UPDATE FROM EDGE\n\n"); */
 
-    double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj;
+    /* double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj; */
 
-    lambda0 = 0.056389;
-    T0 = 0.70710678;
-    T1 = 0.70710678;
-    x0[0] = -1;
-    x0[1] = 1;
-    grad0[0] = -0.70710678;
-    grad0[1] = 0.70710678;
-    x1[0] = 1;
-    x1[1] = 1;
-    grad1[0] = 0.70710678;
-    grad1[1] = 0.70710678;
-    B0[0] = 0.89442719;
-    B0[1] = 0.4472136;
-    B1[0] = 0.89442719;
-    B1[1] = -0.4472136;
+    /* lambda0 = 0.056389; */
+    /* T0 = 0.70710678; */
+    /* T1 = 0.70710678; */
+    /* x0[0] = -1; */
+    /* x0[1] = 1; */
+    /* grad0[0] = -0.70710678; */
+    /* grad0[1] = 0.70710678; */
+    /* x1[0] = 1; */
+    /* x1[1] = 1; */
+    /* grad1[0] = 0.70710678; */
+    /* grad1[1] = 0.70710678; */
+    /* B0[0] = 0.89442719; */
+    /* B0[1] = 0.4472136; */
+    /* B1[0] = 0.89442719; */
+    /* B1[1] = -0.4472136; */
+    /* xHat[0] = 0; */
+    /* xHat[1] = 5; */
+    /* indexRef = 1; */
+    
+
+    /* fObj = fobjective_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+    /* der_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+
+    /* printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, fObj); */
+
+    /* lam_opti = projectedGradient_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef); */
+
+    /* printf("Optimum lambda %lf", lam_opti); */
+    
+    printf("\n\nTESTING FREE SPACE OPTIMIZATION - PROJECTED GRADIENT DESCENT\n\n");
+    
+    double lambda0, lambdaMin, lambdaMax, TA, gradA[2], TB, gradB[2], xA[2], xB[2], xHat[2], tol, maxIter, indexRef, lamOpti;
+    double fObj, derObj;
+    
+    lambda0 = 1.0;
+    lambdaMin = 0.6;
+    lambdaMax = 1.0;
+    TA = 0.70710678;
+    gradA[0] = -0.70710678;
+    gradA[1] = 0.70710678;
+    TB = 0.70710678;
+    gradB[0] = 0.70710678;
+    gradB[1] = 0.70710678;
+    xA[0] = -1;
+    xA[1] = 1;
+    xB[0] = 1;
+    xB[1] = 1;
     xHat[0] = 0;
-    xHat[1] = 5;
-    indexRef = 1;
+    xHat[1] = 2;
+    tol = 0.0001;
+    maxIter = 50;
+    indexRef = 1.0;
+
     
 
-    fObj = fobjective_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    der_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    fObj = fobjective_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    derObj = der_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
 
-    printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, fObj);
+    printf("Starting with objective value  %lf   and derivative  %lf\n", fObj, derObj);
 
-    lam_opti = projectedGradient_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef);
+    lamOpti = projectedGradient_freeSpace(lambda0, lambdaMin, lambdaMax, TA, gradA, TB, gradB, xA, xB, xHat, tol, maxIter, indexRef);
 
-    printf("Optimum lambda %lf", lam_opti);
-    
-    
-    
+    fObj = fobjective_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    derObj = der_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+
+    printf("\nOptimum lambda found: %lf   with objective value  %lf    and derivative  %lf\n", lamOpti, fObj, derObj); 
 
 
     eik_grid_dealloc(&eik_g1);
