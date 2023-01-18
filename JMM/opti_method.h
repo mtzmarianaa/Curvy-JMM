@@ -14,7 +14,16 @@ double fobjective_fromEdge(double lambda, double T0, double grad0[2], double B0[
 
 double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef);
 
+double der_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef);
 
+double backTr_anchorHatBoundary(double alpha0, double d, double lambda, double TA, double gradA, double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef);
+
+double fobjective_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef);
+
+double projectedGradient_anchorHatBoundary(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef);
+
+
+  
 
 
 double eikApproxLin(double T1, double T0, double lambda, double x0[2], double x1[2],

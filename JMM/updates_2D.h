@@ -38,3 +38,5 @@ void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
 
 void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
 
+void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+

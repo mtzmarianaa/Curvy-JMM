@@ -130,8 +130,8 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
   // first we need to find the optimal lambda to define xLam
   double tol, lambda0, lambda1, T0, T1, grad0[2], grad1[2], x0[2], x1[2], xHat[2], indexRef;
   int maxIter;
-  tol = 0.00001;
-  maxIter = 30;
+  tol = 0.0000000001;
+  maxIter = 50;
   lambda0 = 0;
   lambda1 = 1;
   T0 = info_update->T0;
@@ -154,8 +154,35 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
 
 void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
   // two point update but the segment x0x1 is on the boundary
-  
+  double tol, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef;
+  int maxIter;
+  tol = 0.0000000001;
+  maxIter = 50;
+  T0 = info_update->T0;
+  T1 = info_update->T1;
+  grad0[0] = info_update->grad0[0];
+  grad0[1] = info_update->grad0[1];
+  B0[0] = triM_2D->boundary_tan[info_update->indexAccepted][0];
+  B0[1] = triM_2D->boundary_tan[info_update->indexAccepted][1];
+  grad1[0] = info_update->grad1[0];
+  grad1[1] = info_update->grad1[1];
+  B1[0] = triM_2D->boundary_tan[info_update->x1_ind][0];
+  B1[1] = triM_2D->boundary_tan[info_update->x1_ind][1];
+  x0[0] = triM_2D->points->x[info_update->indexAccepted];
+  x0[1] = triM_2D->points->y[info_update->indexAccepted];
+  x1[0] = triM_2D->points->x[info_update->x1_ind];
+  x1[1] = triM_2D->points->y[info_update->x1_ind];
+  xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  indexRef = info_update->indexRef_01;
+  // Calculate the optimal lambda
+  info_update->lambda = projectedGradient_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, tol, maxIter, indexRef);
+  // Then calculate the optimal THat
+  info_update->THat = fobjective_fromEdge(info_update->lambda, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
 }
+
+
+
 
 
 

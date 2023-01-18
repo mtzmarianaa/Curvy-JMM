@@ -571,15 +571,16 @@ double der_fromEdge(double lambda, double T0, double grad0[2], double B0[2], dou
 double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef){
   // backtracking method for projected gradient descent from updates from the edge of the domain
   double f_prev, f_cur, alpha;
+  int i = 0;
   alpha = alpha0;
   // EVALUATING THE OBJECTIVE FUNCTION
   f_prev = fobjective_fromEdge(lambda, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
   f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-  while(f_prev < f_cur){
+  while(f_prev <= f_cur & i < 50){
     alpha = alpha*0.5;
     f_cur = fobjective_fromEdge(lambda - alpha*d, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    i ++;
   }
-  printf("Objective function currently %lf\n", f_cur);
   return alpha;
 }
 
@@ -632,12 +633,12 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
   int i;
   i = 1;
-  alpha = 0.001;
+  alpha = 0.25;
   lam_prev = lambda0;
   grad_cur = der_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
   grad_prev = der_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
   if(fabs(grad_cur) > tol){
-    test = lam_prev - alpha*grad_cur/fabs(grad_cur);
+    test = lam_prev - alpha*grad_cur;
   }
   else{
     test = lam_prev;
@@ -645,7 +646,7 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   if(test>1){
     lam_cur = 1;
   }
-  if(test<0){
+  else if(test<0){
     lam_cur = 0;
   }
   else{
@@ -654,12 +655,8 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   grad_cur = der_fromEdge(lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
 
   while(i<maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0) {
-    printf("\n\nIteration %d\n", i);
-    alpha = backTr_fromEdge(0.08, grad_cur, lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    printf("Step size %lf\n", alpha);
-    test = lam_prev - alpha*grad_cur/fabs(grad_cur);
-    printf("Direction %lf\n", -alpha*grad_cur/grad_cur);
-    printf("Goes from %lf  to   %lf\n", lam_cur, test);
+    alpha = backTr_fromEdge(0.25, grad_cur, lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    test = lam_cur - alpha*grad_cur;
     if(test<0){
       test = 0;
     }
@@ -670,12 +667,118 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
     lam_prev = lam_cur;
     lam_cur = test;
     grad_cur = der_fromEdge(lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    printf("Lambda previous %lf \n", lam_prev);
-    printf("Lambda current %lf \n", lam_cur);
-    printf("Current derivative: %lf \n", grad_cur);
     i ++;
   }
   
+  return lam_cur;
+}
+
+double der_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+  double lambda2;
+  lambda2 = lambda*lambda;
+  // first time we gather terms
+  double  xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2], xHatMinxA[2];
+  vec2_subtraction(xB, xA, xBminxA);
+  vec2_addition(gradA, gradB, gradAplusgradB);
+  scalar_times_2vec(2, gradA, twogradA);
+  vec2_addition(twogradA, gradB, twogradAplusgradB);
+  vec2_subtraction(xHat, xA, xHatMinxA);
+  // second time we gather terms
+  double dotProd1, dotProd2, dotProd3, lamxBminxA[2], disxlam[2], dotProd4;
+  dotProd1 = dotProd(xBminxA, gradAplusgradB);
+  dotProd2 = dotProd(xBminxA, twoTAplusTB);
+  dotProd3 = dotProd(xBminxA, gradA);
+  scalar_times_2vec(lambda, xBminxA, lamxBminxA);
+  vec3_subtraction(xHatMinxA, lamxBminxA, disxlam);
+  dotProd4 = dotProd(xBminxA, disxlam);
+  // third time we gather terms
+  double tLamPart, rayPart;
+  tLamPart = (6*TA - 6*TB + 3*dotProd1)*lambda2 + (-6*TA + 6*TB - 2*dotProd2)*lambda + dotProd3;
+  rayPart = indexRef*(dotProd4)/l2norm(disxlam);
+  return tLamPart - rayPart;
+}
+
+double backTr_anchorHatBoundary(double alpha0, double d, double lambda, double TA, double gradA, double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+  double f_prev, f_cur, alpha;
+  int i = 0;
+  alpha = alpha0;
+  // EVALUATING THE OBJECTIVE FUNCTION
+  f_prev = fobjective_anchorHatBoundary(lambda, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
+  printf("Objective function before %lf  with lambda %lf\n", f_prev, lambda);
+  f_cur = fobjective_anchorHatBoundary(lambda - alpha*d, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
+  while(f_prev <= f_cur & i < 50){
+    alpha = alpha*0.5;
+    f_cur = fobjective_anchorHatBoundary(lambda - alpha*d, TA, gradA, gradA, TB, gradB, gradB, xA, xB, xHat, indexRef);
+    i ++;
+  }
+  printf("Objective function currently %lf  with lambda  %lf   and alpha  %lf\n", f_cur, lambda-alpha*d, alpha);
+  return alpha;
+}
+
+double fobjective_anchorHatBoundary(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
+  double lambda2, lambda3;
+  lambda2 = lambda*lambda;
+  lambda3 = lambda2*lambda;
+  // first time we gather terms
+  double xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2], lamxBminxA[2], xHatminxA[2];
+  vec2_subtraction(xB, xA, xBminxA);
+  vec2_addition(gradA, gradB, gradAplusgradB);
+  scalar_times_2vec(2, gradA, twogradA);
+  vec2_addition(twogradA, gradB, twogradAplusgradB);
+  scalar_times_2vec(lambda, xBminxA, lamxBminxA);
+  vec2_subtraction(xHat, xA, xHatminxA);
+  // second time we gather terms
+  double dotProd1, dotProd2, dotProd3, disxlam[2], norm1;
+  dotProd1 = dotProd(xBminxA, gradAplusgradB);
+  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
+  dotProd3 = dotProd(xBminxA, gradA);
+  vec2_subtraction(xHatminxA, lamxBminxA, disxlam);
+  norm1 = l2norm(disxlam);
+  return (2*TA - 2*TB + dotProd1)*lambda3 + (-3*TA + 3*TB - dotProd2)*lambda2 + dotProd3 + TA + indexRef*norm1;
+}
+
+double projectedGradient_anchorHatBoundary(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef){
+  // two point optimization problem. xA and xHat are on the boundary and xB is fully contained in one region.
+  // With usual notation xA could be either x0 or x1 and xB could be either x0 or x1 (this is more abstract)
+  // THIS IS A PROJECTED GRADIENT DESCENT METHOD
+  double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
+  int i =1;
+  alpha = 0.25;
+  lam_prev = lambda0;
+  grad_cur = der_anchorHatBoundary(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  grad_prev = grad_cur;
+  if(fabs(grad_cur) > tol){
+    test = lam_prev - alpha*grad_cur;
+  }
+  else{
+    test = lam_prev;
+  }
+  if(test>lambdaMax){
+    test = lambdaMax;
+  }
+  if(test<lambdaMin){
+    test = lambdaMin;
+  }
+  lam_cur = test;
+  grad_cur = der_anchorHatBoundary(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+
+  while( i< maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0){
+    alpha = backTr_anchorHatBoundary(0.25, grad_cur, lambda, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    test = lam_cur - alpha*grad_cur;
+    if(test > lambdaMax){
+      test = lambdaMax;
+    }
+    if(test < lambdaMin){
+      test = lambdaMin;
+    }
+
+    grad_prev = grad_cur;
+    lam_prev = lam_cur;
+    lam_cur = test;
+    grad_cur = der_anchorHatBoundary(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+    i++
+  }
+
   return lam_cur;
 }
 

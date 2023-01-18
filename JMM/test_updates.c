@@ -101,7 +101,7 @@ int main()
 
     double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj;
 
-    lambda0 = 0.5;
+    lambda0 = 0.056389;
     T0 = 0.70710678;
     T1 = 0.70710678;
     x0[0] = -1;
@@ -112,13 +112,14 @@ int main()
     x1[1] = 1;
     grad1[0] = 0.70710678;
     grad1[1] = 0.70710678;
-    B0[0] = 1;
-    B0[1] = 0;
-    B1[0] = 1;
-    B1[1] = 0;
+    B0[0] = 0.89442719;
+    B0[1] = 0.4472136;
+    B1[0] = 0.89442719;
+    B1[1] = -0.4472136;
     xHat[0] = 0;
     xHat[1] = 5;
     indexRef = 1;
+    
 
     fObj = fobjective_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
     der_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
