@@ -40,3 +40,6 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
 
 void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
 
+void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update, int anchorOnBoundary);
+
+

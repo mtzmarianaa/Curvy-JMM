@@ -128,12 +128,11 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
   // a cubic hermite polynomial
 
   // first we need to find the optimal lambda to define xLam
-  double tol, lambda0, lambda1, T0, T1, grad0[2], grad1[2], x0[2], x1[2], xHat[2], indexRef;
+  double tol, lambda0, T0, T1, grad0[2], grad1[2], x0[2], x1[2], xHat[2], indexRef;
   int maxIter;
   tol = 0.0000000001;
   maxIter = 50;
   lambda0 = 0;
-  lambda1 = 1;
   T0 = info_update->T0;
   T1 = info_update->T1;
   grad0[0] = info_update->grad0[0];
@@ -148,8 +147,10 @@ void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
   xHat[1] = triM_2D->points->y[info_update->xHat_ind];
   indexRef = info_update->indexRef_01;
 
-  info_update->lambda = secant_freeSpace(lambda0, lambda1, T0, T1, grad0, grad1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
-  info_update->THat = eikApprox_freeSpace(T0, T1, grad0, grad1, info_update->lambda, x0, x1, xHat, indexRef);
+  info_update->lambda = projectedGradient_freeSpace(lambda0, 0, 1, T0, grad0, T1, grad1, x0, x1, xHat, 0.0000001, 50, indexRef);// optimal lambda found
+
+  info_update->THat = fobjective_freeSpace(info_update->lambda, T0, grad0, T1, grad1, x0, x1, xHat, indexRef);
+  
 }
 
 void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
@@ -179,6 +180,80 @@ void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update
   info_update->lambda = projectedGradient_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, tol, maxIter, indexRef);
   // Then calculate the optimal THat
   info_update->THat = fobjective_fromEdge(info_update->lambda, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+}
+
+void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update, int anchorOnBoundary){
+  // this is a constrained free space update. One of the "anchor points", either x0 or x1 is on the boundary
+  // as well as xHat. anchorOnBoundary should be either 0 or 1, specifies which one is on the boundary
+  double TA, gradA[2], TB, gradB[2], xA[2], xB[2], xHat[2], tol, maxIter, indexRef, lambdaMin, lambdaMax, BHat[2], t, b;
+  double lambdaIntersect, lambdaOpt;
+  xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  BHat[0] = triM_2D->boundary_tan[info_update->xHat_ind][0];
+  BHat[1] = triM_2D->boundary_tan[info_update->xHat_ind][1];
+  tol = 0.00000001;
+  maxIter = 50;
+  indexRef = info_update->indexRef_01;
+  // fill in information accordingly
+  if(anchorOnBoundary == 0){
+    // this means that x0 is the one on the boundary
+    TA = info_update->T0;
+    gradA[0] = info_update->grad0[0];
+    gradA[1] = info_update->grad0[1];
+    TB = info_update->T1;
+    gradB[0] = info_update->grad1[0];
+    gradB[1] = info_update->grad1[1];
+    xA[0] = triM_2D->points->x[info_update->indexAccepted];
+    xA[1] = triM_2D->points->y[info_update->indexAccepted];
+    xB[0] = triM_2D->points->x[info_update->x1_ind];
+    xB[1] = triM_2D->points->y[info_update->x1_ind];
+  }
+  else{
+    // this means that x1 is the one on the boundary
+    TA = info_update->T1;
+    gradA[0] = info_update->grad1[0];
+    gradA[1] = info_update->grad1[1];
+    TB = info_update->T0;
+    gradB[0] = info_update->grad0[0];
+    gradB[1] = info_update->grad0[1];
+    xA[0] = triM_2D->points->x[info_update->x1_ind];
+    xA[1] = triM_2D->points->y[info_update->x1_ind];
+    xB[0] = triM_2D->points->x[info_update->indexAccepted];
+    xB[1] = triM_2D->points->y[info_update->indexAccepted];
+  }
+  // we first need to specify the feasible interval for lambda
+  // find the projection
+  t = BHat[1]*xA[0] - BHat[1]*xHat[0] - BHat[0]*xA[1] + BHat[0]*xHat[1];
+  b = BHat[0]*xB[1] - BHat[0]*xA[1] + BHat[1]*xA[0] - BHat[1]*xB[0];
+  
+  if( fabs(b)>tol){
+    // meaning that they are not close to parallel
+    lambdaIntersect = t/b;
+  }
+  else{
+    lambdaIntersect = 0;
+  }
+  // find the minimum feasible lambda
+  lambdaMax = 1;
+  if(lambdaIntersect < 0 || lambdaIntersect > 1){
+    lambdaMin = 0;
+  }
+  else {
+    lambdaMin = lambdaIntersect;
+  }
+
+  // now we can use the projected gradient descent
+  lambdaOpt = projectedGradient_freeSpace(lambdaMin, lambdaMin, lambdaMax, TA, gradA, TB, gradB, xA, xB, xHat, 0.0000001, 50, indexRef); // optimal lambda from xA to xB
+
+  if(anchorOnBoundary == 0){
+    info_update->lambda = lambdaOpt;
+  }
+  else{
+    info_update->lambda = 1 - lambdaOpt;
+  }
+
+  info_update->THat = fobjective_freeSpace(lambdaOpt, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
+  
 }
 
 

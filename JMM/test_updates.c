@@ -130,44 +130,71 @@ int main()
 
     /* printf("Optimum lambda %lf", lam_opti); */
     
-    printf("\n\nTESTING FREE SPACE OPTIMIZATION - PROJECTED GRADIENT DESCENT\n\n");
+    /* printf("\n\nTESTING FREE SPACE OPTIMIZATION - PROJECTED GRADIENT DESCENT\n\n"); */
     
-    double lambda0, lambdaMin, lambdaMax, TA, gradA[2], TB, gradB[2], xA[2], xB[2], xHat[2], tol, maxIter, indexRef, lamOpti;
-    double fObj, derObj;
+    /* double lambda0, lambdaMin, lambdaMax, TA, gradA[2], TB, gradB[2], xA[2], xB[2], xHat[2], tol, maxIter, indexRef, lamOpti; */
+    /* double fObj, derObj; */
     
-    lambda0 = 1.0;
-    lambdaMin = 0.6;
-    lambdaMax = 1.0;
-    TA = 0.70710678;
-    gradA[0] = -0.70710678;
-    gradA[1] = 0.70710678;
-    TB = 0.70710678;
-    gradB[0] = 0.70710678;
-    gradB[1] = 0.70710678;
-    xA[0] = -1;
-    xA[1] = 1;
-    xB[0] = 1;
-    xB[1] = 1;
-    xHat[0] = 0;
-    xHat[1] = 2;
-    tol = 0.0001;
-    maxIter = 50;
+    /* lambda0 = 1.0; */
+    /* lambdaMin = 0.6; */
+    /* lambdaMax = 1.0; */
+    /* TA = 0.70710678; */
+    /* gradA[0] = -0.70710678; */
+    /* gradA[1] = 0.70710678; */
+    /* TB = 0.70710678; */
+    /* gradB[0] = 0.70710678; */
+    /* gradB[1] = 0.70710678; */
+    /* xA[0] = -1; */
+    /* xA[1] = 1; */
+    /* xB[0] = 1; */
+    /* xB[1] = 1; */
+    /* xHat[0] = 0; */
+    /* xHat[1] = 2; */
+    /* tol = 0.0001; */
+    /* maxIter = 50; */
+    /* indexRef = 1.0; */
+
+    
+
+    /* fObj = fobjective_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef); */
+    /* derObj = der_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef); */
+
+    /* printf("Starting with objective value  %lf   and derivative  %lf\n", fObj, derObj); */
+
+    /* lamOpti = projectedGradient_freeSpace(lambda0, lambdaMin, lambdaMax, TA, gradA, TB, gradB, xA, xB, xHat, tol, maxIter, indexRef); */
+
+    /* fObj = fobjective_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef); */
+    /* derObj = der_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef); */
+
+    /* printf("\nOptimum lambda found: %lf   with objective value  %lf    and derivative  %lf\n", lamOpti, fObj, derObj);  */
+
+    printf("\n\n\nTESTING FREE SPACE UPDATE, ONE ANCHOR POINT AND XHAT ON THE BOUNDARY\n\n\n");
+
+    int indexAccepted, x1_ind, xHat_ind;
+    double T0, T1, grad0[2], grad1[2], indexRef;
+
+    grad0[0] = 0.70710678;
+    grad0[1] = 0.70710678;
+    grad1[0] = 0.20485516;
+    grad1[1] = 0.9787923;
+    indexAccepted = 2;
+    x1_ind = 468;
+    xHat_ind = 1;
+    T0 = 1.4142135623730951;
+    T1 = 1.9543124768462696;
     indexRef = 1.0;
 
+    printf("T1: %lf\n", T1);
+    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef);
+
+    print_info_update(info_update);
+
+    anchorHatonBoundary_freeSpaceUpdate(eik_g1->triM_2D, info_update, 0);
+
+    print_info_update(info_update);
+
     
-
-    fObj = fobjective_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-    derObj = der_freeSpace(lambda0, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-
-    printf("Starting with objective value  %lf   and derivative  %lf\n", fObj, derObj);
-
-    lamOpti = projectedGradient_freeSpace(lambda0, lambdaMin, lambdaMax, TA, gradA, TB, gradB, xA, xB, xHat, tol, maxIter, indexRef);
-
-    fObj = fobjective_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-    derObj = der_freeSpace(lamOpti, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-
-    printf("\nOptimum lambda found: %lf   with objective value  %lf    and derivative  %lf\n", lamOpti, fObj, derObj); 
-
+    
 
     eik_grid_dealloc(&eik_g1);
 
