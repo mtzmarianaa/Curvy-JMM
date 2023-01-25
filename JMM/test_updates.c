@@ -194,54 +194,54 @@ int main()
     /* print_info_update(info_update); */
 
 
-    /* printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X0 ON THE BOUNDARY\n\n\n"); */
-
-    /* int indexAccepted, x1_ind, xHat_ind; */
-    /* double T0, T1, grad0[2], grad1[2], indexRef; */
-
-    /* grad0[0] = -0.65702763; */
-    /* grad0[1] = -0.7538665; */
-    /* grad1[0] = -0.95178913; */
-    /* grad1[1] = 0.30675307; */
-    /* indexAccepted = 1; */
-    /* x1_ind = 168; */
-    /* xHat_ind = 468; */
-    /* T0 = 1.6301719299656714; */
-    /* T1 = 0.6327956253704661; */
-    /* indexRef = 1.0; */
-
-    /* info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef); */
-
-    /* print_info_update(info_update); */
-
-    /* justx0Boundary_TwoPointUpdate(eik_g1->triM_2D, info_update); */
-
-    /* print_info_update(info_update); */
-
-
-    printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X1 ON THE BOUNDARY\n\n\n");
+    printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X0 ON THE BOUNDARY\n\n\n");
 
     int indexAccepted, x1_ind, xHat_ind;
     double T0, T1, grad0[2], grad1[2], indexRef;
 
-    grad1[0] = -0.65702763;
-    grad1[1] = -0.7538665;
-    grad0[0] = -0.95178913;
-    grad0[1] = 0.30675307;
-    indexAccepted = 168;
-    x1_ind = 1;
+    grad0[0] = -0.65702763;
+    grad0[1] = -0.7538665;
+    grad1[0] = -0.95178913;
+    grad1[1] = 0.30675307;
+    indexAccepted = 1;
+    x1_ind = 168;
     xHat_ind = 468;
-    T1 = 1.6301719299656714;
-    T0 = 0.6327956253704661;
+    T0 = 1.6301719299656714;
+    T1 = 0.6327956253704661;
     indexRef = 1.0;
 
     info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef);
 
     print_info_update(info_update);
 
-    justx1Boundary_TwoPointUpdate(eik_g1->triM_2D, info_update);
+    justx0Boundary_TwoPointUpdate(eik_g1->triM_2D, info_update);
 
     print_info_update(info_update);
+
+
+    /* printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X1 ON THE BOUNDARY\n\n\n"); */
+
+    /* int indexAccepted, x1_ind, xHat_ind; */
+    /* double T0, T1, grad0[2], grad1[2], indexRef; */
+
+    /* grad1[0] = 0; */
+    /* grad1[1] = 1; */
+    /* grad0[0] = -0.84990039; */
+    /* grad0[1] = 0.52694338; */
+    /* indexAccepted = 464; */
+    /* x1_ind = 614; */
+    /* xHat_ind = 18; */
+    /* T1 = 4.742027478979956; */
+    /* T0 = 0; */
+    /* indexRef = 1.0; */
+
+    /* info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef); */
+
+    /* print_info_update(info_update); */
+
+    /* justxHatBoundary_TwoPointUpdate(eik_g1->triM_2D, info_update); */
+
+    /* print_info_update(info_update); */
     
 
     eik_grid_dealloc(&eik_g1);

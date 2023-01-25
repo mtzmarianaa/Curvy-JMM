@@ -282,7 +282,7 @@ void justx0Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_upda
   xLam[0] = (1-lambdaOpt)*x0[0] + lambdaOpt*x1[0];
   xLam[1] = (1-lambdaOpt)*x0[1] + lambdaOpt*x1[1];
   // check if it passes the test
-  vec2_subtraction(xHat, xLam, testSign);
+  vec2_subtraction(xHat, xLam,  testSign);
   B_perp[0] = triM_2D->boundary_tan[info_update->indexAccepted][1];
   B_perp[1] = -1*triM_2D->boundary_tan[info_update->indexAccepted][0];
   if (dotProd(testSign, B_perp) < 0){
@@ -335,6 +335,8 @@ void justx1Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_upda
 }
 
 void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  double xHat[2], tol, indexRef, T0, grad0[2], T1, grad1[2], x0[2], x1[2], BHat[2], B_perp[2], testSign[2], t, b, lambdaMax, lambdaMin;
+  int maxIter;
   
   xHat[0] = triM_2D->points->x[info_update->xHat_ind];
   xHat[1] = triM_2D->points->y[info_update->xHat_ind];
@@ -358,7 +360,7 @@ void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_up
   BHat[1] = triM_2D->boundary_tan[info_update->xHat_ind][1];
   B_perp[0] = triM_2D->boundary_tan[info_update->xHat_ind][1];
   B_perp[1] = -1*triM_2D->boundary_tan[info_update->xHat_ind][0];
-  vec2_subtraction(xHat, x0, testSign);
+  vec2_subtraction(x0, xHat, testSign);
   // the possible min or max of lambda
   t = BHat[1]*x0[0] - BHat[1]*xHat[0] - BHat[0]*x0[1] + BHat[0]*xHat[1];
   b = BHat[0]*x1[1] - BHat[0]*x0[1] - BHat[1]*x1[0] + BHat[1]*x0[0];
