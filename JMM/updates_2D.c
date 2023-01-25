@@ -256,8 +256,136 @@ void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D, info_updateS *inf
   
 }
 
+void justx0Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  // update for when just x0 is on the boundary
+  double T0, grad0[2], T1, grad1[2], x0[2], x1[2], xHat[2], tol, maxIter, indexRef;
+  double lambdaOpt, xLam[2], testSign[2], B_perp[2];
 
+  xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  tol = 0.00000001;
+  maxIter = 50;
+  indexRef = info_update->indexRef_01;
+  // we do normal gradient descent and if it doesnt pass the test then we don't do the update
+  T0 = info_update->T0;
+  grad0[0] = info_update->grad0[0];
+  grad0[1] = info_update->grad0[1];
+  T1 = info_update->T1;
+  grad1[0] = info_update->grad1[0];
+  grad1[1] = info_update->grad1[1];
+  x0[0] = triM_2D->points->x[info_update->indexAccepted];
+  x0[1] = triM_2D->points->y[info_update->indexAccepted];
+  x1[0] = triM_2D->points->x[info_update->x1_ind];
+  x1[1] = triM_2D->points->y[info_update->x1_ind];
+  // we do gradient descent
+  lambdaOpt = projectedGradient_freeSpace(0,0,1, T0, grad0, T1, grad1, x0, x1, xHat, tol, maxIter, indexRef);
+  xLam[0] = (1-lambdaOpt)*x0[0] + lambdaOpt*x1[0];
+  xLam[1] = (1-lambdaOpt)*x0[1] + lambdaOpt*x1[1];
+  // check if it passes the test
+  vec2_subtraction(xHat, xLam, testSign);
+  B_perp[0] = triM_2D->boundary_tan[info_update->indexAccepted][1];
+  B_perp[1] = -1*triM_2D->boundary_tan[info_update->indexAccepted][0];
+  if (dotProd(testSign, B_perp) < 0){
+    info_update->lambda = -1;
+  }
+  else{
+    info_update->lambda = lambdaOpt;
+    info_update->THat = fobjective_freeSpace(lambdaOpt, T0, grad0, T1, grad1, x0, x1, xHat, indexRef);
+  }
+  
+}
 
+void justx1Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  // update for when just x0 is on the boundary
+  double T0, grad0[2], T1, grad1[2], x0[2], x1[2], xHat[2], tol, maxIter, indexRef;
+  double lambdaOpt, xLam[2], testSign[2], B_perp[2];
 
+  xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  tol = 0.00000001;
+  maxIter = 50;
+  indexRef = info_update->indexRef_01;
+  // we do normal gradient descent and if it doesnt pass the test then we don't do the update
+  T0 = info_update->T0;
+  grad0[0] = info_update->grad0[0];
+  grad0[1] = info_update->grad0[1];
+  T1 = info_update->T1;
+  grad1[0] = info_update->grad1[0];
+  grad1[1] = info_update->grad1[1];
+  x0[0] = triM_2D->points->x[info_update->indexAccepted];
+  x0[1] = triM_2D->points->y[info_update->indexAccepted];
+  x1[0] = triM_2D->points->x[info_update->x1_ind];
+  x1[1] = triM_2D->points->y[info_update->x1_ind];
+  // we do gradient descent
+  lambdaOpt = projectedGradient_freeSpace(0,0,1, T0, grad0, T1, grad1, x0, x1, xHat, tol, maxIter, indexRef);
+  xLam[0] = (1-lambdaOpt)*x0[0] + lambdaOpt*x1[0];
+  xLam[1] = (1-lambdaOpt)*x0[1] + lambdaOpt*x1[1];
+  // check if it passes the test
+  vec2_subtraction(xHat, xLam, testSign);
+  B_perp[0] = triM_2D->boundary_tan[info_update->x1_ind][1];
+  B_perp[1] = -1*triM_2D->boundary_tan[info_update->x1_ind][0];
+  if (dotProd(testSign, B_perp) < 0){
+    info_update->lambda = -1;
+  }
+  else{
+    info_update->lambda = lambdaOpt;
+    info_update->THat = fobjective_freeSpace(lambdaOpt, T0, grad0, T1, grad1, x0, x1, xHat, indexRef);
+  }
+  
+}
+
+void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  
+  xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  tol = 0.00000001;
+  maxIter = 50;
+  indexRef = info_update->indexRef_01;
+  // we do normal gradient descent and if it doesnt pass the test then we don't do the update
+  T0 = info_update->T0;
+  grad0[0] = info_update->grad0[0];
+  grad0[1] = info_update->grad0[1];
+  T1 = info_update->T1;
+  grad1[0] = info_update->grad1[0];
+  grad1[1] = info_update->grad1[1];
+  x0[0] = triM_2D->points->x[info_update->indexAccepted];
+  x0[1] = triM_2D->points->y[info_update->indexAccepted];
+  x1[0] = triM_2D->points->x[info_update->x1_ind];
+  x1[1] = triM_2D->points->y[info_update->x1_ind];
+
+  // check if the problem is with x0
+  BHat[0] = triM_2D->boundary_tan[info_update->xHat_ind][0];
+  BHat[1] = triM_2D->boundary_tan[info_update->xHat_ind][1];
+  B_perp[0] = triM_2D->boundary_tan[info_update->xHat_ind][1];
+  B_perp[1] = -1*triM_2D->boundary_tan[info_update->xHat_ind][0];
+  vec2_subtraction(xHat, x0, testSign);
+  // the possible min or max of lambda
+  t = BHat[1]*x0[0] - BHat[1]*xHat[0] - BHat[0]*x0[1] + BHat[0]*xHat[1];
+  b = BHat[0]*x1[1] - BHat[0]*x0[1] - BHat[1]*x1[0] + BHat[1]*x0[0];
+  if( dotProd(testSign, B_perp)<0){
+    // then we might have a problem with x0
+    lambdaMax = 1;
+    if (t/b > 0 & t/b < 1){
+      lambdaMin = t/b;
+    }
+    else {
+      lambdaMin = 0;
+    }
+  }
+  else {
+    // then we might have a problem with x1
+    lambdaMin = 0;
+    if (t/b > 0 & t/b < 1){
+      lambdaMax = t/b;
+    }
+    else {
+      lambdaMax = 1;
+    }
+  }
+  // then we have a projected gradient descent with modified
+  // feasible interval for lambda
+  info_update->lambda = projectedGradient_freeSpace(lambdaMin, lambdaMin, lambdaMax, T0, grad0, T1, grad1, x0, x1, xHat, tol, maxIter, indexRef);
+  info_update->THat = fobjective_freeSpace(info_update->lambda, T0, grad0, T1, grad1, x0, x1, xHat, indexRef);
+}
 
 

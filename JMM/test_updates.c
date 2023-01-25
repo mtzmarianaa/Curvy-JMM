@@ -168,32 +168,80 @@ int main()
 
     /* printf("\nOptimum lambda found: %lf   with objective value  %lf    and derivative  %lf\n", lamOpti, fObj, derObj);  */
 
-    printf("\n\n\nTESTING FREE SPACE UPDATE, ONE ANCHOR POINT AND XHAT ON THE BOUNDARY\n\n\n");
+    /* printf("\n\n\nTESTING FREE SPACE UPDATE, ONE ANCHOR POINT AND XHAT ON THE BOUNDARY\n\n\n"); */
+
+    /* int indexAccepted, x1_ind, xHat_ind; */
+    /* double T0, T1, grad0[2], grad1[2], indexRef; */
+
+    /* grad0[0] = 0.70710678; */
+    /* grad0[1] = 0.70710678; */
+    /* grad1[0] = 0.20485516; */
+    /* grad1[1] = 0.9787923; */
+    /* indexAccepted = 2; */
+    /* x1_ind = 468; */
+    /* xHat_ind = 1; */
+    /* T0 = 1.4142135623730951; */
+    /* T1 = 1.9543124768462696; */
+    /* indexRef = 1.0; */
+
+    /* printf("T1: %lf\n", T1); */
+    /* info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef); */
+
+    /* print_info_update(info_update); */
+
+    /* anchorHatonBoundary_freeSpaceUpdate(eik_g1->triM_2D, info_update, 0); */
+
+    /* print_info_update(info_update); */
+
+
+    /* printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X0 ON THE BOUNDARY\n\n\n"); */
+
+    /* int indexAccepted, x1_ind, xHat_ind; */
+    /* double T0, T1, grad0[2], grad1[2], indexRef; */
+
+    /* grad0[0] = -0.65702763; */
+    /* grad0[1] = -0.7538665; */
+    /* grad1[0] = -0.95178913; */
+    /* grad1[1] = 0.30675307; */
+    /* indexAccepted = 1; */
+    /* x1_ind = 168; */
+    /* xHat_ind = 468; */
+    /* T0 = 1.6301719299656714; */
+    /* T1 = 0.6327956253704661; */
+    /* indexRef = 1.0; */
+
+    /* info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef); */
+
+    /* print_info_update(info_update); */
+
+    /* justx0Boundary_TwoPointUpdate(eik_g1->triM_2D, info_update); */
+
+    /* print_info_update(info_update); */
+
+
+    printf("\n\n\nTESTING FREE SPACE UPDATE, JUST X1 ON THE BOUNDARY\n\n\n");
 
     int indexAccepted, x1_ind, xHat_ind;
     double T0, T1, grad0[2], grad1[2], indexRef;
 
-    grad0[0] = 0.70710678;
-    grad0[1] = 0.70710678;
-    grad1[0] = 0.20485516;
-    grad1[1] = 0.9787923;
-    indexAccepted = 2;
-    x1_ind = 468;
-    xHat_ind = 1;
-    T0 = 1.4142135623730951;
-    T1 = 1.9543124768462696;
+    grad1[0] = -0.65702763;
+    grad1[1] = -0.7538665;
+    grad0[0] = -0.95178913;
+    grad0[1] = 0.30675307;
+    indexAccepted = 168;
+    x1_ind = 1;
+    xHat_ind = 468;
+    T1 = 1.6301719299656714;
+    T0 = 0.6327956253704661;
     indexRef = 1.0;
 
-    printf("T1: %lf\n", T1);
     info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef);
 
     print_info_update(info_update);
 
-    anchorHatonBoundary_freeSpaceUpdate(eik_g1->triM_2D, info_update, 0);
+    justx1Boundary_TwoPointUpdate(eik_g1->triM_2D, info_update);
 
     print_info_update(info_update);
-
-    
     
 
     eik_grid_dealloc(&eik_g1);

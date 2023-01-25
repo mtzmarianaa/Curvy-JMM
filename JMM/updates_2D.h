@@ -42,4 +42,10 @@ void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update
 
 void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update, int anchorOnBoundary);
 
+void justx0Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+
+void justx1Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+
+void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+
 
