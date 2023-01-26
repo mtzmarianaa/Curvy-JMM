@@ -245,30 +245,63 @@ int main()
 
 
 
-    printf("\n\n\nTESTING FREE SPACE UPDATE, JUST XHAT ON THE BOUNDARY\n\n\n");
+    /* printf("\n\n\nTESTING FREE SPACE UPDATE, JUST XHAT ON THE BOUNDARY\n\n\n"); */
 
-    int indexAccepted, x1_ind, xHat_ind;
-    double T0, T1, grad0[2], grad1[2], indexRef;
+    /* int indexAccepted, x1_ind, xHat_ind; */
+    /* double T0, T1, grad0[2], grad1[2], indexRef; */
 
-    grad0[0] = 0;
-    grad0[1] = 1;
-    grad1[0] = -0.84990039;
-    grad1[1] = 0.52694338;
-    indexAccepted = 614;
-    x1_ind = 464;
-    xHat_ind = 18;
-    T0 = 4.742027478979956;
-    T1 = 0;
-    indexRef = 1.0;
+    /* grad0[0] = 0; */
+    /* grad0[1] = 1; */
+    /* grad1[0] = -0.84990039; */
+    /* grad1[1] = 0.52694338; */
+    /* indexAccepted = 614; */
+    /* x1_ind = 464; */
+    /* xHat_ind = 18; */
+    /* T0 = 4.742027478979956; */
+    /* T1 = 0; */
+    /* indexRef = 1.0; */
 
-    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef);
+    /* info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef); */
 
-    print_info_update(info_update);
+    /* print_info_update(info_update); */
 
-    justxHatBoundary_TwoPointUpdate(eik_g1->triM_2D, info_update);
+    /* justxHatBoundary_TwoPointUpdate(eik_g1->triM_2D, info_update); */
 
-    print_info_update(info_update);
-    
+    /* print_info_update(info_update); */
+
+    printf("TESTING FUNCTIONS RELATED TO A TWO STEP UPDATE");
+
+    double gradient[2], lambda, mu, T0, grad0[2], T1, grad1[2], x0[2], x1[2], x2[2], xHat[2], B0[2], B2[2];
+    double indexRef_01, indexRef_02, optimizers[2], grad_f[2];
+
+    lambda = 0.3;
+    mu = 0.2;
+    T0 = 1.4;
+    grad0[0] = 0.4472136;
+    grad0[1] = 0.89442719;
+    grad1[0] = -0.89442719;
+    grad1[1] = 0.4472136;
+    T1 = 1.6;
+    x0[0] = 0;
+    x0[1] = 0;
+    x1[0] = -3;
+    x1[1] = 1;
+    x2[0] = 0;
+    x2[1] = 0.3;
+    xHat[0] = 0.3;
+    xHat[1] = 2.5;
+    B0[0] = 0.01;
+    B0[1] = 1;
+    B2[0] = 0.1;
+    B2[1] = 0.8;
+    indexRef_01 = 1;
+    indexRef_02 = 1.6;
+
+    projectedGradient_TwoStep(optimizers, 0, 1, 0, 1, T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02, 0.000001, 50);
+
+    printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]);
+
+	   
 
     eik_grid_dealloc(&eik_g1);
 
