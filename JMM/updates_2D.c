@@ -390,4 +390,40 @@ void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_up
   info_update->THat = fobjective_freeSpace(info_update->lambda, T0, grad0, T1, grad1, x0, x1, xHat, indexRef);
 }
 
+void twoStepUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
+  // two step update when there is a change in region
+  double x0[2], x1[2], x2[2], xHat[2], T0, grad0[2], T1, grad1[2], indexRef_01, indexRef_02, optimizers[2], B0[2], B2[2], tol;
+  int maxIter;
 
+    xHat[0] = triM_2D->points->x[info_update->xHat_ind];
+  xHat[1] = triM_2D->points->y[info_update->xHat_ind];
+  tol = 0.00000001;
+  maxIter = 50;
+  indexRef = info_update->indexRef_01;
+  // we do normal gradient descent and if it doesnt pass the test then we don't do the update
+  T0 = info_update->T0;
+  grad0[0] = info_update->grad0[0];
+  grad0[1] = info_update->grad0[1];
+  T1 = info_update->T1;
+  grad1[0] = info_update->grad1[0];
+  grad1[1] = info_update->grad1[1];
+  x0[0] = triM_2D->points->x[info_update->indexAccepted];
+  x0[1] = triM_2D->points->y[info_update->indexAccepted];
+  x1[0] = triM_2D->points->x[info_update->x1_ind];
+  x1[1] = triM_2D->points->y[info_update->x1_ind];
+  x2[0] = triM_2D->points->x[info_update->x2_ind];
+  x2[1] = triM_2D->points->y[info_update->x2_ind];
+  B0[0] = triM_2D->boundary_tan[info_update->indexAccepted][0];
+  B0[1] = triM_2D->boundary_tan[info_update->indexAccepted][1];
+  B2[0] = triM_2D->boundary_tan[info_update->x2_ind][0];
+  B2[1] = triM_2D->boundary_tan[info_update->x2_ind][1];
+
+  projectedGradient_TwoStep(optimizers, 0, 1, 0, 1, T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02, tol, maxIter);
+
+  info_update->lambda = optimizers[0];
+  info_update->mu = optimizers[1];
+  info_update->That = fobjective_TwoStep(optimizers[0], optimizers[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
+  
+
+}
+  
