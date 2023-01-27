@@ -15,6 +15,7 @@ typedef struct eik_grid {
   int (*parents_path)[3]; // this are the two parent nodes (their indices) from which each node has been updated
   double *lambdas; // lambdas from which (using the two parents) the node was updated
   double *mus; // mus from the two step update (if needed)
+  int *type_update; // type of update used for that node
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
@@ -23,23 +24,34 @@ void eik_grid_dealloc(eik_gridS **eik_g );
 
 void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_2D);
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions, char const *pathBoundaryTan, char const *pathBoundaryChain);
+void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints,
+			   char const *pathNeighbors, char const *pathIncidentFaces,
+			   char const *pathFaces, char const *pathIndexRegions,
+			   char const *pathBoundaryTan, char const *pathBoundaryChain);
 
 void printGeneralInfo(eik_gridS *eik_g);
 
 void printAllInfoMesh(eik_gridS *eik_g);
 
+void initializePointsNear(eik_gridS *eik_g, double rBall);
+
+void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2],
+				double parameterization, double indexRefraction, double grad[2]);
+
+void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1,
+			 double param, double TFound, double indexRefraction, int typeUpdate);
+
+void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1,
+			  int parent2, double lambda, double mu, double TFound,
+			  double indexRefraction, int typeUpdate);
+
+
+
+
 void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double T1, double indexRef, double *That2, double *lambda);
 
 void twoStepUpdate(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1, double indexRef_01, double indexRef_02, double *That_step2, double *lambda, double *mu);
 
-void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]);
-
-void initializePointsNear(eik_gridS *eik_g, double rBall);
-
-void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent1, int parent2, double param, double TFound, double indexRefraction);
-
-void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1, int parent2, double lambda, double mu, double TFound, double indexRefraction);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted);
 

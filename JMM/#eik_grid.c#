@@ -295,12 +295,39 @@ void addNeightbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
 	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind);
 	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update);
+	    fromBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
 	    if(info_update->That < eik_g->eik_vals[xHat_ind]){
 	      // we just found a better update
 	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 2);
 	    }
 	  }
+
+	  // CASE 3.1: x0 and xHat are on the boundary, x1 is NOT on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 0);
+	    if(info_update->That < eik_g->eik_vals[xHat_ind]){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 3);
+	    }
+	  }
+
+	  // CASE 3.2: x1 and xHat are on the boundary, x0 is NOT on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 1);
+	    if(info_update->That < eik_g->eik_vals[xHat_ind]){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 3);
+	    }
+	  }
+
 
 	  // Otherwise we need to see if the region changes or not
 	  infoTwoPartUpdate *infoOut;

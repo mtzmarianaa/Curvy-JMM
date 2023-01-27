@@ -26,28 +26,34 @@ void info_update_alloc(info_updateS **info_update);
 
 void info_update_dealloc(info_updateS **info_update);
 
-void info_update_init(info_updateS *info_update, int indexAccepted, int x1_ind, int x2_ind, int xHat_ind, double T0, double grad0[2], double T1, double grad1[2], double indexRef_01, double indexRef_02);
+void info_update_init(info_updateS *info_update, int indexAccepted, int x1_ind,
+		      int x2_ind, int xHat_ind, double T0, double grad0[2], double T1,
+		      double grad1[2], double indexRef_01, double indexRef_02);
 
-void info_update_initCr(info_updateS *info_update, int indexAccepted, int xHat_ind, double T0, double indexMin);
+void info_update_initCr(info_updateS *info_update, int indexAccepted, int xHat_ind,
+			double T0, double indexMin);
 
-void info_update_initTwo(info_updateS *info_update, int indexAccepted, int x1_ind, int xHat_ind, double T0, double grad0[2], double T1, double grad1[2], double indexRef);
+void info_update_initTwo(info_updateS *info_update, int indexAccepted,
+			 int x1_ind, int xHat_ind, double T0, double grad0[2],
+			 double T1, double grad1[2], double indexRef);
 
 void print_info_update(info_updateS *info_update);
 
-void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 1
 
-void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 3
 
-void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 2
 
-void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update, int anchorOnBoundary);
+void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D,
+					 info_updateS *info_update, int anchorOnBoundary); // update 4
 
-void justx0Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void justx0Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); //  update 5
 
-void justx1Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void justx1Boundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 6
 
-void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void justxHatBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 7
 
-void twoStepUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update);
+void twoStepUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 8
 
 
