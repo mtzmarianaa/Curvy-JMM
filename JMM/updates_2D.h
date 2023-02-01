@@ -39,11 +39,11 @@ void info_update_initTwo(info_updateS *info_update, int indexAccepted,
 
 void print_info_update(info_updateS *info_update);
 
-void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 1
+void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 2
 
-void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 3
+void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 1
 
-void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 2
+void fromBoundary_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update); // update 3
 
 void anchorHatonBoundary_freeSpaceUpdate(triMesh_2Ds *triM_2D,
 					 info_updateS *info_update, int anchorOnBoundary); // update 4

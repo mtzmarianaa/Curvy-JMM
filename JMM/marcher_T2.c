@@ -13,7 +13,7 @@ void marcher_T2( eik_gridS *eik_g, double rBall){
         // printf("\n\n\n New iteration \n\n\n");
         // printf("There are still %d in the queue \n", nStillInQueue(eik_g));
         // printf("The minimum index is at %d\n", currentMinInd);
-        popAddNeighborsCubic(eik_g);
+        popAddNeighbors(eik_g);
         // printGeneralInfo(eik_g);
     }
     // printGeneralInfo(eik_g);

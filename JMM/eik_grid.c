@@ -245,7 +245,7 @@ void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, i
 
 
 
-void addNeightbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
+void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
   // after accepting a point (the point with minimum current eikonal value that is on the priority queue)
   // we proceed to update its neighbors that aren't set to valid at this point in the iteration.
   // one point updates are skipped (since we have initialized points near the source)
@@ -254,6 +254,8 @@ void addNeightbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
   double pi, T0, T1, indexRef_01, indexRef_02, grad0[2], grad1[2];
   info_updateS *info_update;
   info_update_alloc(&info_update);
+  infoTwoPartUpdate *infoOut;
+  infoTwoPartUpdate_alloc(&infoOut);
   // get the information we need
   pi = acos(-1.0);
   nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
@@ -275,8 +277,21 @@ void addNeightbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	  grad1[0] = eik_g->eik_grad[x1_ind][0]; // information of the eikonal at x1
 	  grad1[1] = eik_g->eik_grad[x1_ind][1];
 	  // HERE IS WHERE WE CONSIDER ALL THE POSSIBLE TYPES OF UPDATES
+
+	  // CASE 1: none of the points involved in this update are on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    simple_TwoPointUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 1);
+	    }
+	  }
 	  
-	  // CASE 1: creeping ray update
+	  // CASE 2: creeping ray update
 	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
 	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
 	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
@@ -285,285 +300,168 @@ void addNeightbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    creepingUpdate(eik_g->triM_2D, info_update); // compute the possible update
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
 	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, 0, info_update->THat, indexRef_01, 1);
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, 0, info_update->THat, indexRef_01, 2);
 	    }
 	  }
 
-	  // CASE 2: x0 and x1 are on the boundary, xHat is NOT on the boundary
+
+	  // CASE 3: x0 and x1 are on the boundary, xHat is NOT on the boundary
 	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
 	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
 	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
 	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind);
 	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->That < eik_g->eik_vals[xHat_ind]){
+	    fromBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
 	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 2);
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 3);
 	    }
 	  }
 
+	  // CASE 4.1: X1 AND XHAT ARE ON THE BOUNDARY, x0 is not on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 1);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
+	    }
+	  }
+
+	  // CASE 6: just x1 is on the boundary, x0 and xHat are not on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    justx1Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
+	    }
+	  }
+
+	  
+	  // CASE 7: just xHat is on the boundary, x0 and x1 are not on the boundary
+	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
+	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
+	    justxHatBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+	      // we just found a better update
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 7);
+	    }
+	  }
+
+	  //////////
 	  // Otherwise we need to see if the region changes or not
-	  infoTwoPartUpdate *infoOut;
-	  infoTwoPartUpdate_alloc(&infoOut);
 	  // First direction
 	  pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
 	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
 	    // this means that there is no change in region and since the angle is smaller than pi we
 	    // can build a straight line from x0x1 to xHat
+
+	    // CASE 4.2: x0 and xHat are on the boundary, x1 is not on the boundary
+	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
+	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	       eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	      indexRef_01 = infoOut->indexRef_01;
+	      anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 0);
+	      if(info_update->THat <  eik_g->eik_vals[xHat_ind]){
+		// we've found a better update
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
+	      }
+	    }
+
+	    // CASE 5: just x0 on the boundary, x1 and xHat are not on the boundary
+	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
+	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	       eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
+	      indexRef_01 = infoOut->indexRef_01;
+	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
+	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+		// we've found a better update
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
+	      }
+	    }
+	    
+	  }
+
+	  else if(infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat)<= pi & eik_g->current_states[infoOut->xChange_ind] == 0){
+	    // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and x0x2 to x0xHat and x2 is set as far (otherwise it would make no sense to waste resources to make a two step update
+	    x2_ind = infoOut->xChange_ind;
+	    indexRef_01 = infoOut->indexRef_01;
+	    indexRef_02 = infoOut->indexRef_02;
+	    info_update_init(info_update, indexAccepted, x1_ind, x2_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01, indexRef_02);
+	    twoStepUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+	      // we've found a better update
+	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 8);
+	    }
+	  }
+
+	  // Second direction 
+	  pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
+	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
+	    // this means that there is no change in region and since the angle is smaller than pi we
+	    // can build a straight line from x0x1 to xHat
+
+	    // CASE 4.2: x0 and xHat are on the boundary, x1 is not on the boundary
+	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
+	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	       eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
+	      indexRef_01 = infoOut->indexRef_01;
+	      anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 0);
+	      if(info_update->THat <  eik_g->eik_vals[xHat_ind]){
+		// we've found a better update
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
+	      }
+	    }
+
+	    // CASE 5: just x0 on the boundary, x1 and xHat are not on the boundary
+	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
+	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
+	       eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
+	      indexRef_01 = infoOut->indexRef_01;
+	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
+	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+		// we've found a better update
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
+	      }
+	    }
+	    
+	  }
+
+	  else if(infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat)<= pi & eik_g->current_states[infoOut->xChange_ind] == 0){
+	    // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and x0x2 to x0xHat and x2 is set as far (otherwise it would make no sense to waste resources to make a two step update
+	    x2_ind = infoOut->xChange_ind;
+	    indexRef_01 = infoOut->indexRef_01;
+	    indexRef_02 = infoOut->indexRef_02;
+	    info_update_init(info_update, indexAccepted, x1_ind, x2_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01, indexRef_02);
+	    twoStepUpdate(eik_g->triM_2D, info_update);
+	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
+	      // we've found a better update
+	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 8);
+	    }
 	  }
 	}
       }
     }
   }
-}
-
-
-
-/*           // first we need to know if its going to be a simple update or a two step update */
-/*           infoTwoPartUpdate *infoOut; */
-/*           infoTwoPartUpdate_alloc(&infoOut); */
-
-/*           // FIRST DIRECTION */
-/*           pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut); */
-/*           // two options, either it changes region or it doesn't but we much watch out for the angles here */
-/*           if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){ */
-/*             // this means that there is no change in direction + we can build a straight line from x0x1 to xHat */
-/*             // printf("\n\nThere is no change in index of refraction, trying a simple update\n"); */
-/*             simple_UpdateCubic(eik_g, x0, x1, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &currentTHat, &lambda); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){ */
-/*             // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat */
-/*             // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n"); */
-/*             x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind]; */
-/*             x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind]; */
-/*             twoStepUpdateCubic(eik_g, x0, x1, x2, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &infoOut->indexRef_02, &currentTHat, &lambda, &mu); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with mu: %fl\n", param); */
-/*               updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-
-/*           // GO ON THE OTHER DIRECTION */
-/*           pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut); */
-/*           // two options, either it changes region or it doesn't but we much watch out for the angles here */
-/*           if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){ */
-/*             // this means that there is no change in direction + we can build a straight line from x0x1 to xHat */
-/*             // printf("\n\nThere is no change in index of refraction, trying a simple update\n"); */
-/*             simple_UpdateCubic(eik_g, x0, x1, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &currentTHat, &lambda); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with lamdba: %fl\n", param); */
-/*               updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){ */
-/*             // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat */
-/*             // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n"); */
-/*             x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind]; */
-/*             x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind]; */
-/*             twoStepUpdateCubic(eik_g, x0, x1, x2, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &infoOut->indexRef_02, &currentTHat, &lambda, &mu); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with mu: %fl\n", param); */
-/*               updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           infoTwoPartUpdate_dalloc(&infoOut); // deallocate this struct */
-/*         } */
-/*       } */
-/*     } */
-/*   } */
-/* } */
-
-/* void popAddNeighborsCubic(eik_gridS *eik_g){ */
-/*   // int nNeighs; */
-/*   int minIndex = indexRoot(eik_g->p_queueG); */
-/*   // double minEikVal = valueRoot(eik_g->p_queueG); */
-/*   // printf("Initially the queue looks like this: \n"); */
-/*   // printeik_queue(eik_g->p_queueG); */
-/*   // printf("\n"); */
-/*   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue */
-/*   // printf("We've eliminated the root from the queue successfully\n"); */
-/*   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid */
-/*   // printf("We've updated the current state of %d to valid\n", minIndex); */
-/*   addNeighbors_fromAcceptedCubic(eik_g, minIndex); // add neighbors from the recently accepted index */
-/*   // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]); */
-/*   // printf("Its neighbors are: \n"); */
-/*   // nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index */
-/*   // for(int i=0; i<nNeighs; i++){ */
-/*   //   printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] ); */
-/*   // } */
-/*   // printf("\n"); */
-/*   // for(int i=0; i<nNeighs; i++){ */
-/*   //   printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] ); */
-/*   // } */
-/*   // printf("\n"); */
-/* } */
-
-
-
-
-
-
-
-
-
-
-
-
-void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double T1, double indexRef, double *That2, double *lambda) {
-  // this is a simple two point update, meaning that there are no change in regions considered
-  // uses optimization to find xLam, which is on the line defined from x0 to x1 parametrized by lambda
-
-  // first we find the optimal lambda
-  double tol, lambda0, lambda1;
-  int maxIter;
-  tol = 0.00001;
-  maxIter = 30;
-  lambda0 = 0;
-  lambda1 = 1;
-
-  *lambda = secant_2D(lambda0, lambda1, T0, T1, x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
-  // compute the approximation to That2
-  *That2 = eikApproxLin(T0, T1, *lambda, x0, x1, xHat, indexRef);
-
-}
-
-void twoStepUpdate(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1, double indexRef_01, double indexRef_02, double *That_step2, double *lambda, double *mu){
-  // a two step update, there is a change of the index of refraction from indexRef_01 to indexRef_02 from the triangles
-  // x2 x0 x1 to the triangle xHat x0 x2
-  double tol, optimizers[2];
-  int maxIter;
-  tol = 0.00001;
-  maxIter = 30;
-  // we use the projected gradient descent method to get both lambda and mu optimal
-  projectedGradientDescent(optimizers, T0, T1, x0, x1, x2, xHat, tol, maxIter, indexRef_01, indexRef_02);
-  // use them to get the minimum path and the approximated eikonal
-  *That_step2 = eikApproxLin_2Regions(T0, T1, optimizers[0], optimizers[1], x0, x1, x2, xHat, indexRef_01, indexRef_02);
-  // and extract the optimal mu from the optimizers found (we're going to use this to approximate the gradient)
-  *lambda = optimizers[0];
-  *mu = optimizers[1];
-}
-
-void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]) {
-  // given two points in a base with its corresponding parameterization we approximate the gradient of the Eikonal
-  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase, direction[2];
-  MinParametrization = 1 - parameterization;
-  scalar_times_2vec( MinParametrization, x0, xBasePart1 );
-  scalar_times_2vec( parameterization, x1, xBasePart2 );
-  vec2_addition( xBasePart1, xBasePart2, xBase );
-  vec2_subtraction(xHat, xBase, direction);
-  normBase = l2norm(direction);
-  grad[0] = indexRefraction*direction[0]/normBase;
-  grad[1] = indexRefraction*direction[1]/normBase;
+  info_update_dealloc(&info_update);
+  infoTwoPartUpdate_dalloc(&infoOut); // deallocate the useful structs
 }
 
 
 
 
-void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
-  // from the point indexAccepted which was recently set to valid we update its neighbors that are not set to valid
-  // one point updates are skipped (since we have initialized points near the source we don't need one point updates
-  // anymore. This function manages all the cases (if its a simple update or a two step update,
-  int nNeis, x1_ind, xHat_ind;
-  double x0[2], x1[2], x2[2], xHat[2], pi, currentTHat, param, T0, T1, lambda, mu;
-  pi = acos(-1.0);
-  nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
-  x0[0] = eik_g->triM_2D->points->x[indexAccepted];
-  x0[1] = eik_g->triM_2D->points->y[indexAccepted];
-  T0 = eik_g->eik_vals[indexAccepted];
-  // printf("\n\n\nAdding neighbors from index accepted %d, with coordinates (%fl,   %fl)\n\n", indexAccepted, x0[0], x0[1]);
-  for( int i = 0; i < nNeis; i++ ){
-    // iterate on the possible xHats
-    xHat_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[i];
-    if( eik_g->current_states[xHat_ind] != 2 ){
-      // we can only update those neighbors that are not valid at the moment
-      xHat[0] = eik_g->triM_2D->points->x[xHat_ind];
-      xHat[1] = eik_g->triM_2D->points->y[xHat_ind];
-      // printf("The coordinates of xHat: %d    are    (%fl, %fl)\n", xHat_ind, xHat[0], xHat[1]);
-      for( int j = 0; j < nNeis; j++ ){
-        x1_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[j];
-        // printf("\nFrom x0 (index accepted): %d we are considering x1: %d   to update xHat:  %d\n\n", indexAccepted, x1_ind, xHat_ind);
-        T1 = eik_g->eik_vals[x1_ind];
-        // iterate on the possible bases 
-        if( i != j & eik_g->current_states[x1_ind] == 2 ){
-          // the base should include another point different from both x0 and xHat but x1 SHOULD BE VALID
-          x1[0] =  eik_g->triM_2D->points->x[x1_ind];
-          x1[1] =  eik_g->triM_2D->points->y[x1_ind];
-          // first we need to know if its going to be a simple update or a two step update
-          infoTwoPartUpdate *infoOut;
-          infoTwoPartUpdate_alloc(&infoOut);
 
-          // FIRST DIRECTION
-          pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
-          // two options, either it changes region or it doesn't but we much watch out for the angles here
-          if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){
-            // this means that there is no change in direction + we can build a straight line from x0x1 to xHat
-            // printf("\n\nThere is no change in index of refraction, trying a simple update\n");
-            simple_Update(x0, x1, xHat, T0, T1, infoOut->indexRef_01, &currentTHat, &lambda);
-            if(currentTHat < eik_g->eik_vals[xHat_ind]){
-              // we've found a better value
-              // printf("We found a better value with lamdba: %fl\n", param);
-              updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01);
-              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
-            }
-          }
-          if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){
-            // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat
-            // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n");
-            x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind];
-            x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind];
-            twoStepUpdate(x0, x1, x2, xHat, T0, T1, infoOut->indexRef_01, infoOut->indexRef_02, &currentTHat, &lambda, &mu);
-            if(currentTHat < eik_g->eik_vals[xHat_ind]){
-              // we've found a better value
-              // printf("We found a better value with mu: %fl\n", param);
-              updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02);
-              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
-            }
-          }
 
-          // GO ON THE OTHER DIRECTION
-          pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
-          // two options, either it changes region or it doesn't but we much watch out for the angles here
-          if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){
-            // this means that there is no change in direction + we can build a straight line from x0x1 to xHat
-            // printf("\n\nThere is no change in index of refraction, trying a simple update\n");
-            simple_Update(x0, x1, xHat, T0, T1, infoOut->indexRef_01, &currentTHat, &lambda);
-            if(currentTHat < eik_g->eik_vals[xHat_ind]){
-              // we've found a better value
-              // printf("We found a better value with lamdba: %fl\n", param);
-              updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01);
-              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
-            }
-          }
-          if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){
-            // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat
-            // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n");
-            x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind];
-            x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind];
-            twoStepUpdate(x0, x1, x2, xHat, T0, T1, infoOut->indexRef_01, infoOut->indexRef_02, &currentTHat, &lambda, &mu);
-            if(currentTHat < eik_g->eik_vals[xHat_ind]){
-              // we've found a better value
-              // printf("We found a better value with mu: %fl\n", param);
-              updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02);
-              // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]);
-            }
-          }
-          infoTwoPartUpdate_dalloc(&infoOut); // deallocate this struct
-        }
-      }
-    }
-  }
-}
 
 
 void popAddNeighbors(eik_gridS *eik_g){
@@ -622,7 +520,7 @@ void saveComputedParents(eik_gridS *eik_g, const char *pathFile) {
     fp = fopen(pathFile, "wb");
     
     for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
-      fwrite(eik_g->parents_path[i], sizeof(int), 2, fp);
+      fwrite(eik_g->parents_path[i], sizeof(int), 3, fp);
     }
 
     fclose(fp);
@@ -635,185 +533,16 @@ void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile) {
   fclose(fp);
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////
-///// INTERPOLATING T(LAMBDA) WITH CUBIC HERMITE INTERPOLATION
+void saveComputedMus(eik_gridS *eik_g, const char *pathFile) {
+  FILE *fp;
+  fp = fopen(pathFile, "wb");
+  fwrite(eik_g->mus, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fclose(fp);
+}
 
-/* void simple_UpdateCubic(eik_gridS *eik_g, double x0[2], double x1[2], double xHat[2], double T0, */
-/* 			double T1, double grad0[2], double grad1[2], */
-/* 			int indexAccepted, int xHat_ind, double *indexRef, double *That2, double *lambda) { */
-/*   // this is a simple two point update, meaning that there are no change in regions considered */
-/*   // uses optimization to find xLam, which is on the line defined from x0 to x1 parametrized by lambda */
-/*   // T(xLam) is approximated using cubic hermite polynomial */
-
-/*   // first we find the optimal lambda */
-/*   double tol, lambda0, lambda1; */
-/*   int maxIter; */
-/*   tol = 0.00001; */
-/*   maxIter = 30; */
-/*   lambda0 = 0; */
-/*   lambda1 = 1; */
-
-/*   *lambda = secantCubic_2D(lambda0, lambda1, T0, T1, grad0, grad1, x0, x1, xHat, tol, maxIter, *indexRef); // optimal lambda found */
-/*   if(*lambda == 0){ */
-/*     *indexRef = s_function_threeSections(x0, regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind)); */
-/*   } */
-/*   // compute the approximation to That2 */
-/*   *That2 = eikApproxCubic(T0, T1, grad0, grad1, *lambda, x0, x1, xHat, *indexRef); */
-
-/* } */
-
-/* void twoStepUpdateCubic(eik_gridS *eik_g, double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1, */
-/* 			double grad0[2], double grad1[2], int indexAccepted, int xHat_ind, */
-/* 			double *indexRef_01, double *indexRef_02, double *That_step2, double *lambda, double *mu){ */
-/*   // a two step update, there is a change of the index of refraction from indexRef_01 to indexRef_02 from the triangles */
-/*   // x2 x0 x1 to the triangle xHat x0 x2 */
-/*   double tol, optimizers[2]; */
-/*   int maxIter; */
-/*   tol = 0.00001; */
-/*   maxIter = 30; */
-/*   // we use the projected gradient descent method to get both lambda and mu optimal */
-/*   projectedGradientDescentCubic(optimizers, T0, T1, grad0, grad1, x0, x1, x2, xHat, tol, maxIter, *indexRef_01, *indexRef_02); */
-/*   // use them to get the minimum path and the approximated eikonal USING CUBIC INTERPOLATION */
-/*   // notice that if both mu and lambda are zero then it means that we have an update via the edge */
-/*   // in this particular case we need to consider the smallest index of refraction between the two areas */
-/*   if( optimizers[0] == 0 & optimizers[1] == 0){ */
-/*     *indexRef_01 = s_function_threeSections(x0, regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind)); */
-/*     *indexRef_02 = s_function_threeSections(x0, regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind)); */
-/*   } */
-/*   *That_step2 = eikApproxCubic_2Regions(T0, T1, grad0, grad1, optimizers[0], optimizers[1], x0, x1, x2, xHat, *indexRef_01, *indexRef_02); */
-/*   // and extract the optimal mu from the optimizers found (we're going to use this to approximate the gradient) */
-/*   *lambda = optimizers[0]; */
-/*   *mu = optimizers[1]; */
-/* } */
-
-
-
-/* void addNeighbors_fromAcceptedCubic(eik_gridS *eik_g, int indexAccepted) { */
-/*   // from the point indexAccepted which was recently set to valid we update its neighbors that are not set to valid */
-/*   // one point updates are skipped (since we have initialized points near the source we don't need one point updates */
-/*   // anymore. This function manages all the cases (if its a simple update or a two step update, */
-/*   int nNeis, x1_ind, xHat_ind; */
-/*   double x0[2], x1[2], x2[2], xHat[2], pi, currentTHat, lambda, mu, T0, T1, grad0[2], grad1[2]; */
-/*   double indexRef_01, indexRef_02; */
-/*   pi = acos(-1.0); */
-/*   nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update */
-/*   x0[0] = eik_g->triM_2D->points->x[indexAccepted]; */
-/*   x0[1] = eik_g->triM_2D->points->y[indexAccepted]; */
-/*   // since we are interpolating T(xlambda) with a cubir polynomial we also need the */
-/*   // computed gradient of T at x0 */
-/*   grad0[0] = eik_g->eik_grad[indexAccepted][0]; */
-/*   grad0[1] = eik_g->eik_grad[indexAccepted][1]; */
-/*   T0 = eik_g->eik_vals[indexAccepted]; */
-/*   // printf("\n\n\nAdding neighbors from index accepted %d, with coordinates (%fl,   %fl)\n\n", indexAccepted, x0[0], x0[1]); */
-/*   for( int i = 0; i < nNeis; i++ ){ */
-/*     // iterate on the possible xHats */
-/*     xHat_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[i]; */
-/*     if( eik_g->current_states[xHat_ind] != 2 ){ */
-/*       // we can only update those neighbors that are not valid at the moment */
-/*       xHat[0] = eik_g->triM_2D->points->x[xHat_ind]; */
-/*       xHat[1] = eik_g->triM_2D->points->y[xHat_ind]; */
-/*       // printf("The coordinates of xHat: %d    are    (%fl, %fl)\n", xHat_ind, xHat[0], xHat[1]); */
-/*       for( int j = 0; j < nNeis; j++ ){ */
-/*         x1_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[j]; */
-/*         // printf("\nFrom x0 (index accepted): %d we are considering x1: %d   to update xHat:  %d\n\n", indexAccepted, x1_ind, xHat_ind); */
-/*         T1 = eik_g->eik_vals[x1_ind]; */
-/*         // iterate on the possible bases  */
-/*         if( i != j & eik_g->current_states[x1_ind] == 2 ){ */
-/*           // the base should include another point different from both x0 and xHat but x1 SHOULD BE VALID */
-/*           x1[0] =  eik_g->triM_2D->points->x[x1_ind]; */
-/*           x1[1] =  eik_g->triM_2D->points->y[x1_ind]; */
-/* 	  grad1[0] = eik_g->eik_grad[x1_ind][0]; */
-/* 	  grad1[1] = eik_g->eik_grad[x1_ind][1]; */
-/*           // first we need to know if its going to be a simple update or a two step update */
-/*           infoTwoPartUpdate *infoOut; */
-/*           infoTwoPartUpdate_alloc(&infoOut); */
-
-/*           // FIRST DIRECTION */
-/*           pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut); */
-/*           // two options, either it changes region or it doesn't but we much watch out for the angles here */
-/*           if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){ */
-/*             // this means that there is no change in direction + we can build a straight line from x0x1 to xHat */
-/*             // printf("\n\nThere is no change in index of refraction, trying a simple update\n"); */
-/*             simple_UpdateCubic(eik_g, x0, x1, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &currentTHat, &lambda); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){ */
-/*             // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat */
-/*             // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n"); */
-/*             x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind]; */
-/*             x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind]; */
-/*             twoStepUpdateCubic(eik_g, x0, x1, x2, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &infoOut->indexRef_02, &currentTHat, &lambda, &mu); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with mu: %fl\n", param); */
-/*               updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-
-/*           // GO ON THE OTHER DIRECTION */
-/*           pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut); */
-/*           // two options, either it changes region or it doesn't but we much watch out for the angles here */
-/*           if( infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi ){ */
-/*             // this means that there is no change in direction + we can build a straight line from x0x1 to xHat */
-/*             // printf("\n\nThere is no change in index of refraction, trying a simple update\n"); */
-/*             simple_UpdateCubic(eik_g, x0, x1, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &currentTHat, &lambda); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with lamdba: %fl\n", param); */
-/*               updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, lambda, currentTHat, infoOut->indexRef_01); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           if( infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat) <= pi ){ */
-/*             // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and the other one from x0x2 to x0xHat */
-/*             // printf("\n\nThere IS a change in the index of refraction, trying a two part update\n"); */
-/*             x2[0] = eik_g->triM_2D->points->x[infoOut->xChange_ind]; */
-/*             x2[1] = eik_g->triM_2D->points->y[infoOut->xChange_ind]; */
-/*             twoStepUpdateCubic(eik_g, x0, x1, x2, xHat, T0, T1, grad0, grad1, indexAccepted, xHat_ind, &infoOut->indexRef_01, &infoOut->indexRef_02, &currentTHat, &lambda, &mu); */
-/*             if(currentTHat < eik_g->eik_vals[xHat_ind]){ */
-/*               // we've found a better value */
-/*               // printf("We found a better value with mu: %fl\n", param); */
-/*               updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, infoOut->xChange_ind, lambda, mu, currentTHat, infoOut->indexRef_02); */
-/*               // printf("The new value (lambda) is: %fl\n", eik_g->lambdas[xHat_ind]); */
-/*             } */
-/*           } */
-/*           infoTwoPartUpdate_dalloc(&infoOut); // deallocate this struct */
-/*         } */
-/*       } */
-/*     } */
-/*   } */
-/* } */
-
-/* void popAddNeighborsCubic(eik_gridS *eik_g){ */
-/*   // int nNeighs; */
-/*   int minIndex = indexRoot(eik_g->p_queueG); */
-/*   // double minEikVal = valueRoot(eik_g->p_queueG); */
-/*   // printf("Initially the queue looks like this: \n"); */
-/*   // printeik_queue(eik_g->p_queueG); */
-/*   // printf("\n"); */
-/*   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue */
-/*   // printf("We've eliminated the root from the queue successfully\n"); */
-/*   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid */
-/*   // printf("We've updated the current state of %d to valid\n", minIndex); */
-/*   addNeighbors_fromAcceptedCubic(eik_g, minIndex); // add neighbors from the recently accepted index */
-/*   // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]); */
-/*   // printf("Its neighbors are: \n"); */
-/*   // nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index */
-/*   // for(int i=0; i<nNeighs; i++){ */
-/*   //   printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] ); */
-/*   // } */
-/*   // printf("\n"); */
-/*   // for(int i=0; i<nNeighs; i++){ */
-/*   //   printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] ); */
-/*   // } */
-/*   // printf("\n"); */
-/* } */
-
+void saveComputedTypesUpdate(eik_gridS *eik_g, const char *pathFile) {
+  FILE *fp;
+  fp = fopen(pathFile, "wb");
+  fwrite(eik_g->type_update, sizeof(int), eik_g->triM_2D->nPoints, fp);
+  fclose(fp);
+}

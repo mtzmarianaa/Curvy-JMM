@@ -3,6 +3,7 @@
 #include "triMesh_2D.h"
 #include "linAlg.h"
 #include "priority_queue.h"
+#include "updates_2D.h"
 
 typedef struct eik_grid {
   int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
@@ -45,15 +46,8 @@ void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, i
 			  int parent2, double lambda, double mu, double TFound,
 			  double indexRefraction, int typeUpdate);
 
-
-
-
-void simple_Update(double x0[2], double x1[2], double xHat[2], double T0, double T1, double indexRef, double *That2, double *lambda);
-
-void twoStepUpdate(double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1, double indexRef_01, double indexRef_02, double *That_step2, double *lambda, double *mu);
-
-
 void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted);
+
 
 void popAddNeighbors(eik_gridS *eik_g);
 
@@ -69,17 +63,8 @@ void saveComputedParents(eik_gridS *eik_g, const char *pathFile);
 
 void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile);
 
-// For the methods associated with the cubic hermite interpolation:
+void saveComputedMus(eik_gridS *eik_g, const char *pathFile);
 
-void simple_UpdateCubic(eik_gridS *eik_g, double x0[2], double x1[2], double xHat[2], double T0,
-			double T1, double grad0[2], double grad1[2],
-			int indexAccepted, int xHat_ind, double *indexRef, double *That2, double *lambda);
+void saveComputedTypesUpdate(eik_gridS *eik_g, const char *pathFile);
 
-void twoStepUpdateCubic(eik_gridS *eik_g, double x0[2], double x1[2], double x2[2], double xHat[2], double T0, double T1,
-			double grad0[2], double grad1[2], int indexAccepted, int xHat_ind,
-			double *indexRef_01, double *indexRef_02, double *That_step2, double *lambda, double *mu);
-
-void addNeighbors_fromAcceptedCubic(eik_gridS *eik_g, int indexAccepted);
-
-void popAddNeighborsCubic(eik_gridS *eik_g);
 

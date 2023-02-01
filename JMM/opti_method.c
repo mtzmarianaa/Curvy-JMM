@@ -263,8 +263,8 @@ double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lamb
 
   while( i<maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0){
     alpha = backTr_freeSpace(1, grad_cur, lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-    printf("\n\nIteration %d\n", i);
-    printf("Step size %lf   with direction  %lf, hence change is %lf\n", alpha, -grad_cur, -alpha*grad_cur);
+    //printf("\n\nIteration %d\n", i);
+    //printf("Step size %lf   with direction  %lf, hence change is %lf\n", alpha, -grad_cur, -alpha*grad_cur);
     test = lam_cur - alpha*grad_cur;
     if(test > lambdaMax){
       test = lambdaMax;
@@ -277,7 +277,7 @@ double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lamb
     lam_prev = lam_cur;
     lam_cur = test;
     grad_cur = der_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef);
-    printf("Iteration %d   with lam_prev %lf  and lam_cur %lf   with objective value: %lf   and derivative  %lf \n\n\n", i, lam_prev, lam_cur, fobjective_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef), grad_cur);
+    //printf("Iteration %d   with lam_prev %lf  and lam_cur %lf   with objective value: %lf   and derivative  %lf \n\n\n", i, lam_prev, lam_cur, fobjective_freeSpace(lam_cur, TA, gradA, TB, gradB, xA, xB, xHat, indexRef), grad_cur);
     
     i++;
   }
@@ -290,7 +290,7 @@ void grad_twoStep(double gradient[2], double lambda, double mu, double T0, doubl
   double mu2, mu3, lambda2;
   mu2 = mu*mu;
   mu3 = mu2*mu;
-sy  lambda2 = lambda*lambda;
+  lambda2 = lambda*lambda;
   /////// partial with respect to lambda
   // first time gathering terms
   double x1Minx0[2], x0InxLamMinxMu[2], x1inxLamMinxMu[2], B0inxLamMinxMu[2], x2InxLamMinxMu[2], B2inxLamMinxMu[2];
@@ -353,7 +353,7 @@ double backTr_TwoStep(double alpha0, double d[2], double lambda, double mu, doub
   alpha = alpha0;
   // EVALUATING THE OBJECTIVE FUNCTION
   f_prev = fobjective_TwoStep(lambda, mu, T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
-  printf("Objective function before %lf  with lambda %lf  and mu  %lf\n", f_prev, lambda, mu);
+  //printf("Objective function before %lf  with lambda %lf  and mu  %lf\n", f_prev, lambda, mu);
   f_cur = fobjective_TwoStep(lambda - alpha*d[0], mu - alpha*d[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
   while(f_prev <= f_cur & i < 10 ){
     alpha = alpha*0.5;
@@ -363,8 +363,8 @@ double backTr_TwoStep(double alpha0, double d[2], double lambda, double mu, doub
   if (f_prev <= f_cur){
     alpha = 0;
   }
-  printf("Objective function adter back tracking  %lf\n", fobjective_TwoStep(lambda - alpha*d[0], mu - alpha*d[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02) );
-  printf("with lambda %lf  and mu %lf\n", lambda-alpha*d[0], lambda-alpha*d[1]);
+  //printf("Objective function adter back tracking  %lf\n", fobjective_TwoStep(lambda - alpha*d[0], mu - alpha*d[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02) );
+  //printf("with lambda %lf  and mu %lf\n", lambda-alpha*d[0], lambda-alpha*d[1]);
   return alpha;
 }
 
@@ -452,12 +452,12 @@ void projectedGradient_TwoStep(double optimizers[2], double lambdaMin, double la
   grad_twoStep(grad_cur, optimizers_cur[0], optimizers_cur[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
   vec2_subtraction(optimizers_prev, optimizers_cur, difStep);
   while(i < maxIter & l2norm(grad_cur) > tol & l2norm(difStep) > 0){
-    printf("\n\nIteration %d\n", i);
+    //printf("\n\nIteration %d\n", i);
     alpha = backTr_TwoStep(0.1, grad_cur, optimizers_cur[0], optimizers_cur[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
-    printf("Step size %lf  with direction  %lf  %lf, hence the change is  %lf   %lf\n", alpha, -grad_cur[0], -grad_cur[1], -alpha*grad_cur[0], - alpha*grad_cur[1]);
+    //printf("Step size %lf  with direction  %lf  %lf, hence the change is  %lf   %lf\n", alpha, -grad_cur[0], -grad_cur[1], -alpha*grad_cur[0], - alpha*grad_cur[1]);
     test[0] = optimizers_cur[0] - alpha*grad_cur[0];
     test[1] = optimizers_cur[1] - alpha*grad_cur[1];
-    printf("Values before projecting back  %lf   %lf\n", test[0], test[1]);
+    //printf("Values before projecting back  %lf   %lf\n", test[0], test[1]);
     // project back if neccesary
     if( test[0] > lambdaMax){
       test[0] = lambdaMax;
@@ -485,9 +485,9 @@ void projectedGradient_TwoStep(double optimizers[2], double lambdaMin, double la
     optimizers_cur[1] = test[1];
     vec2_subtraction(optimizers_prev, optimizers_cur, difStep);
     grad_twoStep(grad_cur, optimizers_cur[0], optimizers_cur[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
-    printf("Iteration %d  with lambda_prev   %lf   and lambda_cur  %lf\n", i, optimizers_prev[0], optimizers_cur[0]);
-    printf("Iteration %d  with mu_prev   %lf   and mu_cur  %lf\n", i, optimizers_prev[1], optimizers_cur[1]);
-    printf("Objective value   %lf    and gradient %lf  %lf \n", fobjective_TwoStep(optimizers_cur[0], optimizers_cur[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02), grad_cur[0], grad_cur[1]);
+    //printf("Iteration %d  with lambda_prev   %lf   and lambda_cur  %lf\n", i, optimizers_prev[0], optimizers_cur[0]);
+    //printf("Iteration %d  with mu_prev   %lf   and mu_cur  %lf\n", i, optimizers_prev[1], optimizers_cur[1]);
+    //printf("Objective value   %lf    and gradient %lf  %lf \n", fobjective_TwoStep(optimizers_cur[0], optimizers_cur[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02), grad_cur[0], grad_cur[1]);
     i ++;
   }
   optimizers[0] = optimizers_cur[0];

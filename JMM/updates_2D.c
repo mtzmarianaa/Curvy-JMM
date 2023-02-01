@@ -96,12 +96,8 @@ void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
   xHat[1] = triM_2D->points->y[info_update->xHat_ind];
   B0[0] = triM_2D->boundary_tan[info_update->indexAccepted][0];
   B0[1] = triM_2D->boundary_tan[info_update->indexAccepted][1];
-  printf("B0 : %lf | %lf \n", B0[0], B0[1]);
-  printf("x0: %lf | %lf \n", x0[0], x0[1]);
   BHat[0] = triM_2D->boundary_tan[info_update->xHat_ind][0];
   BHat[1] = triM_2D->boundary_tan[info_update->xHat_ind][1];
-  printf("BHat : %lf | %lf \n", BHat[0], BHat[1]);
-  printf("xHat: %lf  | %lf \n", xHat[0], xHat[1]);
   // For Simpsons rule que need norm(B0) + norm(g(0.5)) + norm(BHat)
   // for g(0.5):
   double constx0[2], constB0[2], constxHat[2], constBHat[2], auxSum1[2], auxSum2[2], auxSum3[2], gHalves;
@@ -399,7 +395,8 @@ void twoStepUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
   xHat[1] = triM_2D->points->y[info_update->xHat_ind];
   tol = 0.00000001;
   maxIter = 50;
-  indexRef = info_update->indexRef_01;
+  indexRef_01 = info_update->indexRef_01;
+  indexRef_02 = info_update->indexRef_02;
   // we do normal gradient descent and if it doesnt pass the test then we don't do the update
   T0 = info_update->T0;
   grad0[0] = info_update->grad0[0];
@@ -422,7 +419,7 @@ void twoStepUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
 
   info_update->lambda = optimizers[0];
   info_update->mu = optimizers[1];
-  info_update->That = fobjective_TwoStep(optimizers[0], optimizers[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
+  info_update->THat = fobjective_TwoStep(optimizers[0], optimizers[1], T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02);
   
 
 }
