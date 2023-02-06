@@ -24,12 +24,12 @@ void triMesh_2Ddalloc(triMesh_2Ds **triM_2D) {
     *triM_2D = NULL;
 }
 
-void infoTwoPartUpdate_alloc(infoTwoPartUpdate **infoOut) {
-    *infoOut = malloc(sizeof(infoTwoPartUpdate));
+void infoTriangleFan_alloc(infoTriangleFan **infoOut) {
+    *infoOut = malloc(sizeof(infoTriangleFan));
     assert(*infoOut != NULL);
 }
 
-void infoTwoPartUpdate_dalloc(infoTwoPartUpdate **infoOut) {
+void infoTriangleFan_dalloc(infoTriangleFan **infoOut) {
     free(*infoOut);
     *infoOut = NULL;
 }
@@ -235,7 +235,7 @@ void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int poss
     }
 }
 
-void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int xHat, int directionToStart, infoTwoPartUpdate *infoOut) {
+void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int *current_states, int x0_ind, int x1_ind, int xHat, int directionToStart, infoTriangleFan *infoOut) {
     // given the indices of x0, x1, and xHat we "march" along the triangles with x0 as one of their vertices
     // such that we start at a triangle with x0,x1 as part of their vertices to a triangle that has x0, xHat
     // as part of their vertices. If there is a change in region this function outputs the index of a vertex such
@@ -243,7 +243,9 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     // directionToStart is either 0 or 1, the triangle on which to start marching, since there are two triangles
     // in the mesh that have x0, x1 as one of their edges.
     int previousTriangle, currentTriangle, initialTriangles[2], initialx2[2], x2_ind, previous_x2_ind, iterationTriangles[2], iterationx2[2];
-    double x0[2], x2[2], x2_prev[2], xhatC[2];
+    double x0[2], x2[2], x2_prev[2], xhatC[2], pi;
+
+    pi = acos(-1.0); 
 
     x0[0] = triM_2D->points->x[x0_ind];
     x0[1] = triM_2D->points->y[x0_ind];
@@ -259,6 +261,8 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     infoOut->xChange_ind = -1; // so far no change in region
     infoOut->angle_xHat = 0;
     infoOut->angle_xChange = 0;
+    infoOut->nChanges = 0;
+    infoOut->updatable = 1; // so far it is updatable, we haven't found anything
 
     // printf("Try to find the first triangle\n");
 
@@ -285,6 +289,10 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
     x2[1] = triM_2D->points->y[x2_ind];
     infoOut->angle_xHat += angleThreePoints(x2, x0, x2_prev);
     infoOut->angle_xChange += angleThreePoints(x2, x0, x2_prev);
+    // but if this point in the fan is valid then this update should not be considered
+    if(current_states[x2_ind] == 2){
+      infoOut->updatable = 0; // not updatable
+    }
     // printf("The initial indices of refraction are:   %fl    %fl\n", s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ), s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle] ));
     infoOut->indexRef_01 = s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle]);
     // printf("%fl\n", infoOut->indexRef_01);
@@ -316,6 +324,7 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
             infoOut->xChange_ind = previous_x2_ind;
             // we also want to get the different index of refraction
             infoOut->indexRef_02 = s_function_threeSections(x0, triM_2D->indexRegions[currentTriangle]);
+	    infoOut->nChanges ++; // add one more to the changes in the index of refraction
         }
         // we also need to update the coordinates of x2 and x2_prev
         x2_prev[0] = x2[0];
@@ -327,6 +336,11 @@ void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int x0_ind, int x1_ind, int x
             infoOut->angle_xChange += angleThreePoints(x2, x0, x2_prev);
         }
         infoOut->angle_xHat += angleThreePoints(x2, x0, x2_prev); // but we still add this angle because x2 is not yet xHat
+	if(current_states[x2_ind] == 2 || infoOut->angle_xChange>= pi || infoOut->angle_xHat >= pi ){
+	  // this means that a point in the triangle fan is set a valid and thus we shouldn't consider this update or that we can't build straight lines
+	  infoOut->updatable = 0;
+	}
+	
         // printf("In this iteration the previous triangle is %d\n", previousTriangle);
         // printf("The current triangle is %d\n", currentTriangle);
         // printf("The previous x2 is %d with coordinates   (   %fl   |   %fl   )\n", previous_x2_ind, triM_2D->points->x[previous_x2_ind], triM_2D->points->y[previous_x2_ind]);

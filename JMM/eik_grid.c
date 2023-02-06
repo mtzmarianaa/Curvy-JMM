@@ -205,7 +205,10 @@ void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent0, in
   eik_g->eik_grad[indexToBeUpdated][0] = grad[0];
   eik_g->eik_grad[indexToBeUpdated][1] = grad[1];
   eik_g->type_update[indexToBeUpdated] = typeUpdate;
-
+  if(typeUpdate == 2){
+    printf("Updating information for %d from a creeping ray update\n", indexToBeUpdated);
+    printf("Its gradient is then: %lf %lf\n", grad[0], grad[1]);
+  }
 }
 
 
@@ -254,8 +257,8 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
   double pi, T0, T1, indexRef_01, indexRef_02, grad0[2], grad1[2];
   info_updateS *info_update;
   info_update_alloc(&info_update);
-  infoTwoPartUpdate *infoOut;
-  infoTwoPartUpdate_alloc(&infoOut);
+  infoTriangleFan *infoOut;
+  infoTriangleFan_alloc(&infoOut);
   // get the information we need
   pi = acos(-1.0);
   nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
@@ -268,6 +271,20 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
     xHat_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[i];
     if( eik_g->current_states[xHat_ind] != 2 ){
       // we can only update those points that are still far or trial NOT VALID
+
+      /* // CASE 2: creeping ray update (we don't need an x1 for this) */
+      /* if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 & */
+      /* 	 eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) { */
+      /* 	indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind); // compute the smallest index of refraction */
+      /* 	info_update_initCr(info_update, indexAccepted, xHat_ind, T0, indexRef_01); */
+      /* 	creepingUpdate(eik_g->triM_2D, info_update); // compute the possible update */
+      /* 	if(info_update->THat < eik_g->eik_vals[xHat_ind]){ */
+      /* 	  // we just found a better update */
+      /* 	  updateCurrentValues(eik_g, xHat_ind, indexAccepted, indexAccepted, 0, info_update->THat, indexRef_01, 2); */
+      /* 	  printf("\n\nJust performed a creeping update to %d   with T0 : %lf  and THat %lf\n", xHat_ind, T0, info_update->THat); */
+      /* 	} */
+      /* } */
+      
       for( int j = 0; j < nNeis; j ++){
 	// we need to find a possible x1
 	x1_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[j];
@@ -288,19 +305,6 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
 	      // we just found a better update
 	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 1);
-	    }
-	  }
-	  
-	  // CASE 2: creeping ray update
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind); // compute the smallest index of refraction
-	    info_update_initCr(info_update, indexAccepted, xHat_ind, T0, indexRef_01); // initialize the info_update
-	    creepingUpdate(eik_g->triM_2D, info_update); // compute the possible update
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, 0, info_update->THat, indexRef_01, 2);
 	    }
 	  }
 
@@ -327,7 +331,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 1);
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
 	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
 	    }
 	  }
 
@@ -340,7 +344,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    justx1Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 7);
 	    }
 	  }
 
@@ -354,14 +358,14 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    justxHatBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 7);
+	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 8);
 	    }
 	  }
 
 	  //////////
 	  // Otherwise we need to see if the region changes or not
 	  // First direction
-	  pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
+	  pointWhereRegionChanges(eik_g->triM_2D, eik_g->current_states, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
 	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
 	    // this means that there is no change in region and since the angle is smaller than pi we
 	    // can build a straight line from x0x1 to xHat
@@ -386,7 +390,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
 	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
 	      }
 	    }
 	    
@@ -401,12 +405,12 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    twoStepUpdate(eik_g->triM_2D, info_update);
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 	      // we've found a better update
-	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 8);
+	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 9);
 	    }
 	  }
 
-	  // Second direction 
-	  pointWhereRegionChanges(eik_g->triM_2D, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
+	  // Second direction
+	  pointWhereRegionChanges(eik_g->triM_2D, eik_g->current_states, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
 	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
 	    // this means that there is no change in region and since the angle is smaller than pi we
 	    // can build a straight line from x0x1 to xHat
@@ -431,7 +435,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
 	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
+		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
 	      }
 	    }
 	    
@@ -446,7 +450,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
 	    twoStepUpdate(eik_g->triM_2D, info_update);
 	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
 	      // we've found a better update
-	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 8);
+	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 9);
 	    }
 	  }
 	}
@@ -454,7 +458,7 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
     }
   }
   info_update_dealloc(&info_update);
-  infoTwoPartUpdate_dalloc(&infoOut); // deallocate the useful structs
+  infoTriangleFan_dalloc(&infoOut); // deallocate the useful structs
 }
 
 

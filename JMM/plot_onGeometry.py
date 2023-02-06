@@ -40,6 +40,19 @@ colormap4  = clr.LinearSegmentedColormap.from_list('RetroIncrement',
                                                     (1,    '#000cff')], N=256)
 
 
+colormap5  = clr.LinearSegmentedColormap.from_list('TypeUpdate',
+                                                   [(0,    '#ffffff'),
+                                                    (0.1,    '#ffffff'),
+                                                    (0.2,    '#5a7c7e'),
+                                                    (0.3,    '#001164'),
+                                                    (0.4,    '#002bff'),
+                                                    (0.5,    '#8b00ff'),
+                                                    (0.6,    '#cfc3ff'),
+                                                    (0.7,    '#319094'),
+                                                    (0.8,    '#00c4cd'),
+                                                    (0.9,    '#00f4ff'),
+                                                    (1,    '#27ff00')], N=11)
+
 
 spacingGrid = 10
 nx_default = 36*spacingGrid
@@ -72,7 +85,7 @@ def rotate(angle):
     ax.view_init(azim=angle)
 
 def generatePlotsOnGeometryCircle(H, xi, yi,
-                                  eik_vals, eik_coords, eik_grads, triangles_points,
+                                  eik_vals, eik_coords, eik_grads, triangles_points, update_types,
                                   x0 = None, center = None, R = None, eta1 = None, eta2 = None,
                                   true_sol = None, type_sol = None, true_grads = None,
                                   true_solGrid = None, type_solGrid = None, true_gradsGrid = None,
@@ -91,6 +104,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     :param ndarray eik_coords: coordinates of the points in the mesh
     :param ndarray eik_grads: computed gradients on the mesh via the solver
     :param triangles_points: the faces on the mesh
+    :param ndarrray update_types: type of update used in that point in the solver
     :param ndarray x0: source point
     :param ndarray center: center of the circle
     :param float R: radius of the circle
@@ -186,7 +200,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig( path_to_save + H + "/" + H + '_PointErrorsCubic.png', dpi=my_dpi * 10)
+        plt.savefig( path_to_save + H + "/" + H + '_PointErrors.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -198,7 +212,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig( path_to_save + H + "/" + H + '_SignPointErrorsCubic.png', dpi=my_dpi * 10)
+        plt.savefig( path_to_save + H + "/" + H + '_SignPointErrors.png', dpi=my_dpi * 10)
 
     # ABSOLUTE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -211,7 +225,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_PointErrors_MeshCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_PointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # SIGNED POINT WISE ERRORS WITH TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -224,7 +238,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_SignedPointErrors_MeshCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_SignedPointErrors_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -236,7 +250,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSetsCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF EXACT SOLUTION
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -248,7 +262,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSetsCubicExact.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSetsExact.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER) + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -261,7 +275,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_MeshCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_Mesh.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF EXACT SOLUTION  + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -274,7 +288,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_MeshCubicExact.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_MeshExact.png', dpi=my_dpi * 10)
     
 
     # LEVEL SETS OF COMPUTED SOLUTION (SOLVER) + COMPUTED GRADIENTS
@@ -288,7 +302,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_GradCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_Grad.png', dpi=my_dpi * 10)
 
     # LEVEL SETS OF EXACT SOLUTION  + EXACT GRADIENTS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -301,7 +315,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_GradCubicExact.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LevelSets_GradExact.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -313,7 +327,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_ylim([-18,24])
     plt.colorbar(im2_8)
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LinearIntCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + TRIANGULATION ON TOP
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -326,7 +340,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_MeshCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_Mesh.png', dpi=my_dpi * 10)
 
     # SOLUTION (SOLVER) + LINEAR INTERPOLATION + COMPUTED GRADIETNS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
@@ -339,7 +353,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_GradCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_LinearInt_Grad.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS
     vmaxGrad = np.max(abs(point_errors_grads))
@@ -352,7 +366,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrorsCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrors.png', dpi=my_dpi * 10)
 
     # ERRORS IN GRADIENTS + TRIANGULATION ON TOP
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
@@ -365,7 +379,19 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrorsCubic.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrors.png', dpi=my_dpi * 10)
+
+    # TYPE OF UPDATE DONE IN THE SOLVER
+    fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
+    im2_13 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2.5, c = update_types, cmap = colormap5, vmin = -1, vmax = 8)
+    plt.colorbar(im2_13)
+    plt.title("Type of update from the solver")
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_TypeUpdate.png', dpi=my_dpi * 10)
 
     if(show):
         plt.show()
@@ -377,14 +403,15 @@ def plotEverthing_H(H, saveFigures = True):
     '''
     :param str H: name of the triangulation we want to plot everything for
     '''
-    path_general = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/FMM/TestBaseSnow/"
+    path_general = "/Users/marianamartinez/Documents/NYU-Courant/FMM-Project/TestBaseSnow/"
     path_information = path_general + H + "/" + H 
     path_figures = "/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
     xi, yi = np.meshgrid(np.linspace(-18, 18, nx_default), np.linspace(-18, 24, ny_default))
-    eik_vals = np.fromfile(path_information + "_ComputedValuesCubic.bin")
+    eik_vals = np.fromfile(path_information + "_ComputedValues.bin")
     eik_coords = np.genfromtxt(path_information + "_MeshPoints.txt", delimiter=",")
-    eik_grads = np.fromfile(path_information + "_ComputedGradientsCubic.bin")
+    eik_grads = np.fromfile(path_information + "_ComputedGradients.bin")
     eik_grads = eik_grads.reshape(len(eik_coords), 2)
+    update_types = np.fromfile(path_information + "_Types.bin", dtype = np.int32)
     triangles_points = np.genfromtxt(path_information + "_Faces.txt", delimiter=",")
     true_sol = np.genfromtxt(path_information + "_true_values.txt", delimiter = ',')
     true_solGrid = np.genfromtxt(path_general + "true_solGrid_" + str(nx_default) + "_" + str(ny_default) + ".txt", delimiter = ',')
@@ -405,11 +432,12 @@ def plotEverthing_H(H, saveFigures = True):
     errorsAbs_inter = abs( true_solGrid - zi_lin )
 
     generatePlotsOnGeometryCircle(H, xi, yi,
-                                  eik_vals, eik_coords, eik_grads, triangles_points,
+                                  eik_vals, eik_coords, eik_grads, triangles_points, update_types,
                                   true_sol = true_sol, type_sol = None, true_grads = true_grads,
                                   true_solGrid = true_solGrid, type_solGrid = None, true_gradsGrid = None,
                                   errorsAbs_inter = errorsAbs_inter, errors_inter = errors_inter,
-                                  zi_lin = zi_lin, point_errors_eik = point_errors_eik, point_errors_grads = point_errors_grads,
-                                  saveFigures = False,
+                                  zi_lin = zi_lin, point_errors_eik = point_errors_eik,
+                                  point_errors_grads = point_errors_grads,
+                                  saveFigures = saveFigures,
                                   show = True, 
                                   path_to_save = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/')

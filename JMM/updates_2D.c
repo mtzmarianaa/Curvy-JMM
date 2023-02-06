@@ -84,8 +84,8 @@ void print_info_update(info_updateS *info_update){
 void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
   // this is when x0, x1, and xHat are all on the boundary
   // second asserts, all of these points are on the boundary
-  assert(triM_2D->boundary_tan[info_update->indexAccepted][0] != 0 || triM_2D->boundary_tan[info_update->indexAccepted][1] != 0 );
-  assert(triM_2D->boundary_tan[info_update->xHat_ind][0] != 0 || triM_2D->boundary_tan[info_update->xHat_ind][1] != 0 );
+  //assert(triM_2D->boundary_tan[info_update->indexAccepted][0] != 0 & triM_2D->boundary_tan[info_update->indexAccepted][1] != 0 );
+  //assert(triM_2D->boundary_tan[info_update->xHat_ind][0] != 0 & triM_2D->boundary_tan[info_update->xHat_ind][1] != 0 );
   // if all of these are true then we can proceed with a creeping update
   // THat in this case is just the smallest index of refraction times
   // the arc length of the boundary's Hermite interpolation
@@ -114,7 +114,7 @@ void creepingUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update) {
   normB0 = l2norm(B0);
   normBHat = l2norm(BHat);
   // finally we can compute THat using Simpson's rule
-  info_update->THat = info_update->T0 + info_update->indexRef_01/6*(normB0 + 4*gHalves + normBHat);
+  info_update->THat = info_update->T0 + fabs(info_update->indexRef_01/6*(normB0 + 4*gHalves + normBHat));
 }
 
 void simple_TwoPointUpdate(triMesh_2Ds *triM_2D, info_updateS *info_update){
