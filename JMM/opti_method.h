@@ -24,4 +24,9 @@ double fobjective_TwoStep(double lambda, double mu, double T0, double grad0[2], 
 
 void projectedGradient_TwoStep(double optimizers[2], double lambdaMin, double lambdaMax, double muMin, double muMax, double T0, double grad0[2], double T1, double grad1[2], double x0[2], double x1[2], double x2[2], double xHat[2], double B0[2], double B2[2], double indexRef_01, double indexRef_02, double tol, int maxIter);
 
+double tofMu(double xA[2], double xB[2], double xmu[2], double Bmu[2]);
+
+double der_tofMu(double xA[2], double xB[2], double xmu[2], double grad_Bmu[2]);
+
+double fobjective_directCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double TA, double TB, double gradA[2], double gradB[2], double BR[2], double BHat[2], double indexRef);
 

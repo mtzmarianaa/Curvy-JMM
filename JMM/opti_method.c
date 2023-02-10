@@ -495,3 +495,96 @@ void projectedGradient_TwoStep(double optimizers[2], double lambdaMin, double la
 }
 
 
+double tofMu(double xA[2], double xB[2], double xmu[2], double Bmu[2]){
+  // auxiliary function defined in notes
+  // t(mu) = dot( xmu - x0, Bmu_perp)/dot(x1 - x0, Bmu_perp)
+  double Bmu_perp[2], xmuMinxA[2], xBMinxA[2];
+  Bmu_perp[0] = Bmu[1];
+  Bmu_perp[1] = - Bmu[0];
+  vec2_subtraction(xmu, xA, xmuMinxA);
+  vec2_subtraction(xB, xA, xBMinxA);
+  return dotProd(xmuMinxA, Bmu_perp)/dotProd(xBMinxA, Bmu_perp);
+}
+
+double der_tofMu(double xA[2], double xB[2], double xmu[2], double Bmu[2], double grad_Bmu[2]){
+  // derivative with respect to lambda of t(mu) defined above
+  double grad_Bmu_perp[2], xBminxA[2], xmuMinxA[2], Bmu_perp[2], top, bottom;
+  grad_Bmu_perp[0] = grad_Bmu[1];
+  grad_Bmu_perp[1] = -grad_Bmu[0];
+  Bmu_perp[0] = Bmu[1];
+  Bmu_perp[1] = -Bmu[0];
+  vec2_subtraction(xmu, xA, xmuMinxA);
+  vec2_subtraction(xB, xA, xBminxA);
+  top = dotProd( xmuMinxA, grad_Bmu_perp)*dotProd(xBminxA, Bmu_perp) - dotProd(xBminxA, grad_Bmu_perp)*dotProd(muMinxA, Bmu_perp);
+  bottom = (dotProd(xBminxA, Bmu_perp))*(dotProd(xBminxA, Bmu_perp));
+  return top/bottom;
+}
+
+double fobjective_directCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double TA, double TB, double gradA[2], double gradB[2], double BR[2], double BHat[2], double indexRef){
+  // objective function for an update such that it has a straight line part and a creeping ray part
+  double t, t2, t3, xmu[2], Bmu[2], mu2, mu3;
+  mu2 = mu*mu;
+  mu3 = mu2*mu;
+  // we compute xmu
+  double coef3xmu[2], coef2xmu[2], aux1[2], axu2[2], aux3[2], aux4[2], aux5[2], aux6[2];
+  double part3xmu[2], part2xmu[2], aux7[2];
+  double twoxHat[2], twoxR[2], threexHat[2], twoBHat[2], threexR[2];
+  scalar_times_2vec(2, xHat, twoxHat);
+  scalar_times_2vec(2, xR, twoxR);
+  scalar_times_2vec(3, xHat, threexHat);
+  scalar_times_2vec(2, BHat, twoBHat);
+  scalar_times_2vec(3, xR, threexR);
+  vec2_addition(twoxHat, BHat, aux1);
+  vec2_subtraction(BR, twoxR, aux2);
+  vec2_addition(aux1, aux2, coef3xmu); // coefficient of mu**3
+  scalar_times_2vec(mu3, coef3xmu, part3xmu);
+  vec2_addition(threexHat, twoBHat, aux3);
+  vec2_subtraction(threexR, BR, aux4);
+  vec2_subtraction(aux4, aux3, coef2xmu); // coefficient of mu**2
+  scalar_times_2vec(mu2, coef2xmu, part2xmu);
+  scalar_times_2vec(mu, BHat, aux5); // coef mu
+  vec2_addition(aux5, xHat, aux6);
+  vec2_addition(part3xmu, part2xmu, aux7);
+  vec2_addition(aux6, aux7, xmu); // finally compute xmu
+  // compute the t's
+  t = tofMu(xA, xB, xmu, Bmu);
+  t2 = t*t;
+  t3 = t2*t;
+  // compute xlam
+  double xlam[2], coefx0[2], coefx1[2];
+  scalar_times_2vec(1-t, xA, coefx0);
+  scalar_times_2vec(t, xB, coefx1);
+  vec2_addition(coefx0, coefx1, xlam);
+  // compute the arc length using Simpson's rule
+  double normBHat, part1ghalves[2], part2ghalves[2], sum1ghalves[2], ghalves[2], normghalves;
+  double part1g[2], part2g[2], sum1g[2], gmu[2], normgmu;
+  normBHat = l2norm(BHat);
+  // g(mu/2)
+  scalar_times_2vec(3/4*mu2, coef3xmu, part1ghalves);
+  scalar_times_2vec(mu, coef2mu, part2ghalves);
+  vec2_addition(part2ghalves, BHat, sum1ghalves);
+  vec2_addition(part1ghalves, sum1ghalves, ghalves);
+  normghalves = l2norm(ghalves);
+  // g(mu)
+  scalar_times_2vec(3*mu3, coef3xmu, part1g);
+  scalar_times_2vec(2*mu, coef2xmu, part2g);
+  vec2_addition(part2g, BHat, sum1g);
+  vec2_addition(part1g, sum1g, gmu);
+  normgmu = l2norm(gmu);
+  // xmu minus xlambda
+  double xmuMinxlam[2], normxmuMinxlam;
+  vec2_subtraction(xmu, xlam, xmuMinxlam);
+  normxmuMinxlam = l2norm(xmuMinxlam);
+  // compute Tmu
+  double xBminxA[2], coefgradA[2], coefgradB[2], sumgrads[2];
+  vec2_subtraction(xB, xA, xBminxA);
+  scalar_times_2vec(t3 - 2*t2 + t, gradA, coefgradA);
+  scalar_times_2vec( t3 - t2, gradB, coefgradB);
+  vec2_addition(coefgradA, coefgradB, sumgrads);
+  double Tmu;
+  Tmu = TA*(2*t3 - 3*t2) + TB(-2*t3 + 3*t2) + dotProd(xBminxA, sumgrads);
+  // put everything together
+  return Tmu + indexRef*normxmuMinxlam + indexRef/6*( normBHat + 4*normghalves + normgmu  )
+  
+}
+
