@@ -11,6 +11,102 @@ Optimization methods for the 2D FMM
 #include <stdio.h>
 #include <stdlib.h>
 
+void linearInterpolation(double param, double from[2], double to[2], double interpolation[2]){
+  // useful for xlambda = (1-lambda)*x0 + lambda*x1
+  double coeffrom[2], coefto[2];
+  scalar_times_2vec(1-param, from, coeffrom);
+  scalar_times_2vec(param, to, coefto);
+  vec2_addition(coeffrom, coefto, interpolation);
+}
+
+void der_linearInterpolation(double param, double from[2], double to[2], double der_interpolation[2]){
+  // derivative with respect of lambda of (1-lambda)*x0 + lambda*x1
+  vec2_subtraction(to, from, der_interpolation);
+}
+
+void hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double interpolation[2]){
+  // general hermite interpolation evaluated at param for the boundary
+  double param2, param3;
+  double coef_0[2], coef_1[2], coef_grad0[2], coef_grad1[2];
+  param2 = param*param;
+  param3 = param2*param;
+  scalar_times_2vec(2*param3 - 3*param2 + 1, from, coef_0);
+  scalar_times_2vec(param3 - 2*param2 + param, grad_from, coef_grad0);
+  scalar_times_2vec(-2*param3 + 3*param2, to, coef_1);
+  scalar_times_2vec(param3 - param2, grad_to, coef_grad1);
+  double sumpoints[2], sumgrads[2];
+  vec2_addition(coef_0, coef_1, sumpoints);
+  vec2_addition(coef_grad0, coef_grad1, sumgrads);
+  vec2_addition(sumpoints, sumgrads, interpolation);
+}
+
+void grad_hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double gradient[2]){
+  // gradient of the general hermite interpolation evaluated at param for the boundary (i.e. gradBmu)
+  double param2;
+  double twofrom[2], twoto[2], threefrom[2], twogradfrom[2], threeto[2];
+  scalar_times_2vec(2, from, twofrom);
+  scalar_times_2vec(-2, to, twoto);
+  scalar_times_2vec(-3, from, threefrom);
+  scalar_times_2vec(-2, grad_from, twogradfrom);
+  scalar_times_2vec(3, to, threeto);
+  double sum1[2], sum2[2], sum3[2], sum4[2];
+  vec2_addition(twofrom, grad_from, sum1);
+  vec2_addition(twoto, grad_to, sum2);
+  vec2_addition(threefrom, twogradfrom, sum3);
+  vec2_subtraction(threeto, grad_to, sum4);
+  double coefparam2[2], coefparam[2];
+  vec2_addition(sum1, sum2, coefparam2);
+  vec2_addition(sum3, sum4, coefparam);
+  double par1[2], par2[2], par3[2];
+  scalar_times_2vec(3*param2, coefparam2, par1);
+  scalar_times_2vec(2*param, coefparam, par2);
+  vec2_addition(par2, grad_from, par3);
+  vec2_addition(par1, par3, gradient);
+}
+
+double arclength_hermiteSimpson(double a, double b, double from[2], double to[2], double grad_from[2], double grad_to[2]){
+  // using simpsons rule to calculate the arclength for the parameter being from a to b
+  // uses grad_hermite_interpolationSpatial of course
+  double gradient_a[2], gradient_mid[2], gradient_b[2], norm_a, norm_mid, norm_b;
+  grad_hermite_interpolationSpatial(a, from, to, grad_from, grad_to, gradient_a);
+  grad_hermite_interpolationSpatial((a+b)/2, from, to, grad_from, grad_to, gradient_mid);
+  grad_hermite_interpolationSpatial(b, from, to, grad_from, grad_to, gradient_b);
+  norm_a = l2norm(gradient_a);
+  norm_mid = l2norm(gradient_mid);
+  norm_b = l2norm(gradient_b);
+  return (1/6)*(norm_a + 4*norm_mid + norm_b);
+}
+
+double hermite_interpolationT(double param, double xA[2], double xB[2], double TA, double TB, double gradA[2], double gradB[2]){
+  // hermite interpolation for the value of the eikonal
+  double param2, param3;
+  param2 = param*param;
+  param3 = param2*param;
+  double coef_gradA[2], coef_gradB[2], sumgrads[2], xBminxA[2];
+  scalar_times_2vec(param3 - 2*param2 + param, gradA, coef_gradA);
+  scalar_tiems_2vec(param3 - param2, gradB, coef_gradB);
+  vec2_addition(coef_gradA, coef_gradB, sumgrads);
+  vec2_subtraction(xB, xA, xBminxA);
+  return (2*param3 - 3*param2 + 1)*TA + (-2*param3 + 3*param2)*TB + dotProd(xBminxA, sumgrads);
+}
+
+double der_hermite_interpolationT(double param, double xA[2], double xB[2], double TA, double TB, double gradA[2], double gradB[2]){
+  // derivative with respect of param for the hermite interpolation for the value of the eikonal
+  double param2;
+  param2 = param*param;
+  double xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2];
+  vec2_subtraction(xB, xA, xBminxA);
+  vec2_addition(gradA, gradB, gradAplusgradB);
+  scalar_times_2vec(2, gradA, twogradA);
+  vec2_addition(twogradA, gradB, twogradAplusgradB);
+  double dotProd1, dotProd2, dotProd3;
+  dotProd1 = dotProd(xBminxA, gradAplusgradB);
+  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
+  dotProd3 = dotProd(xBminxA, gradA);
+  // put everything together
+  return (6*TA - 6*TB + 3*dotProd1)*param2 + (-6*TA + 6*TB - 2*dotProd2)*param + dotProd3;
+}
+
 
 
 double der_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef) {
@@ -518,6 +614,21 @@ double der_tofMu(double xA[2], double xB[2], double xmu[2], double Bmu[2], doubl
   top = dotProd( xmuMinxA, grad_Bmu_perp)*dotProd(xBminxA, Bmu_perp) - dotProd(xBminxA, grad_Bmu_perp)*dotProd(muMinxA, Bmu_perp);
   bottom = (dotProd(xBminxA, Bmu_perp))*(dotProd(xBminxA, Bmu_perp));
   return top/bottom;
+}
+
+double der_directCr(double mu, double mu2, double t, double t2, double coef3xmu[2], double coef2xmu[2], double BHat[2], double xA[2], double xB[2], double xHat[2], double TA, double TB, double gradA[2], double gradB[2]){
+  // derivative of the objective function for an update with a straight line and a creeping ray part
+  // with respect to mu
+  // uses der_tofMu (because of the chain rule)
+  double dert;
+  dert = der_tofMu(xA, xB, xmu, Bmu, 
+  double xBminxA[2], coefgradA[2], coefgradB[2];
+  vec2_subtraction(xB, xA, xBminxA);
+  scalar_times_2vec(3*t2 - 4*t + 1, gradA, coefgradA);
+  scalar_times_2vec(3*t2 - 2*t, gradB, coefgradB);
+  double part1;
+  part1 = T0*(6*t2 - 6*t)*
+  
 }
 
 double fobjective_directCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double TA, double TB, double gradA[2], double gradB[2], double BR[2], double BHat[2], double indexRef){
