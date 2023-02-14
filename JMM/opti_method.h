@@ -50,5 +50,5 @@ double t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2
 
 double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2]);
 
-
+double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 

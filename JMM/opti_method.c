@@ -600,6 +600,19 @@ double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double 
   return (dotProd(xMuminxB, derBmu_perp)*dotProd(xAminxB, Bmu_perp) - dotProd(xAminxB, derBmu_perp)*dotProd(xMuminxB, Bmu_perp))/(b*b);
 }
 
-
+double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
+  // objective function for when xHat and xR are on the boundary and we want to update xHat with xA and xB which
+  // are not on the boundary but from 0 to muMin we can't join xAxB to xHat with a straight line
+  // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
+  double lambda;
+  lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
+  double xLam[2], xMu[2], L, Tlam;
+  linearInterpolation(lambda, xA, xB, xLam);
+  hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
+  Tlam = hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB);
+  double xMuminxLam[2];
+  vec2_subtraction(xMu, xLam, xMuminxLam);
+  return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arclength_hermiteSimpson(mu, 1, xR, xHat, BR, BHat);
+}
 
 
