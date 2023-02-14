@@ -112,57 +112,15 @@ double der_hermite_interpolationT(double param, double xA[2], double xB[2], doub
 double der_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef) {
   // derivative with respect of lambda from the function to minimize for the update in which the
   // segment x0x1 is on the boundary but xHat if fully contained in a region with index indexRef
-  double lambda3, lambda2;
-  lambda2 = lambda*lambda;
-  lambda3 = lambda2*lambda;
-  double x1Minx0[2], B0PlusB1[2], B1Plus2B0[2], twoB0[2], grad0Plusgrad1[2], twoGrad0PlusGrad1[2], twoGrad0[2];
-  double lamB0[2], x0MinxHat[2];
-  // first time we gather terms
-  vec2_subtraction(x1, x0, x1Minx0);
-  vec2_addition(B0, B1, B0PlusB1);
-  scalar_times_2vec(2, B0, twoB0);
-  vec2_addition(B1, twoB0, B1Plus2B0);
-  vec2_addition(grad0, grad1, grad0Plusgrad1);
-  scalar_times_2vec(2, grad0, twoGrad0);
-  vec2_addition(twoGrad0, grad1, twoGrad0PlusGrad1);
-  scalar_times_2vec(lambda, B0, lamB0);
-  vec2_subtraction(x0, xHat, x0MinxHat);
-  // second time gathering terms
-  double dotProd1, dotProd2, sixX0minx1[2], threeB0plusB1[2], twoB1Plus2B0[2], twox0Minx1[2], threex0Minx1[2];
-  dotProd1 = dotProd(x1Minx0, grad0Plusgrad1);
-  dotProd2 = dotProd(x1Minx0, twoGrad0PlusGrad1);
-  scalar_times_2vec(-6, x1Minx0, sixX0minx1);
-  scalar_times_2vec(3, B0PlusB1, threeB0plusB1);
-  scalar_times_2vec(2, B1Plus2B0, twoB1Plus2B0);
-  scalar_times_2vec(-2, x1Minx0, twox0Minx1);
-  scalar_times_2vec(-3, x1Minx0, threex0Minx1);
-  // third time gathering terms
-  double coeflam2_1[2], coeflam_1[2], coef_lam3_2[2], coef_lam2_2[2], coef_lam_2[2];
-  vec2_addition(sixX0minx1, threeB0plusB1, coeflam2_1);
-  vec2_addition(sixX0minx1,  twoB1Plus2B0, coeflam_1);
-  vec2_addition(twox0Minx1, B0PlusB1, coef_lam3_2);
-  vec2_addition(threex0Minx1, B1Plus2B0, coef_lam2_2);
-  scalar_times_2vec(lambda, B0, coef_lam_2);
-  // fourth time gathering terms
-  double lam2_1[2], lam1_1[2], rest1_1[2], lam3_2[2], lam2_2[2], rest1_2[2], rest2_2[2];
-  scalar_times_2vec(lambda2, coeflam2_1, lam2_1);
-  scalar_times_2vec(lambda, coeflam_1, lam1_1);
-  vec2_subtraction(lam2_1, lam1_1, rest1_1);
-  scalar_times_2vec(lambda3, coef_lam3_2, lam3_2);
-  scalar_times_2vec(lambda2, coef_lam2_2, lam2_2);
-  vec2_addition(lamB0, x0MinxHat, rest2_2);
-  vec2_subtraction(lam3_2, lam2_2, rest1_2);
-  // fifth time gathering terms
-  double derInside[2], xHatMinxLam[2], dotProd3, norm1, boundaryPart, tLamPart, dotProd4;
-  vec2_addition(rest1_1, B0, derInside);
-  vec2_addition(rest1_2, rest2_2, xHatMinxLam);
-  dotProd3 = dotProd(derInside, xHatMinxLam);
-  dotProd4 = dotProd(x1Minx0, grad0);
-  norm1 = l2norm(xHatMinxLam);
-  boundaryPart = indexRef*dotProd3/norm1;
-  tLamPart = 6*T0*lambda2 - 6*T1*lambda2 + 3*lambda2*dotProd1 -6*T0*lambda + 6*T1*lambda - 2*lambda*dotProd2 + dotProd4;
+  // segments x0xHat and x1xHat are fully contained in a region 
+  double xLam[2], gradxLam[2], der_Tlam, xHatminxLam[2], normxHatminxLam;
+  hermite_interpolationSpatial(lambda, x0, x1, B0, B1, xLam);
+  grad_hermite_interpolationSpatial(lambda, x0, x1, B0, B1, gradxLam);
+  der_Tlam = der_hermite_interpolationT(lambda, x0, x1, T0, T1, grad0, grad1);
+  vec2_subtraction(xLam, xHat, xHatminxLam);
+  normxHatminxLam = l2norm(xHatminxLam);
   // Putting everything together
-  return tLamPart + boundaryPart;
+  return der_Tlam + indexRef*dotProd(xHatminxLam, gradxLam)/normxHatminxLam;
 }
 
 double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef){
