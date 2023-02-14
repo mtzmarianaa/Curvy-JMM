@@ -1,4 +1,4 @@
-# Project with FMM (Fast Marching Method)
+# Project with JMM
 
 ### First stage: getting familiarized with FMM
 #### Spring Break 2022
