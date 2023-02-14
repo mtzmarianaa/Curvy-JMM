@@ -97,38 +97,41 @@ int main()
     /* print_info_update(info_update); */
 
 
-    /* printf("\n\nTESTING UPDATE FROM EDGE\n\n"); */
+    printf("\n\nTESTING UPDATE FROM EDGE\n\n");
 
-    /* double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj; */
+    double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj, der_Obj;
 
-    /* lambda0 = 0.056389; */
-    /* T0 = 0.70710678; */
-    /* T1 = 0.70710678; */
-    /* x0[0] = -1; */
-    /* x0[1] = 1; */
-    /* grad0[0] = -0.70710678; */
-    /* grad0[1] = 0.70710678; */
-    /* x1[0] = 1; */
-    /* x1[1] = 1; */
-    /* grad1[0] = 0.70710678; */
-    /* grad1[1] = 0.70710678; */
-    /* B0[0] = 0.89442719; */
-    /* B0[1] = 0.4472136; */
-    /* B1[0] = 0.89442719; */
-    /* B1[1] = -0.4472136; */
-    /* xHat[0] = 0; */
-    /* xHat[1] = 5; */
-    /* indexRef = 1; */
+    lambda0 = 0.056389;
+    T0 = 0.70710678;
+    T1 = 0.70710678;
+    x0[0] = -1;
+    x0[1] = 1;
+    grad0[0] = -0.70710678;
+    grad0[1] = 0.70710678;
+    x1[0] = 1;
+    x1[1] = 1;
+    grad1[0] = 0.70710678;
+    grad1[1] = 0.70710678;
+    B0[0] = 0.89442719;
+    B0[1] = 0.4472136;
+    B1[0] = 0.89442719;
+    B1[1] = -0.4472136;
+    xHat[0] = 0;
+    xHat[1] = 5;
+    indexRef = 1;
     
 
-    /* fObj = fobjective_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
-    /* der_fromEdge(0.5, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+    fObj = fobjective_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    der_Obj = der_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
 
-    /* printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, fObj); */
+    printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, der_Obj);
 
-    /* lam_opti = projectedGradient_fromEdge(lambda0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef); */
+    lam_opti = projectedGradient_fromEdge(lambda0, 0, 1,T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef);
 
-    /* printf("Optimum lambda %lf", lam_opti); */
+    printf("Optimum lambda %lf\n", lam_opti);
+    fObj = fobjective_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    der_Obj = der_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    printf("Final objective value %lf   and derivative   %lf\n",  fObj, der_Obj);
     
     /* printf("\n\nTESTING FREE SPACE OPTIMIZATION - PROJECTED GRADIENT DESCENT\n\n"); */
     
@@ -269,37 +272,37 @@ int main()
 
     /* print_info_update(info_update); */
 
-    printf("TESTING FUNCTIONS RELATED TO A TWO STEP UPDATE");
+    /* printf("TESTING FUNCTIONS RELATED TO A TWO STEP UPDATE"); */
 
-    double gradient[2], lambda, mu, T0, grad0[2], T1, grad1[2], x0[2], x1[2], x2[2], xHat[2], B0[2], B2[2];
-    double indexRef_01, indexRef_02, optimizers[2], grad_f[2];
+    /* double gradient[2], lambda, mu, T0, grad0[2], T1, grad1[2], x0[2], x1[2], x2[2], xHat[2], B0[2], B2[2]; */
+    /* double indexRef_01, indexRef_02, optimizers[2], grad_f[2]; */
 
-    lambda = 0.3;
-    mu = 0.2;
-    T0 = 1.4;
-    grad0[0] = 0.4472136;
-    grad0[1] = 0.89442719;
-    grad1[0] = -0.89442719;
-    grad1[1] = 0.4472136;
-    T1 = 1.6;
-    x0[0] = 0;
-    x0[1] = 0;
-    x1[0] = -3;
-    x1[1] = 1;
-    x2[0] = 0;
-    x2[1] = 0.3;
-    xHat[0] = 0.3;
-    xHat[1] = 2.5;
-    B0[0] = 0.01;
-    B0[1] = 1;
-    B2[0] = 0.1;
-    B2[1] = 0.8;
-    indexRef_01 = 1;
-    indexRef_02 = 1.6;
+    /* lambda = 0.3; */
+    /* mu = 0.2; */
+    /* T0 = 1.4; */
+    /* grad0[0] = 0.4472136; */
+    /* grad0[1] = 0.89442719; */
+    /* grad1[0] = -0.89442719; */
+    /* grad1[1] = 0.4472136; */
+    /* T1 = 1.6; */
+    /* x0[0] = 0; */
+    /* x0[1] = 0; */
+    /* x1[0] = -3; */
+    /* x1[1] = 1; */
+    /* x2[0] = 0; */
+    /* x2[1] = 0.3; */
+    /* xHat[0] = 0.3; */
+    /* xHat[1] = 2.5; */
+    /* B0[0] = 0.01; */
+    /* B0[1] = 1; */
+    /* B2[0] = 0.1; */
+    /* B2[1] = 0.8; */
+    /* indexRef_01 = 1; */
+    /* indexRef_02 = 1.6; */
 
-    projectedGradient_TwoStep(optimizers, 0, 1, 0, 1, T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02, 0.000001, 50);
+    /* projectedGradient_TwoStep(optimizers, 0, 1, 0, 1, T0, grad0, T1, grad1, x0, x1, x2, xHat, B0, B2, indexRef_01, indexRef_02, 0.000001, 50); */
 
-    printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]);
+    /* printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]); */
 
 	   
 
