@@ -2,6 +2,8 @@
 
 void linearInterpolation(double param, double from[2], double to[2], double interpolation[2]);
 
+void der_linearInterpolation(double param, double from[2], double to[2], double der_interpolation[2]);
+
 void hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double interpolation[2]);
 
 void grad_hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double gradient[2]);
@@ -18,7 +20,7 @@ double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double
 
 double fobjective_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef);
 
-double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef);
+double projectedGradient_fromEdge(double lambda0, double lambdaMin, double lambdaMax, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef);
 
 double der_freeSpace(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef);
 

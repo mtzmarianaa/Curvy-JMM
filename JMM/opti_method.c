@@ -140,49 +140,24 @@ double backTr_fromEdge(double alpha0, double d, double lambda, double T0, double
 }
 
 double fobjective_fromEdge(double lambda, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double indexRef){
-  double lambda3, lambda2;
-  lambda2 = lambda*lambda;
-  lambda3 = lambda2*lambda;
-  double x1Minx0[2], B0PlusB1[2], B1Plus2B0[2], twoB0[2], grad0Plusgrad1[2], twoGrad0PlusGrad1[2], twoGrad0[2];
-  double lamB0[2], x0MinxHat[2];
-  // first time we gather terms
-  vec2_subtraction(x1, x0, x1Minx0);
-  vec2_addition(B0, B1, B0PlusB1);
-  scalar_times_2vec(2, B0, twoB0);
-  vec2_addition(B1, twoB0, B1Plus2B0);
-  vec2_addition(grad0, grad1, grad0Plusgrad1);
-  scalar_times_2vec(2, grad0, twoGrad0);
-  vec2_addition(twoGrad0, grad1, twoGrad0PlusGrad1);
-  scalar_times_2vec(lambda, B0, lamB0);
-  vec2_subtraction(x0, xHat, x0MinxHat);
-  // second time gathering terms
-  double dotProd1, dotProd2, twox0Minx1[2], threex0Minx1[2];
-  dotProd1 = dotProd(x1Minx0, grad0Plusgrad1);
-  dotProd2 = dotProd(x1Minx0, twoGrad0PlusGrad1);
-  scalar_times_2vec(-2, x1Minx0, twox0Minx1);
-  scalar_times_2vec(-3, x1Minx0, threex0Minx1);
-  // third time gathering terms
-  double coef_lam3_2[2], coef_lam2_2[2], coef_lam_2[2];
-  vec2_addition(twox0Minx1, B0PlusB1, coef_lam3_2);
-  vec2_addition(threex0Minx1, B1Plus2B0, coef_lam2_2);
-  scalar_times_2vec(lambda, B0, coef_lam_2);
-  // fourth time gathering terms
-  double lam3_2[2], lam2_2[2], rest1_2[2], rest2_2[2];
-  scalar_times_2vec(lambda3, coef_lam3_2, lam3_2);
-  scalar_times_2vec(lambda2, coef_lam2_2, lam2_2);
-  vec2_addition(lamB0, x0MinxHat, rest2_2);
-  vec2_subtraction(lam3_2, lam2_2, rest1_2);
-  // fifth time gathering terms
-  double xHatMinxLam[2], norm1, boundaryPart, tLamPart, dotProd4;
-  vec2_addition(rest1_2, rest2_2, xHatMinxLam);
-  dotProd4 = dotProd(x1Minx0, grad0);
-  norm1 = l2norm(xHatMinxLam);
-  tLamPart = 2*T0*lambda3 - 2*T1*lambda3 + lambda3*dotProd1 -3*T0*lambda2 + 3*T1*lambda2 - lambda2*dotProd2 + lambda*dotProd4 + T0;
-  return tLamPart + indexRef*norm1;
+
+  // T(xlambda) + indexRef*norm(xHat - xLam)
+
+  double Tlam, xLam[2];
+
+  Tlam = hermite_interpolationT(lambda, x0, x1, T0, T1, grad0, grad1);
+  hermite_interpolationSpatial(lambda, x0, x1, B0, B1, xLam);
+
+  // put everything together
+  double xHatminxLam[2], normxHatminxLam;
+  vec2_subtraction(xHat, xLam, xHatminxLam);
+  normxHatminxLam = l2norm(xHatminxLam);
+
+  return Tlam + indexRef*normxHatminxLam;
 }
 
 
-double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef){
+double projectedGradient_fromEdge(double lambda0, double lambdaMin, double lambdaMax, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef){
   // projected gradient descent for an update in which the segment x0x1 is on the boundary but xHat
   // if fully contained in a region with index indexRef
   double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
@@ -198,11 +173,11 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   else{
     test = lam_prev;
   }
-  if(test>1){
-    lam_cur = 1;
+  if(test>lambdaMax){
+    lam_cur = lambdaMax;
   }
-  else if(test<0){
-    lam_cur = 0;
+  else if(test<lambdaMin){
+    lam_cur = lambdaMin;
   }
   else{
     lam_cur = test;
@@ -212,11 +187,11 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
   while(i<maxIter & fabs(grad_cur)>tol & fabs(lam_cur - lam_prev)>0) {
     alpha = backTr_fromEdge(0.25, grad_cur, lam_cur, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
     test = lam_cur - alpha*grad_cur;
-    if(test<0){
-      test = 0;
+    if(test<lambdaMin){
+      test = lambdaMin;
     }
-    if(test>1){
-      test = 1;
+    if(test>lambdaMax){
+      test = lambdaMax;
     }
     grad_prev = grad_cur;
     lam_prev = lam_cur;
@@ -229,28 +204,13 @@ double projectedGradient_fromEdge(double lambda0, double T0, double grad0[2], do
 }
 
 double der_freeSpace(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
-  double lambda2;
-  lambda2 = lambda*lambda;
-  // first time we gather terms
-  double  xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2], xHatMinxA[2];
-  vec2_subtraction(xB, xA, xBminxA);
-  vec2_addition(gradA, gradB, gradAplusgradB);
-  scalar_times_2vec(2, gradA, twogradA);
-  vec2_addition(twogradA, gradB, twogradAplusgradB);
-  vec2_subtraction(xHat, xA, xHatMinxA);
-  // second time we gather terms
-  double dotProd1, dotProd2, dotProd3, lamxBminxA[2], disxlam[2], dotProd4;
-  dotProd1 = dotProd(xBminxA, gradAplusgradB);
-  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
-  dotProd3 = dotProd(xBminxA, gradA);
-  scalar_times_2vec(lambda, xBminxA, lamxBminxA);
-  vec2_subtraction(xHatMinxA, lamxBminxA, disxlam);
-  dotProd4 = dotProd(xBminxA, disxlam);
-  // third time we gather terms
-  double tLamPart, rayPart;
-  tLamPart = (6*TA - 6*TB + 3*dotProd1)*lambda2 + (-6*TA + 6*TB - 2*dotProd2)*lambda + dotProd3;
-  rayPart = indexRef*(dotProd4)/l2norm(disxlam);
-  return tLamPart - rayPart;
+  double xLam[2], gradxLam[2], der_Tlam, xHatminxLam[2], normxHatminxLam;
+  linearInterpolation(lambda, xA, xB, xLam);
+  der_linearInterpolation(lambda, xA, xB, gradxLam);
+  der_Tlam = der_hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB);
+  vec2_subtraction(xLam, xHat, xHatminxLam);
+  normxHatminxLam = l2norm(xHatminxLam);
+  return der_Tlam + indexRef*dotProd(xHatminxLam, gradxLam)/normxHatminxLam;
 }
 
 double backTr_freeSpace(double alpha0, double d, double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
@@ -269,25 +229,15 @@ double backTr_freeSpace(double alpha0, double d, double lambda, double TA, doubl
 }
 
 double fobjective_freeSpace(double lambda, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double indexRef){
-  double lambda2, lambda3;
-  lambda2 = lambda*lambda;
-  lambda3 = lambda2*lambda;
-  // first time we gather terms
-  double xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2], lamxBminxA[2], xHatminxA[2];
-  vec2_subtraction(xB, xA, xBminxA);
-  vec2_addition(gradA, gradB, gradAplusgradB);
-  scalar_times_2vec(2, gradA, twogradA);
-  vec2_addition(twogradA, gradB, twogradAplusgradB);
-  scalar_times_2vec(lambda, xBminxA, lamxBminxA);
-  vec2_subtraction(xHat, xA, xHatminxA);
-  // second time we gather terms
-  double dotProd1, dotProd2, dotProd3, disxlam[2], norm1;
-  dotProd1 = dotProd(xBminxA, gradAplusgradB);
-  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
-  dotProd3 = dotProd(xBminxA, gradA);
-  vec2_subtraction(xHatminxA, lamxBminxA, disxlam);
-  norm1 = l2norm(disxlam);
-  return (2*TA - 2*TB + dotProd1)*lambda3 + (-3*TA + 3*TB - dotProd2)*lambda2 + dotProd3*lambda + TA + indexRef*norm1;
+  double Tlam, xLam[2];
+  Tlam = hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB);
+  linearInterpolation(lambda, xA, xB, xLam);
+  // put everything together
+  double xHatminxLam[2], normxHatminxLam;
+  vec2_subtraction(xHat, xLam, xHatminxLam);
+  normxHatminxLam = l2norm(xHatminxLam);
+
+  return Tlam + indexRef*normxHatminxLam;
 }
 
 double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef){
