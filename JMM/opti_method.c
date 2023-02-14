@@ -1,5 +1,4 @@
 
-
 /*
 Optimization methods for the 2D FMM
 */
@@ -178,7 +177,7 @@ double fobjective_fromEdge(double lambda, double T0, double grad0[2], double B0[
 }
 
 
-double projectedGradient_fromEdge(double lambda0, double lambdaMin, double lambdaMax, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, double maxIter, double indexRef){
+double projectedGradient_fromEdge(double lambda0, double lambdaMin, double lambdaMax, double T0, double grad0[2], double B0[2], double T1, double grad1[2], double B1[2], double x0[2], double x1[2], double xHat[2], double tol, int maxIter, double indexRef){
   // projected gradient descent for an update in which the segment x0x1 is on the boundary but xHat
   // if fully contained in a region with index indexRef
   double grad_cur, grad_prev, step, alpha, lam_prev, lam_cur, test;
@@ -261,7 +260,7 @@ double fobjective_freeSpace(double lambda, double TA, double gradA[2], double TB
   return Tlam + indexRef*normxHatminxLam;
 }
 
-double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, double maxIter, double indexRef){
+double projectedGradient_freeSpace(double lambda0, double lambdaMin, double lambdaMax, double TA, double gradA[2], double TB, double gradB[2], double xA[2], double xB[2], double xHat[2], double tol, int maxIter, double indexRef){
   // two point optimization problem. xA and xHat are on the boundary and xB is fully contained in one region.
   // With usual notation xA could be either x0 or x1 and xB could be either x0 or x1 (this is more abstract)
   // THIS IS A PROJECTED GRADIENT DESCENT METHOD
@@ -599,6 +598,91 @@ double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double 
   b = dotProd(xAminxB, Bmu_perp);
   return (dotProd(xMuminxB, derBmu_perp)*dotProd(xAminxB, Bmu_perp) - dotProd(xAminxB, derBmu_perp)*dotProd(xMuminxB, Bmu_perp))/(b*b);
 }
+
+double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double muMin, double indexRef){
+  // gradient of fobjective_shootCr
+  double lambda, xMu[2], xLam[2], Bmu[2], derBmu[2], Tprime, Bmu_halves[2], derBmu_halves[2];
+  lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
+  linearInterpolation(lambda, xA, xB, xLam); // xLam
+  hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu); // xMu
+  Tprime = der_hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB); // T'(lambda)
+  grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu); // Bmu
+  secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu); // Bmu'
+  grad_hermite_interpolationSpatial((1-mu)/2, xR, xHat, BR, BHat, Bmu_halves); // Bmu of (1-mu)/2
+  secondDer_hermite_interpolationSpatial((1-mu)/2, xR, xHat, BR, BHat, derBmu_halves); // Bmu' of (1-mu)/2
+  double xMuminxLam[2], gPrime, gPrime_halves, tPrime, derxLam[2];
+  vec2_subtraction(xMu, xLam, xMuminxLam);
+  gPrime = dotProd(derBmu, Bmu)/l2norm(Bmu);
+  gPrime_halves = dotProd(derBmu_halves, Bmu_halves)/l2norm(Bmu_halves);
+  tPrime = der_t_ofMu(mu, xA, xB, xHat, xR, BHat, BR);
+  der_linearInterpolation(lambda, xA, xB, derxLam);
+  double derMiddle, BmuminderxLam[2], coefxLam[2];
+  scalar_times_2vec(tPrime, derxLam, coefxLam);
+  vec2_subtraction(Bmu, coefxLam, BmuminderxLam);
+  derMiddle = indexRef*(dotProd(BmuminderxLam, xMuminxLam)/l2norm(xMuminxLam));
+  return Tprime*tPrime + derMiddle + indexRef/6*(gPrime - 2*mu*gPrime_halves);
+}
+
+double backTr_shootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef){
+  double f_prev, f_cur, alpha;
+  int i = 0;
+  alpha = alpha0;
+  // evaluating the objective function
+  f_prev = fobjective_shootCr(mu, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
+  f_cur = fobjective_shootCr(mu-alpha*d, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
+  // start backtracking if necessary
+  while(f_prev<=f_cur & i<10){
+    alpha = alpha*0.5;
+    f_cur = fobjective_shootCr(mu-alpha*d, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
+    i++;
+  }
+  return alpha;
+}
+
+double projectedGradient_shootCr(double mu0, double muMin, double muMax, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double tol, int maxIter, double indexRef){
+  // projected gradient descent for when xHat and xR are on the boundary and we want to update xHat with xA and xB which
+  // are not on the boundary but from 0 to muMin we can't join xAxB to xHat with a straight line
+  // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
+  double der_cur, der_prev, step, alpha, mu_prev, mu_cur, test;
+  int i = 1;
+  alpha = 1;
+  mu_prev = mu0;
+  der_cur = der_shootCr(mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+  der_prev = der_cur;
+  if(fabs(der_cur)>tol){
+    test = mu_prev - alpha*der_cur;
+  }
+  else{
+    test = mu_prev;
+  }
+  if(test>muMax){
+    test = muMax;
+  }
+  if(test<muMin){
+    test = muMin;
+  }
+  mu_cur = test;
+  der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+  // start the iteration part
+  while(i<maxIter & fabs(der_cur)>tol & fabs(mu_cur - mu_prev)>0){
+    alpha = backTr_shootCr(1, der_cur, mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
+    test = mu_cur - alpha*der_cur;
+    if(test>muMax){
+      test = muMax;
+    }
+    if(test<muMin){
+      test = muMin;
+    }
+    der_prev = der_cur;
+    mu_prev = mu_cur;
+    mu_cur = test;
+    der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+    i++;
+    }
+    return mu_cur;
+}
+
+
 
 double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
   // objective function for when xHat and xR are on the boundary and we want to update xHat with xA and xB which
