@@ -42,18 +42,19 @@ void hermite_interpolationSpatial(double param, double from[2], double to[2], do
 void grad_hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double gradient[2]){
   // gradient of the general hermite interpolation evaluated at param for the boundary (i.e. gradBmu)
   double param2;
+  param2 = param*param;
   double twofrom[2], twoto[2], threefrom[2], twogradfrom[2], threeto[2];
-  scalar_times_2vec(2, from, twofrom);
-  scalar_times_2vec(-2, to, twoto);
-  scalar_times_2vec(-3, from, threefrom);
-  scalar_times_2vec(-2, grad_from, twogradfrom);
-  scalar_times_2vec(3, to, threeto);
+  scalar_times_2vec(2, from, twofrom); // 2x0
+  scalar_times_2vec(-2, to, twoto); // -2x1
+  scalar_times_2vec(-3, from, threefrom); // -3x0
+  scalar_times_2vec(-2, grad_from, twogradfrom); // -2B0
+  scalar_times_2vec(3, to, threeto); // 3x1
   double sum1[2], sum2[2], sum3[2], sum4[2];
-  vec2_addition(twofrom, grad_from, sum1);
-  vec2_addition(twoto, grad_to, sum2);
-  vec2_addition(threefrom, twogradfrom, sum3);
-  vec2_subtraction(threeto, grad_to, sum4);
-  double coefparam2[2], coefparam[2];
+  vec2_addition(twofrom, grad_from, sum1); // 2x0 + B0
+  vec2_addition(twoto, grad_to, sum2); // -2x1 + B1
+  vec2_addition(threefrom, twogradfrom, sum3); // -3x0 -2B0
+  vec2_subtraction(threeto, grad_to, sum4); // -3x0 - B0
+  double coefparam2[2], coefparam[2]; 
   vec2_addition(sum1, sum2, coefparam2);
   vec2_addition(sum3, sum4, coefparam);
   double par1[2], par2[2], par3[2];
@@ -94,7 +95,7 @@ double arclength_hermiteSimpson(double a, double b, double from[2], double to[2]
   norm_a = l2norm(gradient_a);
   norm_mid = l2norm(gradient_mid);
   norm_b = l2norm(gradient_b);
-  return (1/6)*(norm_a + 4*norm_mid + norm_b);
+  return (norm_a + 4*norm_mid + norm_b)*(b-a)/6;
 }
 
 double hermite_interpolationT(double param, double xA[2], double xB[2], double TA, double TB, double gradA[2], double gradB[2]){
@@ -573,12 +574,10 @@ double t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2
   double xMu[2], Bmu[2], Bmu_perp[2];
   hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
   grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu);
-  Bmu_perp[0] = Bmu[1];
-  Bmu_perp[1] = -Bmu[0];
-  double xMuminxB[2], xAminxB[2];
-  vec2_subtraction(xMu, xB, xMuminxB);
-  vec2_subtraction(xA, xB, xAminxB);
-  return dotProd(xMuminxB, Bmu_perp)/dotProd(xAminxB, Bmu_perp);
+  double t, b;
+  t = Bmu[1]*xA[0] - Bmu[1]*xMu[0] - Bmu[0]*xA[1] + Bmu[0]*xMu[1];
+  b = Bmu[0]*xB[1] - Bmu[0]*xA[1] + Bmu[1]*xA[0] - Bmu[1]*xB[0];
+  return t/b;
 }
 
 double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2]){
@@ -686,17 +685,21 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
 
 double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
   // objective function for when xHat and xR are on the boundary and we want to update xHat with xA and xB which
-  // are not on the boundary but from 0 to muMin we can't join xAxB to xHat with a straight line
+  // are not on the boundary but from muMin to 1 we can't join xAxB to xHat with a straight line
   // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
   double lambda;
   lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
+  printf("Value of lambda: %lf\n", lambda);
   double xLam[2], xMu[2], L, Tlam;
   linearInterpolation(lambda, xA, xB, xLam);
   hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
   Tlam = hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB);
   double xMuminxLam[2];
   vec2_subtraction(xMu, xLam, xMuminxLam);
-  return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arclength_hermiteSimpson(mu, 1, xR, xHat, BR, BHat);
+  double arcL;
+  arcL = arclength_hermiteSimpson(mu, 1, xR, xHat, BR, BHat);
+  printf("The computed L: %lf\n", arcL);
+  return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arcL;
 }
 
 

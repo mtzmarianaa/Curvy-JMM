@@ -97,41 +97,41 @@ int main()
     /* print_info_update(info_update); */
 
 
-    printf("\n\nTESTING UPDATE FROM EDGE\n\n");
+    /* printf("\n\nTESTING UPDATE FROM EDGE\n\n"); */
 
-    double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj, der_Obj;
+    /* double lambda0, T0, grad0[2], B0[2], T1, grad1[2], B1[2], x0[2], x1[2], xHat[2], indexRef, lam_opti, fObj, der_Obj; */
 
-    lambda0 = 0.056389;
-    T0 = 0.70710678;
-    T1 = 0.70710678;
-    x0[0] = -1;
-    x0[1] = 1;
-    grad0[0] = -0.70710678;
-    grad0[1] = 0.70710678;
-    x1[0] = 1;
-    x1[1] = 1;
-    grad1[0] = 0.70710678;
-    grad1[1] = 0.70710678;
-    B0[0] = 0.89442719;
-    B0[1] = 0.4472136;
-    B1[0] = 0.89442719;
-    B1[1] = -0.4472136;
-    xHat[0] = 0;
-    xHat[1] = 5;
-    indexRef = 1;
+    /* lambda0 = 0.056389; */
+    /* T0 = 0.70710678; */
+    /* T1 = 0.70710678; */
+    /* x0[0] = -1; */
+    /* x0[1] = 1; */
+    /* grad0[0] = -0.70710678; */
+    /* grad0[1] = 0.70710678; */
+    /* x1[0] = 1; */
+    /* x1[1] = 1; */
+    /* grad1[0] = 0.70710678; */
+    /* grad1[1] = 0.70710678; */
+    /* B0[0] = 0.89442719; */
+    /* B0[1] = 0.4472136; */
+    /* B1[0] = 0.89442719; */
+    /* B1[1] = -0.4472136; */
+    /* xHat[0] = 0; */
+    /* xHat[1] = 5; */
+    /* indexRef = 1; */
     
 
-    fObj = fobjective_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    der_Obj = der_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
+    /* fObj = fobjective_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+    /* der_Obj = der_fromEdge(0, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
 
-    printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, der_Obj);
+    /* printf("Starting with objetive value %lf    and derivative  %lf\n", fObj, der_Obj); */
 
-    lam_opti = projectedGradient_fromEdge(lambda0, 0, 1,T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef);
+    /* lam_opti = projectedGradient_fromEdge(lambda0, 0, 1,T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, 0.0001, 50, indexRef); */
 
-    printf("Optimum lambda %lf\n", lam_opti);
-    fObj = fobjective_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    der_Obj = der_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef);
-    printf("Final objective value %lf   and derivative   %lf\n",  fObj, der_Obj);
+    /* printf("Optimum lambda %lf\n", lam_opti); */
+    /* fObj = fobjective_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+    /* der_Obj = der_fromEdge(lam_opti, T0, grad0, B0, T1, grad1, B1, x0, x1, xHat, indexRef); */
+    /* printf("Final objective value %lf   and derivative   %lf\n",  fObj, der_Obj); */
     
     /* printf("\n\nTESTING FREE SPACE OPTIMIZATION - PROJECTED GRADIENT DESCENT\n\n"); */
     
@@ -304,6 +304,63 @@ int main()
 
     /* printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]); */
 
+
+
+    printf("TESTING THE SHOOT + CREEPING RAY UPDATE AND FININD MUMIN\n\n");
+
+    double muMin, x0[2], x1[2], xHat[2], xR[2], BHat[2], BR[2], T0, T1, grad0[2], grad1[2];
+
+    muMin = 0.25;
+
+    x0[0] = 3;
+    x0[1] = -2;
+    
+    x1[0] = -1;
+    x1[1] = -2;
+    
+    xR[0] = 0;
+    xR[1] = -1;
+    
+    xHat[0] = 1;
+    xHat[1] = 0;
+    
+    BHat[0] = 0;
+    BHat[1] = 1;
+    
+    BR[0] = 1;
+    BR[1] = 0;
+
+    T0 = 4.123105625617661;
+    T1 = 1.0;
+
+    grad0[0] = 0.9701425;
+    grad0[1] = 0.24253563;
+    grad1[0] = 0.0;
+    grad1[1] = 1.0;
+
+    double fObj, mu;
+    
+    printf("Testing the function value at mu = 0.5\n");
+
+    mu = 0.5;
+
+    fObj = fobjective_shootCr(mu, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.5: %lf:\n", fObj);
+
+    double grad_to[2], grad_from[2];
+    grad_hermite_interpolationSpatial(0.5, xR, xHat, BR, BHat, grad_to);
+    grad_hermite_interpolationSpatial(1, xR, xHat, BR, BHat, grad_from);
+
+    printf("Computed boundary gradient at mu = 0.5: %lf,  %lf\n", grad_to[0], grad_to[1]);
+    printf("Computed boundary gradient at mu = 1: %lf,  %lf\n", grad_from[0], grad_from[1]);
+
+    double inter1[2], inter2[2];
+
+    hermite_interpolationSpatial(0.5, xR, xHat, BR, BHat, inter1);
+    hermite_interpolationSpatial(0.75, xR, xHat, BR, BHat, inter2);
+
+    printf("Testing hermite interpolation with mu = 0.5: %lf  %lf\n", inter1[0], inter1[1]);
+    printf("Testing hermite interpolation with mu = 0.75: %lf  %lf\n", inter2[0], inter2[1]);
 	   
 
     eik_grid_dealloc(&eik_g1);
