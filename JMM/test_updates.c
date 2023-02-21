@@ -352,6 +352,16 @@ int main()
     muMin = find_minMu(0, x0, x1, xHat, xR, BHat, BR, 0.00001, 50);
     printf("The minimum mu found is: %lf\n", muMin);
 
+    double fObj_min;
+    fObj_min = fobjective_shootCr(muMin, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With muMin: %lf:\n", fObj_min);
+
+    double muOpt, fObj_opt;
+    muOpt = projectedGradient_shootCr(muMin, muMin, 1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 0.00001, 50, 1.0);
+    printf("\n\n\n\n\nOptimum mu found for a shoot and creep update: %lf\n", muOpt);
+    fObj_opt = fobjective_shootCr(muOpt, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With optimum mu: %lf\n", fObj_opt);
+
 
     eik_grid_dealloc(&eik_g1);
 

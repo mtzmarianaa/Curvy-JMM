@@ -672,8 +672,6 @@ double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double
     vec2_subtraction(xMu, xB, xMuminxB);
     fEval = dotProd(xMuminxB, Bmu_perp); // (xMu - xB)^T(Bmu_perp)
     derEval = dotProd(xMuminxB, derBmu_perp); // (xMu - xB)^T(derBmu_perp)
-    printf("Current mu: %lf\n", mu);
-    printf("Current t(mu): %lf\n\n\n", fEval);
     i ++;
     if(mu<0){
       mu = 0;
@@ -731,10 +729,10 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
   // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
   double der_cur, der_prev, step, alpha, mu_prev, mu_cur, test;
   int i = 1;
-  alpha = 1;
   mu_prev = mu0;
   der_cur = der_shootCr(mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
   der_prev = der_cur;
+  alpha = backTr_shootCr(1, der_cur, mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
   if(fabs(der_cur)>tol){
     test = mu_prev - alpha*der_cur;
   }
@@ -763,6 +761,10 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
     mu_prev = mu_cur;
     mu_cur = test;
     der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+    printf("  Current value of derivative: %lf\n", der_cur);
+    double fCur;
+    fCur = fobjective_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
+    printf("  Current value of objective function: %lf\n", fCur);
     i++;
     }
     return mu_cur;
@@ -776,8 +778,8 @@ double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2],
   // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
   double lambda;
   lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
-  printf("With mu: %lf\n", mu);
-  printf("Value of lambda: %lf\n", lambda);
+  /* printf("\n\nWith mu: %lf\n", mu); */
+  /* printf("Value of lambda: %lf\n", lambda); */
   double xLam[2], xMu[2], L, Tlam;
   linearInterpolation(lambda, xA, xB, xLam);
   hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
@@ -786,7 +788,7 @@ double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2],
   vec2_subtraction(xMu, xLam, xMuminxLam);
   double arcL;
   arcL = arclength_hermiteSimpson(mu, 1, xR, xHat, BR, BHat);
-  printf("The computed L: %lf\n\n", arcL);
+  //printf("The computed L: %lf\n", arcL);
   return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arcL;
 }
 
