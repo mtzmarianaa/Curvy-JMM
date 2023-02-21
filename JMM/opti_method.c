@@ -575,9 +575,9 @@ double t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2
   hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
   grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu);
   double t, b;
-  t = Bmu[1]*xA[0] - Bmu[1]*xMu[0] - Bmu[0]*xA[1] + Bmu[0]*xMu[1];
-  b = Bmu[0]*xB[1] - Bmu[0]*xA[1] + Bmu[1]*xA[0] - Bmu[1]*xB[0];
-  return t/b;
+  t = (xMu[0] - xA[0])*Bmu[1] - (xMu[1] - xA[1])*Bmu[0];
+  b = (xA[0] - xB[0])*Bmu[1] - (xA[1] - xB[1])*Bmu[0];
+  return -t/b;
 }
 
 double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2]){
@@ -596,6 +596,93 @@ double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double 
   double b;
   b = dotProd(xAminxB, Bmu_perp);
   return (dotProd(xMuminxB, derBmu_perp)*dotProd(xAminxB, Bmu_perp) - dotProd(xAminxB, derBmu_perp)*dotProd(xMuminxB, Bmu_perp))/(b*b);
+}
+
+double backTr_find_minMu(double mu, double alpha0, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double tol, double maxIter){
+  // backtracking algorithm to find the best step for finding the minimum mu
+  //  (0<= mu <= 1) such that the segment x0xMu is parallel to Bmu)
+  double mu_new, fEval, derEval, fEval_new, derEval_new, xMu[2], Bmu[2];
+  double Bmu_perp[2], xMuminxB[2], derBmu[2], derBmu_perp[2], alpha;
+  int i = 1;
+  alpha = alpha0;
+  hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
+  grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu);
+  Bmu_perp[0] = Bmu[1];
+  Bmu_perp[1] = -Bmu[0];
+  secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu);
+  derBmu_perp[0] = derBmu[1];
+  derBmu_perp[1] = -derBmu[0];
+  vec2_subtraction(xMu, xB, xMuminxB);
+  fEval = dotProd(xMuminxB, Bmu_perp) ; // (xMu - xB)^T(Bmu_perp) 
+  derEval = dotProd(xMuminxB, derBmu_perp); // (xMu - xB)^T(derBmu_perp)
+  mu_new = mu - alpha*fEval/derEval; // new step
+  hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, xMu);
+  grad_hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, Bmu);
+  Bmu_perp[0] = Bmu[1];
+  Bmu_perp[1] = -Bmu[0];
+  secondDer_hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, derBmu);
+  derBmu_perp[0] = derBmu[1];
+  derBmu_perp[1] = -derBmu[0];
+  vec2_subtraction(xMu, xB, xMuminxB);
+  fEval_new = dotProd(xMuminxB, Bmu_perp) ; // (xMu - xB)^T(Bmu_perp)
+  while(fabs(fEval) < fabs(fEval_new)){
+    alpha = alpha/2;
+    mu_new = mu - alpha*fEval/derEval; // new step
+    hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, xMu);
+    grad_hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, Bmu);
+    Bmu_perp[0] = Bmu[1];
+    Bmu_perp[1] = -Bmu[0];
+    secondDer_hermite_interpolationSpatial(mu_new, xR, xHat, BR, BHat, derBmu);
+    derBmu_perp[0] = derBmu[1];
+    derBmu_perp[1] = -derBmu[0];
+    vec2_subtraction(xMu, xB, xMuminxB);
+    fEval_new = dotProd(xMuminxB, Bmu_perp) ; // (xMu - xB)^T(Bmu_perp)
+    derEval_new = dotProd(xMuminxB, derBmu_perp);
+  }
+  return alpha;
+}
+
+double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double tol, double maxIter){
+  // find the minimum mu (0<= mu <= 1) such that the segment x0xMu is parallel to Bmu)
+  double mu, fEval, derEval, xMu[2], Bmu[2], Bmu_perp[2], xMuminxB[2], derBmu[2], derBmu_perp[2], change, alpha;
+  int i = 1;
+  mu = mu0;
+  hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
+  grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu);
+  Bmu_perp[0] = Bmu[1];
+  Bmu_perp[1] = -Bmu[0];
+  secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu);
+  derBmu_perp[0] = derBmu[1];
+  derBmu_perp[1] = -derBmu[0];
+  vec2_subtraction(xMu, xB, xMuminxB);
+  fEval = dotProd(xMuminxB, Bmu_perp) ; // (xMu - xB)^T(Bmu_perp) 
+  derEval = dotProd(xMuminxB, derBmu_perp); // (xMu - xB)^T(derBmu_perp)
+  change = 10;
+  while(fabs(fEval)> tol & i < maxIter & fabs(change)>tol){
+    // Newton's method
+    alpha = backTr_find_minMu(mu, 1, xA, xB, xHat, xR, BHat, BR, tol, maxIter);
+    mu = mu - alpha*fEval/derEval;
+    hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu);
+    grad_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, Bmu);
+    Bmu_perp[0] = Bmu[1];
+    Bmu_perp[1] = -Bmu[0];
+    secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu);
+    derBmu_perp[0] = derBmu[1];
+    derBmu_perp[1] = -derBmu[0];
+    vec2_subtraction(xMu, xB, xMuminxB);
+    fEval = dotProd(xMuminxB, Bmu_perp); // (xMu - xB)^T(Bmu_perp)
+    derEval = dotProd(xMuminxB, derBmu_perp); // (xMu - xB)^T(derBmu_perp)
+    printf("Current mu: %lf\n", mu);
+    printf("Current t(mu): %lf\n\n\n", fEval);
+    i ++;
+    if(mu<0){
+      mu = 0;
+    }
+    if(mu>1){
+      mu = 1;
+    }
+  }
+  return mu;
 }
 
 double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double muMin, double indexRef){
@@ -689,6 +776,7 @@ double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2],
   // this is why we shoot to the boundary and then we do a creeping update until we reach xHat
   double lambda;
   lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
+  printf("With mu: %lf\n", mu);
   printf("Value of lambda: %lf\n", lambda);
   double xLam[2], xMu[2], L, Tlam;
   linearInterpolation(lambda, xA, xB, xLam);
@@ -698,7 +786,7 @@ double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2],
   vec2_subtraction(xMu, xLam, xMuminxLam);
   double arcL;
   arcL = arclength_hermiteSimpson(mu, 1, xR, xHat, BR, BHat);
-  printf("The computed L: %lf\n", arcL);
+  printf("The computed L: %lf\n\n", arcL);
   return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arcL;
 }
 

@@ -304,7 +304,9 @@ int main()
 
     /* printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]); */
 
-
+    /////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////
 
     printf("TESTING THE SHOOT + CREEPING RAY UPDATE AND FININD MUMIN\n\n");
 
@@ -346,22 +348,10 @@ int main()
 
     fObj = fobjective_shootCr(mu, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
     printf("With mu = 0.5: %lf:\n", fObj);
+    
+    muMin = find_minMu(0, x0, x1, xHat, xR, BHat, BR, 0.00001, 50);
+    printf("The minimum mu found is: %lf\n", muMin);
 
-    double grad_to[2], grad_from[2];
-    grad_hermite_interpolationSpatial(0.5, xR, xHat, BR, BHat, grad_to);
-    grad_hermite_interpolationSpatial(1, xR, xHat, BR, BHat, grad_from);
-
-    printf("Computed boundary gradient at mu = 0.5: %lf,  %lf\n", grad_to[0], grad_to[1]);
-    printf("Computed boundary gradient at mu = 1: %lf,  %lf\n", grad_from[0], grad_from[1]);
-
-    double inter1[2], inter2[2];
-
-    hermite_interpolationSpatial(0.5, xR, xHat, BR, BHat, inter1);
-    hermite_interpolationSpatial(0.75, xR, xHat, BR, BHat, inter2);
-
-    printf("Testing hermite interpolation with mu = 0.5: %lf  %lf\n", inter1[0], inter1[1]);
-    printf("Testing hermite interpolation with mu = 0.75: %lf  %lf\n", inter2[0], inter2[1]);
-	   
 
     eik_grid_dealloc(&eik_g1);
 
