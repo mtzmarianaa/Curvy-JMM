@@ -590,12 +590,12 @@ double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double 
   secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu);
   derBmu_perp[0] = derBmu[1];
   derBmu_perp[1] = -derBmu[0];
-  double xMuminxB[2], xAminxB[2];
-  vec2_subtraction(xMu, xB, xMuminxB);
-  vec2_subtraction(xA, xB, xAminxB);
+  double xMuminxA[2], xAminxB[2];
+  vec2_subtraction(xMu, xA, xMuminxA);
+  vec2_subtraction(xB, xA, xBminxA);
   double b;
-  b = dotProd(xAminxB, Bmu_perp);
-  return (dotProd(xMuminxB, derBmu_perp)*dotProd(xAminxB, Bmu_perp) - dotProd(xAminxB, derBmu_perp)*dotProd(xMuminxB, Bmu_perp))/(b*b);
+  b = dotProd(xBminxA, Bmu_perp);
+  return (dotProd(xMuminxA, derBmu_perp)*dotProd(xBminxA, Bmu_perp) - dotProd(xBminxA, derBmu_perp)*dotProd(xMuminxA, Bmu_perp))/(b*b);
 }
 
 double backTr_find_minMu(double mu, double alpha0, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double tol, double maxIter){
@@ -683,7 +683,7 @@ double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double
   return mu;
 }
 
-double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double muMin, double indexRef){
+double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef){
   // gradient of fobjective_shootCr
   double lambda, xMu[2], xLam[2], Bmu[2], derBmu[2], Tprime, Bmu_halves[2], derBmu_halves[2];
   lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
@@ -704,7 +704,7 @@ double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double
   scalar_times_2vec(tPrime, derxLam, coefxLam);
   vec2_subtraction(Bmu, coefxLam, BmuminderxLam);
   derMiddle = indexRef*(dotProd(BmuminderxLam, xMuminxLam)/l2norm(xMuminxLam));
-  return Tprime*tPrime + derMiddle + indexRef/6*(gPrime - 2*mu*gPrime_halves);
+  return Tprime*tPrime + derMiddle + (gPrime - 2*mu*gPrime_halves)*indexRef/6;
 }
 
 double backTr_shootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef){
@@ -730,7 +730,7 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
   double der_cur, der_prev, step, alpha, mu_prev, mu_cur, test;
   int i = 1;
   mu_prev = mu0;
-  der_cur = der_shootCr(mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+  der_cur = der_shootCr(mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
   der_prev = der_cur;
   alpha = backTr_shootCr(1, der_cur, mu0, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
   if(fabs(der_cur)>tol){
@@ -746,7 +746,7 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
     test = muMin;
   }
   mu_cur = test;
-  der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+  der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
   // start the iteration part
   while(i<maxIter & fabs(der_cur)>tol & fabs(mu_cur - mu_prev)>0){
     alpha = backTr_shootCr(1, der_cur, mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
@@ -760,7 +760,7 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
     der_prev = der_cur;
     mu_prev = mu_cur;
     mu_cur = test;
-    der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, muMin, indexRef);
+    der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
     printf("  Current value of derivative: %lf\n", der_cur);
     double fCur;
     fCur = fobjective_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);

@@ -340,17 +340,38 @@ int main()
     grad1[0] = 0.0;
     grad1[1] = 1.0;
 
-    double fObj, mu;
-    
-    printf("Testing the function value at mu = 0.5\n");
-
-    mu = 0.5;
-
-    fObj = fobjective_shootCr(mu, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
-    printf("With mu = 0.5: %lf:\n", fObj);
+    double fObj, mu, derObj;
     
     muMin = find_minMu(0, x0, x1, xHat, xR, BHat, BR, 0.00001, 50);
     printf("The minimum mu found is: %lf\n", muMin);
+
+    fObj = fobjective_shootCr(0.4, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.4, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.4: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(0.5, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.5, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.5: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(0.6, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.6, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.6: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(0.7, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.7, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.7: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(0.8, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.8, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.8: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(0.9, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(0.9, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 0.9: %lf:     derivative: %lf\n", fObj, derObj);
+
+    fObj = fobjective_shootCr(1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    derObj = der_shootCr(1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
+    printf("With mu = 1: %lf:     derivative: %lf\n", fObj, derObj);
 
     double fObj_min;
     fObj_min = fobjective_shootCr(muMin, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);

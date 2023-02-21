@@ -54,7 +54,7 @@ double backTr_find_minMu(double mu, double alpha0, double xA[2], double xB[2], d
 
 double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double tol, double maxIter);
 
-double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double muMin, double indexRef);
+double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
 double backTr_shootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
