@@ -871,8 +871,82 @@ void grad_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], do
   grad[1] = indexRef*(dotProd(Bmu, xMuminxLam)/normxMuminxLam) - grad1 + grad2;
 }
 
-double backTr_NonLinShootCr(double alpha0, double d, double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
+double backTr_NonLinShootCr(double alpha0, double d[2], double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
   // backtracking algorithm for the nonlinear shoot and creep optimization regine
+  double f_prev, f_cur, alpha;
+  int i = 0;
+  alpha = alpha0;
+  // evaluate the objective function
+  f_prev = fobjective_NonLinShootCr(lambda, mu, xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef);
+  f_cur = fobjective_NonLinShootCr(lambda - alpha*d[0], mu - alpha*d[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef);
+  // start backtracking if necessary
+  while(f_prev <= f_cur & i < 10){
+    alpha = alpha/2;
+    f_cur = fobjective_NonLinShootCr(lambda - alpha*d[0], mu - alpha*d[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef);
+    i++;
+  }
+  return alpha;
+}
+
+
+void projectedGradient_NonLinShootCr(double lambda0, double mu0, double lambdaMin, double lambdaMax, double muMin, double muMax, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef, double lambdaOpt, double muOpt) {
+  // projected gradient descent for a non linear shoot and creep update
+  double grad_cur[2], grad_prev[2], alpha, opti_cur[2], opti_prev[2], test[2], change[2];
+  int i = 1;
+  opti_prev[0] = lambda0;
+  opti_prev[1] = mu0;
+  grad_NonLinShootCr(lambda0, mu0, xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef, grad_prev);
+  grad_cur[0] = grad_prev[0];
+  grad_cur[1] = grad_prev[1];
+  alpha = backTr_NonLinShootCr(1, grad_cur, opti_prev[0], opti_prev[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef);
+  if( l2norm(grad_cur) > tol){
+    test[0] = opti_prev[0] - alpha*grad_cur[0];
+    test[1] = opti_prev[1] - alpha*grad_cur[1];
+  }
+  if( test[0] < lambdaMin){
+    test[0] = lambdaMin;
+  }
+  else if( test[0] > lambdaMax){
+    test[0] = lambdaMax;
+  }
+  if( test[1] < muMin ){
+    test[1] = muMin;
+  }
+  else if( test[1] > muMax) {
+    test[1] = muMax;
+  }
+  opti_cur[0] = test[0];
+  opti_cur[1] = test[1];
+  grad_NonLinShootCr(opti_cur[0], opti_cur[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef, grad_cur);
+  vec2_subtraction(opti_cur, opti_prev, change);
+  // start the iteration part
+  while( i<maxIter & l2norm(grad_cur)> tol & l2norm(change)> 0){
+    alpha = backTr_NonLinShootCr(1, grad_cur, opti_cur[0], opti_cur[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef);
+    test[0] = opti_cur[0] - alpha*grad_cur[0];
+    test[1] = opti_cur[1] - alpha*grad_cur[1];
+    // project
+    if(test[0] < lambdaMin){
+      test[0] = lambdaMin;
+    }
+    else if(test[1] > lambdaMax){
+      test[0] = lambdaMax;
+    }
+    if(test[1] < muMin){
+      test[1] = muMin;
+    }
+    else if(test[1] > muMax){
+      test[1] = muMax;
+    }
+    opti_prev[0] = opti_cur[0];
+    opti_prev[1] = opti_cut[1];
+    opti_cur[0] = test[0];
+    opti_cur[1] = test[1];
+    grad_NonLinShootCr(opti_cur[0], opti_cur[1], xA, xB, BA, BB, xHat, BHat, TA, TB, gradA, gradB, indexRef, grad_cur);
+    vec2_subtraction(opti_cur, opti_prev, change);
+    i++;
+  }
+  lambdaOpt = opti_cur[0];
+  muOpt = opti_cur[1];
 }
 
 double fobjective_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {

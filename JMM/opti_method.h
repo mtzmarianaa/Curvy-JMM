@@ -72,6 +72,8 @@ void grad_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], do
 
 double backTr_NonLinShootCr(double alpha0, double d, double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
+void projectedGradient_NonLinShootCr(double lambda0, double mu0, double lambdaMin, double lambdaMax, double muMin, double muMax, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef, double lambdaOpt, double muOpt);
+
 double fobjective_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
 
