@@ -304,11 +304,92 @@ int main()
 
     /* printf("Optimizers found %lf  %lf\n", optimizers[0], optimizers[1]); */
 
-    /////////////////////////////////////////////////////////////////////////////////
+    /* ///////////////////////////////////////////////////////////////////////////////// */
+    /* ///////////////////////////////////////////////////////////////////////////////// */
+    /* ///////////////////////////////////////////////////////////////////////////////// */
+
+    /* printf("TESTING THE SHOOT + CREEPING RAY UPDATE AND FININD MUMIN\n\n"); */
+
+    /* double muMin, x0[2], x1[2], xHat[2], xR[2], BHat[2], BR[2], T0, T1, grad0[2], grad1[2]; */
+
+    /* muMin = 0.25; */
+
+    /* x0[0] = 3; */
+    /* x0[1] = -2; */
+    
+    /* x1[0] = -1; */
+    /* x1[1] = -2; */
+    
+    /* xR[0] = 0; */
+    /* xR[1] = -1; */
+    
+    /* xHat[0] = 1; */
+    /* xHat[1] = 0; */
+    
+    /* BHat[0] = 0; */
+    /* BHat[1] = 1; */
+    
+    /* BR[0] = 1; */
+    /* BR[1] = 0; */
+
+    /* T0 = 4.123105625617661; */
+    /* T1 = 1.0; */
+
+    /* grad0[0] = 0.9701425; */
+    /* grad0[1] = 0.24253563; */
+    /* grad1[0] = 0.0; */
+    /* grad1[1] = 1.0; */
+
+    /* double fObj, mu, derObj; */
+    
+    /* muMin = find_minMu(0, x0, x1, xHat, xR, BHat, BR, 0.00001, 50); */
+    /* printf("The minimum mu found is: %lf\n", muMin); */
+
+    /* fObj = fobjective_shootCr(0.4, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.4, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.4: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(0.5, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.5, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.5: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(0.6, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.6, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.6: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(0.7, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.7, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.7: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(0.8, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.8, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.8: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(0.9, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(0.9, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 0.9: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* fObj = fobjective_shootCr(1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* derObj = der_shootCr(1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With mu = 1: %lf:     derivative: %lf\n", fObj, derObj); */
+
+    /* double fObj_min; */
+    /* fObj_min = fobjective_shootCr(muMin, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With muMin: %lf:\n", fObj_min); */
+
+    /* double muOpt, fObj_opt; */
+    /* muOpt = projectedGradient_shootCr(muMin, muMin, 1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 0.00001, 50, 1.0); */
+    /* printf("\n\n\n\n\n\n\n\n\n   Optimum mu found for a shoot and creep update: %lf\n", muOpt); */
+    /* fObj_opt = fobjective_shootCr(muOpt, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0); */
+    /* printf("With optimum mu: %lf\n", fObj_opt); */
+
+
+
+     /////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////
 
-    printf("TESTING THE SHOOT + CREEPING RAY UPDATE AND FININD MUMIN\n\n");
+    printf("TESTING THE SHOOT + CREEPING RAY UPDATE AND FIND MUMIN BUT XR is X1\n\n");
 
     double muMin, x0[2], x1[2], xHat[2], xR[2], BHat[2], BR[2], T0, T1, grad0[2], grad1[2];
 
@@ -379,7 +460,7 @@ int main()
 
     double muOpt, fObj_opt;
     muOpt = projectedGradient_shootCr(muMin, muMin, 1, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 0.00001, 50, 1.0);
-    printf("\n\n\n\n\nOptimum mu found for a shoot and creep update: %lf\n", muOpt);
+    printf("\n\n\n\n\n\n\n\n\n   Optimum mu found for a shoot and creep update: %lf\n", muOpt);
     fObj_opt = fobjective_shootCr(muOpt, x0, x1, xHat, xR, BHat, BR, T0, T1, grad0, grad1, 1.0);
     printf("With optimum mu: %lf\n", fObj_opt);
 

@@ -115,17 +115,13 @@ double der_hermite_interpolationT(double param, double xA[2], double xB[2], doub
   // derivative with respect of param for the hermite interpolation for the value of the eikonal
   double param2;
   param2 = param*param;
-  double xBminxA[2], gradAplusgradB[2], twogradA[2], twogradAplusgradB[2];
+  double coef0[2], coef1[2], sumGrads[2];
+  scalar_times_2vec(3*param2 - 4*param + 1, gradA, coef0);
+  scalar_times_2vec(3*param2 - 2*param, gradB, coef1);
+  vec2_addition(coef0, coef1, sumGrads);
+  double xBminxA[2];
   vec2_subtraction(xB, xA, xBminxA);
-  vec2_addition(gradA, gradB, gradAplusgradB);
-  scalar_times_2vec(2, gradA, twogradA);
-  vec2_addition(twogradA, gradB, twogradAplusgradB);
-  double dotProd1, dotProd2, dotProd3;
-  dotProd1 = dotProd(xBminxA, gradAplusgradB);
-  dotProd2 = dotProd(xBminxA, twogradAplusgradB);
-  dotProd3 = dotProd(xBminxA, gradA);
-  // put everything together
-  return (6*TA - 6*TB + 3*dotProd1)*param2 + (-6*TA + 6*TB - 2*dotProd2)*param + dotProd3;
+  return (6*param2 - 6*param)*TA + (-6*param2 + 6*param)*TB + dotProd(xBminxA,sumGrads); 
 }
 
 
@@ -590,7 +586,7 @@ double der_t_ofMu(double mu, double xA[2], double xB[2], double xHat[2], double 
   secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu);
   derBmu_perp[0] = derBmu[1];
   derBmu_perp[1] = -derBmu[0];
-  double xMuminxA[2], xAminxB[2];
+  double xMuminxA[2], xBminxA[2];
   vec2_subtraction(xMu, xA, xMuminxA);
   vec2_subtraction(xB, xA, xBminxA);
   double b;
@@ -686,6 +682,7 @@ double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double
 double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef){
   // gradient of fobjective_shootCr
   double lambda, xMu[2], xLam[2], Bmu[2], derBmu[2], Tprime, Bmu_halves[2], derBmu_halves[2];
+  double tPrime;
   lambda = t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // because lambda is uniquely defined by mu
   linearInterpolation(lambda, xA, xB, xLam); // xLam
   hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, xMu); // xMu
@@ -694,17 +691,20 @@ double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double
   secondDer_hermite_interpolationSpatial(mu, xR, xHat, BR, BHat, derBmu); // Bmu'
   grad_hermite_interpolationSpatial((1-mu)/2, xR, xHat, BR, BHat, Bmu_halves); // Bmu of (1-mu)/2
   secondDer_hermite_interpolationSpatial((1-mu)/2, xR, xHat, BR, BHat, derBmu_halves); // Bmu' of (1-mu)/2
-  double xMuminxLam[2], gPrime, gPrime_halves, tPrime, derxLam[2];
+  tPrime = der_t_ofMu(mu, xA, xB, xHat, xR, BHat, BR); // t'(mu)
+  double xMuminxLam[2], xBminxA[2];
   vec2_subtraction(xMu, xLam, xMuminxLam);
-  gPrime = dotProd(derBmu, Bmu)/l2norm(Bmu);
-  gPrime_halves = dotProd(derBmu_halves, Bmu_halves)/l2norm(Bmu_halves);
-  tPrime = der_t_ofMu(mu, xA, xB, xHat, xR, BHat, BR);
-  der_linearInterpolation(lambda, xA, xB, derxLam);
-  double derMiddle, BmuminderxLam[2], coefxLam[2];
-  scalar_times_2vec(tPrime, derxLam, coefxLam);
-  vec2_subtraction(Bmu, coefxLam, BmuminderxLam);
-  derMiddle = indexRef*(dotProd(BmuminderxLam, xMuminxLam)/l2norm(xMuminxLam));
-  return Tprime*tPrime + derMiddle + (gPrime - 2*mu*gPrime_halves)*indexRef/6;
+  vec2_subtraction(xB, xA, xBminxA);
+  double tPrimexBminxA[2], BmumintPrimexBminxA[2];
+  scalar_times_2vec(tPrime, xBminxA, tPrimexBminxA);
+  vec2_subtraction(Bmu, tPrimexBminxA, BmumintPrimexBminxA);
+  double der2, L;
+  // we compute kind of simpson but with the (1-mu)/6 factor in front
+  der2 = indexRef*dotProd(BmumintPrimexBminxA, xMuminxLam)/l2norm(xMuminxLam);
+  L = (indexRef/6)*(l2norm(Bmu) + 4*l2norm(Bmu_halves) + l2norm(BHat));
+  double der3;
+  der3 = -L + ((indexRef*(1-mu)/6))*( dotProd(derBmu, Bmu)/l2norm(Bmu) + 2*dotProd(derBmu_halves, Bmu_halves)/l2norm(Bmu_halves));
+  return Tprime*tPrime + der2 + der3;
 }
 
 double backTr_shootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef){
@@ -761,10 +761,8 @@ double projectedGradient_shootCr(double mu0, double muMin, double muMax, double 
     mu_prev = mu_cur;
     mu_cur = test;
     der_cur = der_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
-    printf("  Current value of derivative: %lf\n", der_cur);
     double fCur;
     fCur = fobjective_shootCr(mu_cur, xA, xB, xHat, xR, BHat, BR, TA, TB, gradA, gradB, indexRef);
-    printf("  Current value of objective function: %lf\n", fCur);
     i++;
     }
     return mu_cur;
