@@ -54,11 +54,19 @@ double backTr_find_minMu(double mu, double alpha0, double xA[2], double xB[2], d
 
 double find_minMu(double mu0, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double tol, double maxIter);
 
-double der_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+double der_linearShootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
-double backTr_shootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+double backTr_linearShootCr(double alpha0, double d, double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
 
-double projectedGradient_shootCr(double mu0, double muMin, double muMax, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double tol, int maxIter, double indexRef);
+double projectedGradient_linearShootCr(double mu0, double muMin, double muMax, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double tol, int maxIter, double indexRef);
 
-double fobjective_shootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+double fobjective_linearShootCr(double mu, double xA[2], double xB[2], double xHat[2], double xR[2], double BHat[2], double BR[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+
+double tN_ofLamMu(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2]);
+
+double find_MufromLam_tN(double mu0, double mu1, double lambda, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double tol, int maxIter);
+
+double find_LamfromMu_tN(double lam0, double lam1, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double tol, int maxIter);
+
+
 
