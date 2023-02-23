@@ -68,5 +68,11 @@ double find_MufromLam_tN(double mu0, double mu1, double lambda, double xA[2], do
 
 double find_LamfromMu_tN(double lam0, double lam1, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double tol, int maxIter);
 
+void grad_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef, double grad[2]);
+
+double backTr_NonLinShootCr(double alpha0, double d, double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+
+double fobjective_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef);
+
 
 

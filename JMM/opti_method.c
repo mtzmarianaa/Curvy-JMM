@@ -846,6 +846,48 @@ double find_LamfromMu_tN(double lam0, double lam1, double mu, double xA[2], doub
 }
 
 
+void grad_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef, double grad[2]) {
+  double Tprime, xMu[2], xLam[2], Bmu[2], derBmu[2], Blam[2], Bmu_halves[2], derBmu_halves[2];
+  hermite_interpolationSpatial(lambda, xA, xB, BA, BB, xLam); // xLam
+  hermite_interpolationSpatial(mu, xA, xHat, BA, BHat, xMu); // xMu
+  Tprime = der_hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB); // T'(lambda)
+  grad_hermite_interpolationSpatial(lambda, xA, xB, BA, BB, Blam); // Blam
+  grad_hermite_interpolationSpatial(mu, xA, xHat, BA, BHat, Bmu); // Bmu
+  grad_hermite_interpolationSpatial((1+mu)/2, xA, xHat, BA, BHat, Bmu_halves); // Bmu
+  secondDer_hermite_interpolationSpatial(mu, xA, xHat, BA, BHat, derBmu); // Bmu'
+  secondDer_hermite_interpolationSpatial((1+mu)/2, xA, xHat, BA, BHat, derBmu_halves); // Bmu_halves'
+  double xMuminxLam[2], normxMuminxLam;
+  vec2_subtraction(xMu, xLam, xMuminxLam); // xMu - xLam
+  normxMuminxLam = l2norm(xMuminxLam);
+  double normBmu, normBmu_halves, normBHat;
+  normBmu = l2norm(Bmu);
+  normBmu_halves = l2norm(Bmu_halves);
+  normBHat = l2norm(BHat);
+  // put everything together
+  grad[0] = Tprime - indexRef*(dotProd(Blam, xMuminxLam)/normxMuminxLam );
+  double grad1, grad2;
+  grad1 = (indexRef/6)*( normBmu + 4*normBmu_halves + normBHat);
+  grad2 = indexRef*((1-mu)/6)*( dotProd(derBmu, Bmu)/normBmu + 2*dotProd(derBmu_halves, Bmu_halves)/normBmu_halves);
+  grad[1] = indexRef*(dotProd(Bmu, xMuminxLam)/normxMuminxLam) - grad1 + grad2;
+}
+
+double backTr_NonLinShootCr(double alpha0, double d, double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
+  // backtracking algorithm for the nonlinear shoot and creep optimization regine
+}
+
+double fobjective_NonLinShootCr(double lambda, double mu, double xA[2], double xB[2], double BA[2], double BB[2], double xHat[2], double BHat[2], double TA, double TB, double gradA[2], double gradB[2], double indexRef) {
+  // THat for a non linear shoot and creep update
+  double xLam[2], xMu[2], Tlam, xMuminxLam[2];
+  hermite_interpolationSpatial(lambda, xA, xB, BA, BB, xLam); // xLam
+  hermite_interpolationSpatial(mu, xA, xHat, BA, BHat, xMu); // xMu
+  vec2_subtraction(xMu, xLam, xMuminxLam); // xMu - xLam
+  Tlam = hermite_interpolationT(lambda, xA, xB, TA, TB, gradA, gradB); // T(lambda)
+  double arcL;
+  arcL = arclength_hermiteSimpson(mu, 1, xA, xHat, BA, BHat);
+  // put everything together
+  return Tlam + indexRef*l2norm(xMuminxLam) + indexRef*arcL;
+  
+}
 
 
 
