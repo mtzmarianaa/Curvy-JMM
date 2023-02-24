@@ -1,12 +1,13 @@
 import matplotlib.pyplot as plt
-import numpu as np
+import numpy as np
 from numpy.linalg import norm
+from math import sqrt, pi
 
 def archlength(a, b):
      chordLength = norm(a-b)
      return 20*np.arcsin(chordLength/20)
 
- def archlength_small(a, b):
+def archlength_small(a, b):
       chordLength = norm(a-b)
       return 2*np.arcsin(chordLength/2)
 
@@ -27,7 +28,7 @@ def tMuMin(mu, xA, xR, BR, xHat, BHat):
      Bmu_perp = np.array([Bmu[1], -Bmu[0]])
      return np.dot(xB - xMu, Bmu_perp)
 
- def tMu(mu, xA, xB, xR, BR, xHat, BHat):
+def tMu(mu, xA, xB, xR, BR, xHat, BHat):
      xMu = hermite_boundary(mu, xR, BR, xHat, BHat)
      Bmu = gradientBoundary(mu, xR, BR, xHat, BHat)
      Bmu_perp = np.array([Bmu[1], -Bmu[0]])
