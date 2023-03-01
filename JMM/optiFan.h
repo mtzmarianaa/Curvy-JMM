@@ -13,6 +13,7 @@ typedef struct {
   double (*points_fan)[2]; // coordinates of the points on the fan
   double (*boundary_x0)[2]; // divisions inside the triangle fan, length n+2
   double *indicesRef; // n+2 different indices of refraction
+  int *types; // types of curved boundaries inside the triangle fan (type 1, 2, 3, or 4)
 } optiFanS;
 
 void optiFan_alloc(optiFanS **optiFan);

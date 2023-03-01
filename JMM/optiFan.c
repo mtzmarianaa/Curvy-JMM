@@ -31,6 +31,10 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
   optiFan->points_fan = points_fan;
   optiFan->boundary_x0 = boundary_x0;
   optiFan->indicesRef = indicesRef;
+  optiFan->types = malloc(nRegions*sizeof(int));
+  for (int i = 0; i<nRegions; i++){
+    optiFan->types[i] = -1;
+  }
 }
 
 // starting the section with auxiliary functions
