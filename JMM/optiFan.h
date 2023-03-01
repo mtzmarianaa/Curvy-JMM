@@ -10,8 +10,9 @@ typedef struct {
   double x1[2]; // farthest neighbor of x0 set to valid
   double T1; // eikonal value at x1
   double xHat[2]; // point we want to update
-  double (*points_fan)[2]; // coordinates of the points on the fan
-  double (*boundary_x0)[2]; // divisions inside the triangle fan, length n+2
+  double (*points_fan)[2]; // coordinates of the points on the fan (total = n)
+  double (*B_x0)[2]; // gradients at x0 from the boundary (total = n+1)
+  double (*B_xk)[2]; // gradients at xk from the boundary (total = n+1)
   double *indicesRef; // n+2 different indices of refraction
   int *types; // types of curved boundaries inside the triangle fan (type 1, 2, 3, or 4)
 } optiFanS;
@@ -20,7 +21,7 @@ void optiFan_alloc(optiFanS **optiFan);
 
 void optiFan_dealloc(optiFanS **optiFan);
 
-void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; double x1[2], double T1, double xHat[2], double *(points_fan)[2], double (*boundary_x0)[2], double *indicesRef);
+void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; double x1[2], double T1, double xHat[2], double *(points_fan)[2], double (*B_x0)[2], double (*B_xk)[2], double *indicesRef);
 
 //////////// AUXILIARY FUNCTIONS
 

@@ -21,7 +21,8 @@ void optiFan_dealloc(optiFanS **optiFan) {
   assert(*optiFan == NULL);
 }
 
-void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; double x1[2], double T1, double xHat[2], double *(points_fan)[2], double (*boundary_x0)[2], double *indicesRef) {
+void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; double x1[2], double T1, double xHat[2], double *(points_fan)[2], double (*B_x0)[2], double (*B_xk)[2], double *indicesRef) {
+  double gradTest_x0[2], xkMinx0[2], xk[2], B0k1[2], B0k[2], Bk1[2], Bk[2], xk1[2], dotB0k1B0k, dotBk1Bk;
   optiFan->nRegions = nRegions;
   optiFan->x0 = x0;
   optiFan->T0 = T0;
@@ -29,11 +30,65 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
   optiFan->T1 = T1;
   optiFan->xHat = xHat;
   optiFan->points_fan = points_fan;
-  optiFan->boundary_x0 = boundary_x0;
   optiFan->indicesRef = indicesRef;
   optiFan->types = malloc(nRegions*sizeof(int));
-  for (int i = 0; i<nRegions; i++){
-    optiFan->types[i] = -1;
+  optiFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
+  optiFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
+  for (int i = 0; i<(nRegions+1); i++){
+    // we need to know if the gradients go from x0 to xk
+    xk[0] = points_fan[i][0];
+    xk[1] = points_fan[i][1];
+    vec2_subtraction(xk, x0, xkMinx0);
+    gradTest_x0[0] = B_x0[i][0];
+    gradTest_x0[1] = B_x0[i][1];
+    if( dotProd(gradTest_x0, xkMinx0)>0 ){
+      // direction we want x0->xk
+      optiFan->B_x0[i][0] = gradTest_x0[0];
+      optiFan->B_x0[i][1] = gradTest_x0[1];
+      optiFan->B_xk[i][0] = B_xk[i][0];
+      optiFan->B_xk[i][1] = B_xk[i][1];
+    }
+    else{
+      // direction we don't want xk->x0
+      optiFan->B_x0[i][0] = -gradTest_x0[0];
+      optiFan->B_x0[i][1] = -gradTest_x0[1];
+      optiFan->B_xk[i][0] = -B_xk[i][0];
+      optiFan->B_xk[i][1] = -B_xk[i][1];
+    }
+  }
+  // now we compute the type of triangle we have
+  for (i = 0; i<nRegions; i++){
+    Bk[0] = optiFan->B_xk[i][0];
+    Bk[1] = optiFan->B_xk[i][1];
+    Bk1[0] = optiFan->B_xk[i+1][0];
+    Bk1[1] = optiFan->B_xk[i+1][1];
+    B0k[0] = optiFan->B_x0[i][0];
+    B0k[1] = optiFan->B_x0[i][1];
+    B0k1[0] = optiFan->B_x0[i+1][0];
+    B0k1[1] = optiFan->B_x0[i+1][1];
+    dotB0k1B0k = dotProd(B0k1, B0k);
+    dotBk1Bk = dotProd(Bk1, Bk);
+    if( dotB0k1B0k <=0 & dotBk1Bk >=0 ){
+      optiFan->types[i] = 3;
+    }
+    else if(dotB0k1B0k>0 & dotBk1Bk<0){
+      optiFan->types[i] = 4;
+    }
+    else if(dotB0k1B0k >=0 & dotBk1Bk >=0){
+      xk1[0] = points_fan[i+1][0];
+      xk1[1] = points_fan[i+1][1];
+      vec2subtraction(xk1, x0, xkMinx0);
+      if( dotProd(xkMinx0, B0k) >= 0){
+	optiFan->types[i] = 1;
+      }
+      else{
+	optiFan->types[i] = 2;
+      }
+    }
+    else{
+      // this case should not happen, it means there is an inflection point
+      assert(False);
+    }
   }
 }
 
