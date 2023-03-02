@@ -220,14 +220,14 @@ double t1_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], do
   // line through yk' with slope Bk(mu)
   double y_k1[2];
   hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
-  return Bk_mu[1]*(y_k1[1] - ykPrime[1]) - Bk_mu[0]*(y_k1[0] - ykPrime[0]);
+  return Bk_mu[0]*(y_k1[1] - ykPrime[1]) - Bk_mu[1]*(y_k1[0] - ykPrime[0]);
 }
 
 double t1Prime_ofLam(double lambda, double x0[2], double B0[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
   // derivative with respect to lambda of the line through yk' with slope Bk(mu)
   double B_lam[2];
   grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
-  return Bk_mu[1]*B_lam[1] - Bk_mu[0]*B_lam[0];
+  return Bk_mu[0]*B_lam[1] - Bk_mu[1]*B_lam[0];
 }
 
 double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
@@ -258,7 +258,7 @@ double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[
   while( fabs(t1_cur) > tol & i < maxIter & alpha > 0){
     t1Prime = t1Prime_ofLam(lambda, x0, B0, Bk_mu, x_k1, B_k1);
     d = t1_cur/t1Prime;
-    alpha = backTr_t1(1, d, lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+    alpha = backTr_t1(0.1, d, lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
     lambda = lambda - alpha*d;
     t1_cur = t1_ofLam(lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
     i++;
@@ -266,21 +266,21 @@ double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[
   return lambda;
 }
 
-double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]){
+double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2];
   hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
   grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
-  return B_lam[1]*(y_k1[1] - ykPrime[1]) - B_lam[0]*(y_k1[0] - ykPrime[0]);
+  return B_lam[0]*(y_k1[1] - ykPrime[1]) - B_lam[1]*(y_k1[0] - ykPrime[0]);
 }
 
-double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double x_k1[2], double B_k1[2]) {
+double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // derivative with respect to lambda of the line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2], derB_lam[2];
   hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
   grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
   secondDer_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, derB_lam);
-  return derB_lam[1]*y_k1[1] + (B_lam[1]*B_lam[1]) - derB_lam[0]*y_k1[0] - (B_lam[0]*B_lam[0]);
+  return derB_lam[0]*(y_k1[1] - ykPrime[1]) - derB_lam[1]*(y_k1[0] - ykPrime[0]);
 }
 
 double backTr_t2(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
@@ -309,7 +309,7 @@ double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[
   lambda = lambda0;
   t2_cur = t2_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
   while( fabs(t2_cur) > tol & i < maxIter & alpha > 0){
-    t2Prime = t2Prime_ofLam(lambda, x0, B0, x_k1, B_k1);
+    t2Prime = t2Prime_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
     d = t2_cur/t2Prime;
     alpha = backTr_t2(1, d, lambda, x0, B0, ykPrime, x_k1, B_k1);
     lambda = lambda - alpha*d;

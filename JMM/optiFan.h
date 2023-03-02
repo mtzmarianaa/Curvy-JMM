@@ -49,7 +49,7 @@ double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[
 
 double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
 
-double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double x_k1[2], double B_k1[2]);
+double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
 
 double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
 

@@ -38,7 +38,9 @@ def tMu(mu, xA, xB, xR, BR, xHat, BHat):
      return np.dot(xMu - xA, Bmu_perp)/np.dot(xB - xA, Bmu_perp)
  
 
-def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat):
+def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat,
+             mu1 = None, lam2 = None, mu2 = None, lam3 = None,
+             mu3 = None, lam4 = None):
      '''
      Plots a triangle fan with 3 intermediate points to xHat
      '''
@@ -69,6 +71,32 @@ def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat):
      plt.scatter(x2[0], x2[1], s = 7, c = "#001871", label = "x2")
      plt.scatter(x3[0], x3[1], s = 7, c = "#001871", label = "x3")
      plt.scatter(xHat[0], xHat[1], s = 10, c = "#8000ff", label = "xHat")
+     # If given the information plot the points on the boundaries
+     if(mu1 is not None):
+          xmu1 = hermite_boundary(mu1, x0, B01, x1, B1)
+          plt.scatter(xmu1[0], xmu1[1], s = 5, c = "#117783")
+     if(mu2 is not None):
+          xmu2 = hermite_boundary(mu2, x0, B02, x2, B2)
+          plt.scatter(xmu2[0], xmu2[1], s = 5, c = "#117783")
+     if(mu3 is not None):
+          xmu3 = hermite_boundary(mu3, x0, B03, x3, B3)
+          plt.scatter(xmu3[0], xmu3[1], s = 5, c = "#117783")
+     if(lam2 is not None):
+          xlam2 = hermite_boundary(lam2, x0, B02, x2, B2)
+          plt.scatter(xlam2[0], xlam2[1], s = 5, c = "#561183")
+     if(lam3 is not None):
+          xlam3 = hermite_boundary(lam3, x0, B03, x3, B3)
+          plt.scatter(xlam3[0], xlam3[1], s = 5, c = "#561183")
+     if(lam4 is not None):
+          xlam4 = hermite_boundary(lam4, x0, B0Hat, xHat, BHat)
+          plt.scatter(xlam4[0], xlam4[1], s = 5, c = "#561183")
+     if(mu1 is not None and lam2 is not None):
+          plt.plot([xmu1[0], xlam2[0]], [xmu1[1], xlam2[1]], linewidth = 1, c = "#525460")
+     if(mu2 is not None and lam3 is not None):
+          plt.plot([xmu2[0], xlam3[0]], [xmu2[1], xlam3[1]], linewidth = 1, c = "#525460")
+     if(mu3 is not None and lam4 is not None):
+          plt.plot([xmu3[0], xlam4[0]], [xmu3[1], xlam4[1]], linewidth = 1, c = "#525460")
+          
      plt.legend()
      ax = plt.gca()
      ax.set_aspect("equal")
