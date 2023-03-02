@@ -9,6 +9,8 @@ The approach is based on the triangle fan
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <stdbool.h>
 
 void optiFan_alloc(optiFanS **optiFan) {
   *optiFan = malloc(sizeof(optiFanS));
@@ -21,28 +23,36 @@ void optiFan_dealloc(optiFanS **optiFan) {
   assert(*optiFan == NULL);
 }
 
-void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; double x1[2], double T1, double xHat[2], double *(points_fan)[2], double (*B_x0)[2], double (*B_xk)[2], double *indicesRef) {
+void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) {
   double gradTest_x0[2], xkMinx0[2], xk[2], B0k1[2], B0k[2], Bk1[2], Bk[2], xk1[2], dotB0k1B0k, dotBk1Bk;
+  int i;
   optiFan->nRegions = nRegions;
-  optiFan->x0 = x0;
+  optiFan->x0[0] = x0[0];
+  optiFan->x0[1] = x0[1];
   optiFan->T0 = T0;
-  optiFan->x1 = x1;
+  optiFan->x1[0] = x1[0];
+  optiFan->x1[1] = x1[1];
   optiFan->T1 = T1;
-  optiFan->xHat = xHat;
+  optiFan->xHat[0] = xHat[0];
+  optiFan->xHat[1] = xHat[1];
   optiFan->points_fan = points_fan;
   optiFan->indicesRef = indicesRef;
   optiFan->types = malloc(nRegions*sizeof(int));
   optiFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
   optiFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
-  for (int i = 0; i<(nRegions+1); i++){
+  for (i = 0; i<(nRegions+1); i++){
     // we need to know if the gradients go from x0 to xk
     xk[0] = points_fan[i][0];
     xk[1] = points_fan[i][1];
     vec2_subtraction(xk, x0, xkMinx0);
+    printf("For i= %d  xk: %lf %lf  and xk-x0: %lf  %lf\n", i, xk[0], xk[1], xkMinx0[0], xkMinx0[1]);
     gradTest_x0[0] = B_x0[i][0];
     gradTest_x0[1] = B_x0[i][1];
-    if( dotProd(gradTest_x0, xkMinx0)>0 ){
+    printf("The initial B0k given is: %lf  %lf\n", gradTest_x0[0], gradTest_x0[1]);
+    printf("The initial Bk given is: %lf  %lf\n", B_xk[i][0], B_xk[i][1]);
+    if( dotProd(gradTest_x0, xkMinx0)>=0 ){
       // direction we want x0->xk
+      printf("   We don't have a problem with the original direction of the tangents\n");
       optiFan->B_x0[i][0] = gradTest_x0[0];
       optiFan->B_x0[i][1] = gradTest_x0[1];
       optiFan->B_xk[i][0] = B_xk[i][0];
@@ -50,6 +60,7 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
     }
     else{
       // direction we don't want xk->x0
+      printf("   We have a problem\n");
       optiFan->B_x0[i][0] = -gradTest_x0[0];
       optiFan->B_x0[i][1] = -gradTest_x0[1];
       optiFan->B_xk[i][0] = -B_xk[i][0];
@@ -57,6 +68,7 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
     }
   }
   // now we compute the type of triangle we have
+  printf("\n\n");
   for (i = 0; i<nRegions; i++){
     Bk[0] = optiFan->B_xk[i][0];
     Bk[1] = optiFan->B_xk[i][1];
@@ -66,8 +78,12 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
     B0k[1] = optiFan->B_x0[i][1];
     B0k1[0] = optiFan->B_x0[i+1][0];
     B0k1[1] = optiFan->B_x0[i+1][1];
+    printf("For i=%d  Bk= %lf  %lf   B(k+1)=   %lf  %lf\n", i, Bk[0], Bk[1], Bk1[0], Bk1[1]);
+    printf("          B0k= %lf  %lf   B0(k+1)=   %lf  %lf\n", B0k[0], B0k[1], B0k1[0], B0k1[1]);
     dotB0k1B0k = dotProd(B0k1, B0k);
     dotBk1Bk = dotProd(Bk1, Bk);
+    printf("Dot product B0k1 and B0k  %lf\n", dotB0k1B0k);
+    printf("Dot product Bk1 and Bk  %lf\n", dotBk1Bk);
     if( dotB0k1B0k <=0 & dotBk1Bk >=0 ){
       optiFan->types[i] = 3;
     }
@@ -77,7 +93,7 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
     else if(dotB0k1B0k >=0 & dotBk1Bk >=0){
       xk1[0] = points_fan[i+1][0];
       xk1[1] = points_fan[i+1][1];
-      vec2subtraction(xk1, x0, xkMinx0);
+      vec2_subtraction(xk1, x0, xkMinx0);
       if( dotProd(xkMinx0, B0k) >= 0){
 	optiFan->types[i] = 1;
       }
@@ -87,8 +103,11 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0; doub
     }
     else{
       // this case should not happen, it means there is an inflection point
-      assert(False);
+      assert(false); // SHOULD NEVER HAPPEN!
+      printf("For the point %d  with Bk  %lf  %lf   and B0k  %lf %lf: \n", i, Bk[0], Bk[1], B0k[0], B0k[1]);
+      printf("                   and Bk1  %lf  %lf   and B0k1  %lf %lf: \n", Bk1[0], Bk1[1], B0k1[0], B0k1[1]);
     }
+    printf(" For the internal triangle %d  the type of curvy triangle is: %d\n\n", i, optiFan->types[i]);
   }
 }
 
@@ -247,7 +266,7 @@ double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[
   return lambda;
 }
 
-double t2_ofLam(double lambda, double x0, double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]){
+double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]){
   // line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2];
   hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
@@ -255,7 +274,7 @@ double t2_ofLam(double lambda, double x0, double B0[2], double ykPrime[2], doubl
   return B_lam[1]*(y_k1[1] - ykPrime[1]) - B_lam[0]*(y_k1[0] - ykPrime[0]);
 }
 
-double t2Prime_ofLam(double lambda, double x0, double B0[2], double x_k1[2], double B_k1[2]) {
+double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double x_k1[2], double B_k1[2]) {
   // derivative with respect to lambda of the line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2], derB_lam[2];
   hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
@@ -264,17 +283,17 @@ double t2Prime_ofLam(double lambda, double x0, double B0[2], double x_k1[2], dou
   return derB_lam[1]*y_k1[1] + (B_lam[1]*B_lam[1]) - derB_lam[0]*y_k1[0] - (B_lam[0]*B_lam[0]);
 }
 
-double backTr_t2(double alpha0, double d, double lambda, double x0, double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
+double backTr_t2(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // backtracking to find suitable step size for t2
-  double t2_prev, t2_prev, alpha;
+  double t2_prev, t2_cur, alpha;
   int i = 0;
   alpha = alpha0;
   // evaluating objective function
-  t2_prev = t2_ofLam(lambda, x0, B0, tkPrime, x_k1, B_k1);
-  t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, tkPrime, x_k1, B_k1);
+  t2_prev = t2_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
+  t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, ykPrime, x_k1, B_k1);
   while( fabs(t2_prev) < fabs(t2_cur) & i < 10){
     alpha = alpha*0.5;
-    t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, tkPrime, x_k1, B_k1);
+    t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, ykPrime, x_k1, B_k1);
     i++;
   }
   if( fabs(t2_prev) < fabs(t2_cur) ){
@@ -283,7 +302,7 @@ double backTr_t2(double alpha0, double d, double lambda, double x0, double B0[2]
   return alpha;
 }
 
-double lambda_fromt2(double lambda0, double x0, double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // Newtons method to find lambda such that t2(lambda) = 0
   double lambda, t2_cur, t2Prime, alpha, d;
   int i = 0;
