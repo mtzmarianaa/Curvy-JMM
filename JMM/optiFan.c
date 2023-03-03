@@ -40,6 +40,7 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
   optiFan->types = malloc(nRegions*sizeof(int));
   optiFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
   optiFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
+  optiFan->B_xk_perp = malloc((nRegions+1)*2*sizeof(double));
   for (i = 0; i<(nRegions+1); i++){
     // we need to know if the gradients go from x0 to xk
     xk[0] = points_fan[i][0];
@@ -66,6 +67,9 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
       optiFan->B_xk[i][0] = -B_xk[i][0];
       optiFan->B_xk[i][1] = -B_xk[i][1];
     }
+    // then we save the normals in the direction of xkxk1
+    optiFan->B_xk_perp[0] = -optiFan->B_xk[i][1];
+    optiFan->B_xk_perp[1] = optiFan->B_xk[i][0];
   }
   // now we compute the type of triangle we have
   printf("\n\n");
@@ -317,6 +321,115 @@ double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[
     i++;
   }
   return lambda;
+}
+
+// these are the functions used to project back on the feasible set
+// but they depend on the type of curvy triangle we are dealing with
+
+void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+  // given all this information project back yk1. Here we assume that this triangle is
+  // a type 1 curvy triangle
+  if(lambdak1 > 1){
+    lambdak1 = 1;
+    yk1[0] = x_k1[0];
+    yk1[1] = x_k1[1];
+  }
+  else if(lambdak1 < 0){
+    lambdak1 = 0;
+    yk1[0] = x0[0];
+    yk1[1] = x0[1];
+  }
+  // we need to know if yk1 is in the feasible set computed from ykPrime
+  double yk1MinykPrime[2], dotTest, lambdat1;
+  vec2_subtraction(yk1,ykPrime, yk1MinykPrime);
+  dotTest = dotProd(yk1MinykPrime, Bk_mu_perp);
+  if(dotTest < 0){
+    // then we need to find lambdaMax/lambdaMin and project back
+    lambdat1 = lambda_fromt1(lambdak1, x0, B0, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    if(lambdat1 < 0){
+      lambdat1 = 0;
+    }
+    else if(lambdat1 > 1){
+      lambdat1 = 1;
+    }
+    // compute yk1 from this newly found lambda
+    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0, B_k1, yk1);
+  }
+}
+
+void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+  // given all this information project back yk1. Here we are going to assume that this
+  // is a type 2 curvy triangle
+  if(lambdak1 > 1){
+    lambdak1 = 1;
+    yk1[0] = x_k1[0];
+    yk1[1] = x_k1[1];
+  }
+  else if(lambdak1 < 0){
+    lambdak1 = 0;
+    yk1[0] = x0[0];
+    yk1[1] = x0[1];
+  }
+  // we need to know if yk1 is in the feasible set computed from ykPrime
+  double yk1MinykPrime[2], dotTest, lambdat2;
+  vec2_subtraction(yk1, ykPrime, yk1MinykPrime);
+  dotTest = dotProd(yk1MinykPrime, Bk1_lam_perp);
+  if( dotTest<0){
+    // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
+    lambdat2 = lambda_fromt2(lambdak1, x0, B0, ykPrime, x_k1, B_k1, tol, maxIter);
+    if(lambdat2 < 0){
+      lambdat2 = 0;
+    }
+    else if(lambdat2 > 1){
+      lambdat2 = 1;
+    }
+    // compute yk1 from this newly found lambda
+    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0, B_k1, yk1);
+  }
+}
+
+void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter){
+  // given all of this information project back yk1. Here we are going to assume
+  // that this is a type 4 curvy triangle
+  if(lambdak1 > 1){
+    lambdak1 = 1;
+    yk1[0] = x_k1[0];
+    yk1[1] = x_k1[1];
+  }
+  else if(lambdak1 < 0){
+    lambdak1 = 0;
+    yk1[0] = x0[0];
+    yk1[1] = x0[1];
+  }
+  // then we need to find lambdaMin with t1 and lambdaMax with t2 (if necessary)
+  double dotTestMin, dotTestMax, yk1MinykPrime[2], lambdat1, lambdat2;
+  vec2_subtraction(yk1, ykPrime, yk1MinykPrime);
+  dotTestMin = dotProd(yk1MinykPrime, B_k_mu_perp);
+  dotTestMax = dotProd(yk1MinykPrime, B_k1_lam_perp);
+  if( dotTestMin < 0){
+    // meaning we need to find lambdaMin
+    lambdat1 = lambda_fromt1(lambdak1, x0, B0, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    if(lambdat1 < 0){
+      lambdat1 = 0;
+    }
+    else if(lambdat1 > 1){
+      lambdat1 = 1;
+    }
+    // compute yk1 from this newly found lambda
+    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0, B_k1, yk1);
+  }
+  else if( dotTestMax){
+    // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
+    lambdat2 = lambda_fromt2(lambdak1, x0, B0, ykPrime, x_k1, B_k1, tol, maxIter);
+    if(lambdat2 < 0){
+      lambdat2 = 0;
+    }
+    else if(lambdat2 > 1){
+      lambdat2 = 1;
+    }
+    // compute yk1 from this newly found lambda
+    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0, B_k1, yk1);
+  }
 }
 
 
