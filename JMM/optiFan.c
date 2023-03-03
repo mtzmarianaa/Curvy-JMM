@@ -40,7 +40,6 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
   optiFan->types = malloc(nRegions*sizeof(int));
   optiFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
   optiFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
-  optiFan->B_xk_perp = malloc((nRegions+1)*2*sizeof(double));
   for (i = 0; i<(nRegions+1); i++){
     // we need to know if the gradients go from x0 to xk
     xk[0] = points_fan[i][0];
@@ -67,9 +66,6 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
       optiFan->B_xk[i][0] = -B_xk[i][0];
       optiFan->B_xk[i][1] = -B_xk[i][1];
     }
-    // then we save the normals in the direction of xkxk1
-    optiFan->B_xk_perp[0] = -optiFan->B_xk[i][1];
-    optiFan->B_xk_perp[1] = optiFan->B_xk[i][0];
   }
   // now we compute the type of triangle we have
   printf("\n\n");
@@ -388,7 +384,7 @@ void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double
   }
 }
 
-void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter){
+void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) {
   // given all of this information project back yk1. Here we are going to assume
   // that this is a type 4 curvy triangle
   if(lambdak1 > 1){

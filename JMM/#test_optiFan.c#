@@ -99,10 +99,9 @@ int main(){
 
 
   // we project
-  double B_xk_perp[2];
+  double B_xmu[2], B_xmu_perp[2], B_xlam[2], B_xlam_perp[2];
   // first triangle
-  B_xk_perp[0] = -B_xk[0][1];
-  B_xk_perp[1] = B_xk[0][0];
+  
   projectBack_type1(lambda2, yk2, yk1Prime, x0, B_x0[0], B_xk[0], B_xk_perp, x1, x2, B_xk[1], 0.000001, 100);
   printf("After projecting back lambda2 is: %lf  with coordinates  %lf %lf\n", lambda2, yk2[0], yk2[1]);
 

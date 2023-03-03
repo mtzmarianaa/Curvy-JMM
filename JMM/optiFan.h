@@ -12,7 +12,6 @@ typedef struct {
   double xHat[2]; // point we want to update
   double (*points_fan)[2]; // coordinates of the points on the fan (total = n-1)
   double (*B_x0)[2]; // gradients at x0 from the boundary (total = n+1)
-  double (*B_x0_perp)[2]; // normal of the boundaries x0xk (pointing in the same direction as xkxk1
   double (*B_xk)[2]; // gradients at xk from the boundary (total = n+1)
   double *indicesRef; // n+2 different indices of refraction
   int *types; // types of curved boundaries inside the triangle fan (type 1, 2, 3, or 4)
@@ -53,5 +52,13 @@ double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], do
 double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
 
 double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
+
+// projections according to the triangle type
+
+void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+
+void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+
+void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) ;
 
 
