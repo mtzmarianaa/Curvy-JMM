@@ -39,26 +39,26 @@ double der_hermite_interpolationT(double param, double xA[2], double xB[2], doub
 
 // functions to find lambdaMin and lambdaMax for types 1,2, and 4
 
-double t1_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
+double t1_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
 
-double t1Prime_ofLam(double lambda, double x0[2], double B0[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
+double t1Prime_ofLam(double lambda, double x0[2], double B0_k1[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
 
-double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
+double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]);
 
-double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
+double lambda_fromt1(double lambda0, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
 
-double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
+double t2_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
 
-double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
+double t2Prime_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2]);
 
-double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
+double lambda_fromt2(double lambda0, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter);
 
 // projections according to the triangle type
 
-void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
 
-void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
 
-void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) ;
+void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) ;
 
 

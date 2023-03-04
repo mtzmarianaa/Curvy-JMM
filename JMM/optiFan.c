@@ -216,31 +216,31 @@ double der_hermite_interpolationT(double param, double xA[2], double xB[2], doub
 
 // functions to find lambdaMin and lambdaMax for types 1,2, and 4
 
-double t1_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
+double t1_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
   // line through yk' with slope Bk(mu)
   double y_k1[2];
-  hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
+  hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, y_k1);
   return Bk_mu[0]*(y_k1[1] - ykPrime[1]) - Bk_mu[1]*(y_k1[0] - ykPrime[0]);
 }
 
-double t1Prime_ofLam(double lambda, double x0[2], double B0[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
+double t1Prime_ofLam(double lambda, double x0[2], double B0_k1[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
   // derivative with respect to lambda of the line through yk' with slope Bk(mu)
   double B_lam[2];
-  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
+  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, B_lam);
   return Bk_mu[0]*B_lam[1] - Bk_mu[1]*B_lam[0];
 }
 
-double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
+double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
   // backtracking to find suitable step size for t1
   double t1_prev, t1_cur, alpha;
   int i = 0;
   alpha = alpha0;
   // evaluating objective function
-  t1_prev = t1_ofLam(lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
-  t1_cur = t1_ofLam(lambda - alpha*d, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+  t1_prev = t1_ofLam(lambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
+  t1_cur = t1_ofLam(lambda - alpha*d, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
   while( fabs(t1_prev) <= fabs(t1_cur) & i < 10){
     alpha = alpha*0.5;
-    t1_cur = t1_ofLam(lambda - alpha*d, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+    t1_cur = t1_ofLam(lambda - alpha*d, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
     i++;
   }
   if( fabs(t1_prev) <= fabs(t1_cur) ){
@@ -249,51 +249,51 @@ double backTr_t1(double alpha0, double d, double lambda, double x0[2], double B0
   return alpha;
 }
 
-double lambda_fromt1(double lambda0, double x0[2], double B0[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+double lambda_fromt1(double lambda0, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // newtons method to find lambda such that t1(lambda) = 0
   double lambda, t1_cur, t1Prime, alpha, d;
   int i = 0;
   lambda = lambda0;
-  t1_cur = t1_ofLam(lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+  t1_cur = t1_ofLam(lambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
   while( fabs(t1_cur) > tol & i < maxIter & alpha > 0){
-    t1Prime = t1Prime_ofLam(lambda, x0, B0, Bk_mu, x_k1, B_k1);
+    t1Prime = t1Prime_ofLam(lambda, x0, B0_k1, Bk_mu, x_k1, B_k1);
     d = t1_cur/t1Prime;
-    alpha = backTr_t1(0.1, d, lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+    alpha = backTr_t1(0.1, d, lambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
     lambda = lambda - alpha*d;
-    t1_cur = t1_ofLam(lambda, x0, B0, ykPrime, Bk_mu, x_k1, B_k1);
+    t1_cur = t1_ofLam(lambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1);
     i++;
   }
   return lambda;
 }
 
-double t2_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
+double t2_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2];
-  hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
-  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
+  hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, y_k1);
+  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, B_lam);
   return B_lam[0]*(y_k1[1] - ykPrime[1]) - B_lam[1]*(y_k1[0] - ykPrime[0]);
 }
 
-double t2Prime_ofLam(double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
+double t2Prime_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // derivative with respect to lambda of the line through yk' with slope B(k+1)(lambda)
   double y_k1[2], B_lam[2], derB_lam[2];
-  hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, y_k1);
-  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, B_lam);
-  secondDer_hermite_interpolationSpatial(lambda, x0, x_k1, B0, B_k1, derB_lam);
+  hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, y_k1);
+  grad_hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, B_lam);
+  secondDer_hermite_interpolationSpatial(lambda, x0, x_k1, B0_k1, B_k1, derB_lam);
   return derB_lam[0]*(y_k1[1] - ykPrime[1]) - derB_lam[1]*(y_k1[0] - ykPrime[0]);
 }
 
-double backTr_t2(double alpha0, double d, double lambda, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
+double backTr_t2(double alpha0, double d, double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2]) {
   // backtracking to find suitable step size for t2
   double t2_prev, t2_cur, alpha;
   int i = 0;
   alpha = alpha0;
   // evaluating objective function
-  t2_prev = t2_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
-  t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, ykPrime, x_k1, B_k1);
+  t2_prev = t2_ofLam(lambda, x0, B0_k1, ykPrime, x_k1, B_k1);
+  t2_cur = t2_ofLam(lambda - alpha*d, x0, B0_k1, ykPrime, x_k1, B_k1);
   while( fabs(t2_prev) < fabs(t2_cur) & i < 10){
     alpha = alpha*0.5;
-    t2_cur = t2_ofLam(lambda - alpha*d, x0, B0, ykPrime, x_k1, B_k1);
+    t2_cur = t2_ofLam(lambda - alpha*d, x0, B0_k1, ykPrime, x_k1, B_k1);
     i++;
   }
   if( fabs(t2_prev) < fabs(t2_cur) ){
@@ -302,18 +302,18 @@ double backTr_t2(double alpha0, double d, double lambda, double x0[2], double B0
   return alpha;
 }
 
-double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+double lambda_fromt2(double lambda0, double x0[2], double B0_k1[2], double ykPrime[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // Newtons method to find lambda such that t2(lambda) = 0
   double lambda, t2_cur, t2Prime, alpha, d;
   int i = 0;
   lambda = lambda0;
-  t2_cur = t2_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
+  t2_cur = t2_ofLam(lambda, x0, B0_k1, ykPrime, x_k1, B_k1);
   while( fabs(t2_cur) > tol & i < maxIter & alpha > 0){
-    t2Prime = t2Prime_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
+    t2Prime = t2Prime_ofLam(lambda, x0, B0_k1, ykPrime, x_k1, B_k1);
     d = t2_cur/t2Prime;
-    alpha = backTr_t2(1, d, lambda, x0, B0, ykPrime, x_k1, B_k1);
+    alpha = backTr_t2(1, d, lambda, x0, B0_k1, ykPrime, x_k1, B_k1);
     lambda = lambda - alpha*d;
-    t2_cur = t2_ofLam(lambda, x0, B0, ykPrime, x_k1, B_k1);
+    t2_cur = t2_ofLam(lambda, x0, B0_k1, ykPrime, x_k1, B_k1);
     i++;
   }
   return lambda;
@@ -322,7 +322,7 @@ double lambda_fromt2(double lambda0, double x0[2], double B0[2], double ykPrime[
 // these are the functions used to project back on the feasible set
 // but they depend on the type of curvy triangle we are dealing with
 
-void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // given all this information project back yk1. Here we assume that this triangle is
   // a type 1 curvy triangle
   if(lambdak1 > 1){
@@ -341,7 +341,14 @@ void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double
   dotTest = dotProd(yk1MinykPrime, Bk_mu_perp);
   if(dotTest < 0){
     // then we need to find lambdaMax/lambdaMin and project back
-    lambdat1 = lambda_fromt1(lambdak1, x0, B0, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    lambdat1 = lambda_fromt1(lambdak1, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    printf("Lambda from t1 found: %lf\n", lambdat1);
+    printf("Parameters used in lambda_fromt1:  \n");
+    printf("    B0_k1:  %lf   %lf\n", B0_k1[0], B0_k1[1]);
+    printf("    ykPrime:  %lf   %lf\n", ykPrime[0], ykPrime[1]);
+    printf("    Bk_mu:  %lf   %lf\n", Bk_mu[0], Bk_mu[1]);
+    printf("    x_k1:  %lf   %lf\n", x_k1[0], x_k1[1]);
+    printf("    B_k1:  %lf   %lf\n", B_k1[0], B_k1[1]);
     if(lambdat1 < 0){
       lambdat1 = 0;
     }
@@ -349,11 +356,11 @@ void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double
       lambdat1 = 1;
     }
     // compute yk1 from this newly found lambda
-    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0, B_k1, yk1);
+    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0_k1, B_k1, yk1);
   }
 }
 
-void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // given all this information project back yk1. Here we are going to assume that this
   // is a type 2 curvy triangle
   if(lambdak1 > 1){
@@ -372,7 +379,7 @@ void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double
   dotTest = dotProd(yk1MinykPrime, Bk1_lam_perp);
   if( dotTest<0){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
-    lambdat2 = lambda_fromt2(lambdak1, x0, B0, ykPrime, x_k1, B_k1, tol, maxIter);
+    lambdat2 = lambda_fromt2(lambdak1, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
       lambdat2 = 0;
     }
@@ -380,11 +387,11 @@ void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double
       lambdat2 = 1;
     }
     // compute yk1 from this newly found lambda
-    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0, B_k1, yk1);
+    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0_k1, B_k1, yk1);
   }
 }
 
-void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) {
+void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) {
   // given all of this information project back yk1. Here we are going to assume
   // that this is a type 4 curvy triangle
   if(lambdak1 > 1){
@@ -404,7 +411,7 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
   dotTestMax = dotProd(yk1MinykPrime, B_k1_lam_perp);
   if( dotTestMin < 0){
     // meaning we need to find lambdaMin
-    lambdat1 = lambda_fromt1(lambdak1, x0, B0, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    lambdat1 = lambda_fromt1(lambdak1, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
     if(lambdat1 < 0){
       lambdat1 = 0;
     }
@@ -412,11 +419,11 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
       lambdat1 = 1;
     }
     // compute yk1 from this newly found lambda
-    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0, B_k1, yk1);
+    hermite_interpolationSpatial(lambdat1, x0, x_k1, B0_k1, B_k1, yk1);
   }
   else if( dotTestMax){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
-    lambdat2 = lambda_fromt2(lambdak1, x0, B0, ykPrime, x_k1, B_k1, tol, maxIter);
+    lambdat2 = lambda_fromt2(lambdak1, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
       lambdat2 = 0;
     }
@@ -424,7 +431,7 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
       lambdat2 = 1;
     }
     // compute yk1 from this newly found lambda
-    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0, B_k1, yk1);
+    hermite_interpolationSpatial(lambdat2, x0, x_k1, B0_k1, B_k1, yk1);
   }
 }
 

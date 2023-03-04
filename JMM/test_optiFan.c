@@ -99,14 +99,18 @@ int main(){
 
 
   // we project
-  double B_xk_perp[2];
+  double B_xmu[2], B_xmu_perp[2], B_xlam[2], B_xlam_perp[2];
   // first triangle
-  B_xk_perp[0] = -B_xk[0][1];
-  B_xk_perp[1] = B_xk[0][0];
-  projectBack_type1(lambda2, yk2, yk1Prime, x0, B_x0[0], B_xk[0], B_xk_perp, x1, x2, B_xk[1], 0.000001, 100);
+  grad_hermite_interpolationSpatial(mu1, x0, x1, B_x0[0], B_xk[0], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  projectBack_type1(lambda2, yk2, yk1Prime, x0, B_x0[1], B_xmu, B_xmu_perp, x1, x2, B_xk[1], 0.000001, 100);
   printf("After projecting back lambda2 is: %lf  with coordinates  %lf %lf\n", lambda2, yk2[0], yk2[1]);
 
-  /* double lambda2min, B0[2], ykPrime[2], x2[2], B1[2], Bk_mu[2], B2[2], xlam[2]; */
+
+
+  /* printf("\n\n\n\n\n\n\n\n"); */
+  /* double lambda2min, B0[2], ykPrime[2], B1[2], Bk_mu[2], B2[2], xlam[2]; */
   /* B0[0] = B_x0[1][0]; */
   /* B0[1] = B_x0[1][1]; */
   /* B1[0] = B_xk[0][0]; */
@@ -123,7 +127,16 @@ int main(){
 
   /* printf("\n\nThe minimum possible value for lambda2 is: %lf\n\n\n", lambda2min); */
 
-  /* printf("T1 with this lamdba2: %lf\n", t1_ofLam(lambda2min, x0, B0, ykPrime, Bk_mu, x2, B2)); */
+
+  /* printf("Lambda from t1 found: %lf\n", lambda2min); */
+  /*   printf("Parameters used in lambda_fromt1:  \n"); */
+  /*   printf("    B0_k1:  %lf   %lf\n", B0[0], B0[1]); */
+  /*   printf("    ykPrime:  %lf   %lf\n", ykPrime[0], ykPrime[1]); */
+  /*   printf("    Bk_mu:  %lf   %lf\n", Bk_mu[0], Bk_mu[1]); */
+  /*   printf("    x_k1:  %lf   %lf\n", x2[0], x2[1]); */
+  /*   printf("    B_k1:  %lf   %lf\n", B2[0], B2[1]); */
+
+  /* /\* printf("T1 with this lamdba2: %lf\n", t1_ofLam(lambda2min, x0, B0, ykPrime, Bk_mu, x2, B2)); *\/ */
 
   /* hermite_interpolationSpatial(lambda2min, x0, x2, B0, B2, xlam); */
   /* printf("The interpolated value with lambdamin:   %lf  %lf\n", xlam[0], xlam[1]); */
