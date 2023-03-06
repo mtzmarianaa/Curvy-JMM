@@ -9,7 +9,7 @@
 #include <stdbool.h>
 
 int main(){
-  optiFanS *optiFan;
+  triFanS *triFan;
   int nRegions;
   double x0[2], T0, x1[2], T1, xHat[2], (*points_fan)[2], (*B_x0)[2], (*B_xk)[2], *indicesRef;
 
@@ -17,7 +17,7 @@ int main(){
   T1 = 1.4;
   nRegions = 3;
 
-  points_fan = malloc(4*2*sizeof(double));
+  points_fan = malloc(5*2*sizeof(double));
   B_x0 = malloc(2*4*sizeof(double));
   B_xk = malloc(4*2*sizeof(double));
   indicesRef = malloc(5*sizeof(double));
@@ -63,8 +63,8 @@ int main(){
   indicesRef[3] = 1.005;
   indicesRef[4] = 1.5;
 
-  optiFan_alloc(&optiFan);
-  optiFan_init(optiFan, nRegions, x0, T0, x1, T1, xHat, indicesRef, points_fan, B_x0, B_xk);
+  triFan_alloc(&triFan);
+  triFan_init(triFan, nRegions, x0, T0, x1, T1, xHat, indicesRef, points_fan, B_x0, B_xk);
 
 
   printf("\n\n\n\n\n\n   Test the projections back on to the feasible set\n\n\n\n");
@@ -104,9 +104,46 @@ int main(){
   grad_hermite_interpolationSpatial(mu1, x0, x1, B_x0[0], B_xk[0], B_xmu);
   B_xmu_perp[0] = -B_xmu[1];
   B_xmu_perp[1] = B_xmu[0];
-  projectBack_type1(lambda2, yk2, yk1Prime, x0, B_x0[1], B_xmu, B_xmu_perp, x1, x2, B_xk[1], 0.000001, 100);
-  printf("After projecting back lambda2 is: %lf  with coordinates  %lf %lf\n", lambda2, yk2[0], yk2[1]);
+  projectBack_type1(&lambda2, yk2, yk1Prime, x0, B_x0[1], B_xmu, B_xmu_perp, x1, x2, B_xk[1], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda2 is: %lf  with coordinates  %lf %lf\n", lambda2, yk2[0], yk2[1]);
 
+  // second triangle
+  grad_hermite_interpolationSpatial(mu2, x0, x2, B_x0[1], B_xk[1], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  projectBack_type1(&lambda3, yk3, yk2Prime, x0, B_x0[2], B_xmu, B_xmu_perp, x2, x3, B_xk[2], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda3 is: %lf  with coordinates  %lf %lf\n", lambda3, yk3[0], yk3[1]);
+
+  // third triangle
+  double B_k1_lam_perp[2], B_k1_lam[2];
+  grad_hermite_interpolationSpatial(mu3, x0, x3, B_x0[2], B_xk[2], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  grad_hermite_interpolationSpatial(lambda4, x0, xHat, B_x0[3], B_xk[3], B_k1_lam);
+  B_k1_lam_perp[0] = -B_k1_lam[1];
+  B_k1_lam_perp[1] = B_k1_lam[0];
+  projectBack_type4(&lambda4, yk4, yk3Prime, x0, B_x0[3], B_xmu, B_xmu_perp,B_k1_lam_perp, x3, xHat, B_xk[3], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda4 is: %lf  with coordinates  %lf %lf\n", lambda4, yk4[0], yk4[1]);
+
+
+
+  printf("\n\n\n\n\n\n\n\n\n\n WE NOW TEST THE FUNCTION THAT PROJECTS ALL OF THEM\n\n\n\n");
+
+  double *params;
+  params = malloc(6*sizeof(double));
+  params[0] = 0.2;
+  params[1] = 0.5;
+  params[2] = 0.9;
+  params[3] = 0.85;
+  params[4] = 0.5;
+  params[5] = 0.15;
+
+  projectAll(params, triFan, 0.000000001, 100);
+
+  printf("\n\n\n\n\nInitialize an update struct with a feasible set of parameters\n");
+  updateS *update;
+  update_alloc(&update);
+  update_init(update, triFan);
 
 
   /* printf("\n\n\n\n\n\n\n\n"); */

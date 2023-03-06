@@ -12,34 +12,34 @@ The approach is based on the triangle fan
 #include <assert.h>
 #include <stdbool.h>
 
-void optiFan_alloc(optiFanS **optiFan) {
-  *optiFan = malloc(sizeof(optiFanS));
-  assert(*optiFan != NULL);
+void triFan_alloc(triFanS **triFan) {
+  *triFan = malloc(sizeof(triFanS));
+  assert(*triFan != NULL);
 }
 
-void optiFan_dealloc(optiFanS **optiFan) {
-  free(*optiFan);
-  *optiFan = NULL;
-  assert(*optiFan == NULL);
+void triFan_dealloc(triFanS **triFan) {
+  free(*triFan);
+  *triFan = NULL;
+  assert(*triFan == NULL);
 }
 
-void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) {
+void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) {
   double gradTest_x0[2], xkMinx0[2], xk[2], B0k1[2], B0k[2], Bk1[2], Bk[2], xk1[2], dotB0k1B0k, dotBk1Bk;
   int i;
-  optiFan->nRegions = nRegions;
-  optiFan->x0[0] = x0[0];
-  optiFan->x0[1] = x0[1];
-  optiFan->T0 = T0;
-  optiFan->x1[0] = x1[0];
-  optiFan->x1[1] = x1[1];
-  optiFan->T1 = T1;
-  optiFan->xHat[0] = xHat[0];
-  optiFan->xHat[1] = xHat[1];
-  optiFan->points_fan = points_fan;
-  optiFan->indicesRef = indicesRef;
-  optiFan->types = malloc(nRegions*sizeof(int));
-  optiFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
-  optiFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
+  triFan->nRegions = nRegions;
+  triFan->x0[0] = x0[0];
+  triFan->x0[1] = x0[1];
+  triFan->T0 = T0;
+  triFan->x1[0] = x1[0];
+  triFan->x1[1] = x1[1];
+  triFan->T1 = T1;
+  triFan->xHat[0] = xHat[0];
+  triFan->xHat[1] = xHat[1];
+  triFan->points_fan = points_fan;
+  triFan->indicesRef = indicesRef;
+  triFan->types = malloc(nRegions*sizeof(int));
+  triFan->B_x0 = malloc((nRegions+1)*2*sizeof(double));
+  triFan->B_xk = malloc((nRegions+1)*2*sizeof(double));
   for (i = 0; i<(nRegions+1); i++){
     // we need to know if the gradients go from x0 to xk
     xk[0] = points_fan[i][0];
@@ -53,31 +53,31 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
     if( dotProd(gradTest_x0, xkMinx0)>=0 ){
       // direction we want x0->xk
       printf("   We don't have a problem with the original direction of the tangents\n");
-      optiFan->B_x0[i][0] = gradTest_x0[0];
-      optiFan->B_x0[i][1] = gradTest_x0[1];
-      optiFan->B_xk[i][0] = B_xk[i][0];
-      optiFan->B_xk[i][1] = B_xk[i][1];
+      triFan->B_x0[i][0] = gradTest_x0[0];
+      triFan->B_x0[i][1] = gradTest_x0[1];
+      triFan->B_xk[i][0] = B_xk[i][0];
+      triFan->B_xk[i][1] = B_xk[i][1];
     }
     else{
       // direction we don't want xk->x0
       printf("   We have a problem\n");
-      optiFan->B_x0[i][0] = -gradTest_x0[0];
-      optiFan->B_x0[i][1] = -gradTest_x0[1];
-      optiFan->B_xk[i][0] = -B_xk[i][0];
-      optiFan->B_xk[i][1] = -B_xk[i][1];
+      triFan->B_x0[i][0] = -gradTest_x0[0];
+      triFan->B_x0[i][1] = -gradTest_x0[1];
+      triFan->B_xk[i][0] = -B_xk[i][0];
+      triFan->B_xk[i][1] = -B_xk[i][1];
     }
   }
   // now we compute the type of triangle we have
   printf("\n\n");
   for (i = 0; i<nRegions; i++){
-    Bk[0] = optiFan->B_xk[i][0];
-    Bk[1] = optiFan->B_xk[i][1];
-    Bk1[0] = optiFan->B_xk[i+1][0];
-    Bk1[1] = optiFan->B_xk[i+1][1];
-    B0k[0] = optiFan->B_x0[i][0];
-    B0k[1] = optiFan->B_x0[i][1];
-    B0k1[0] = optiFan->B_x0[i+1][0];
-    B0k1[1] = optiFan->B_x0[i+1][1];
+    Bk[0] = triFan->B_xk[i][0];
+    Bk[1] = triFan->B_xk[i][1];
+    Bk1[0] = triFan->B_xk[i+1][0];
+    Bk1[1] = triFan->B_xk[i+1][1];
+    B0k[0] = triFan->B_x0[i][0];
+    B0k[1] = triFan->B_x0[i][1];
+    B0k1[0] = triFan->B_x0[i+1][0];
+    B0k1[1] = triFan->B_x0[i+1][1];
     printf("For i=%d  Bk= %lf  %lf   B(k+1)=   %lf  %lf\n", i, Bk[0], Bk[1], Bk1[0], Bk1[1]);
     printf("          B0k= %lf  %lf   B0(k+1)=   %lf  %lf\n", B0k[0], B0k[1], B0k1[0], B0k1[1]);
     dotB0k1B0k = dotProd(B0k1, B0k);
@@ -85,20 +85,20 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
     printf("Dot product B0k1 and B0k  %lf\n", dotB0k1B0k);
     printf("Dot product Bk1 and Bk  %lf\n", dotBk1Bk);
     if( dotB0k1B0k <=0 & dotBk1Bk >=0 ){
-      optiFan->types[i] = 3;
+      triFan->types[i] = 3;
     }
     else if(dotB0k1B0k>0 & dotBk1Bk<0){
-      optiFan->types[i] = 4;
+      triFan->types[i] = 4;
     }
     else if(dotB0k1B0k >=0 & dotBk1Bk >=0){
       xk1[0] = points_fan[i+1][0];
       xk1[1] = points_fan[i+1][1];
       vec2_subtraction(xk1, x0, xkMinx0);
       if( dotProd(xkMinx0, B0k) >= 0){
-	optiFan->types[i] = 1;
+	triFan->types[i] = 1;
       }
       else{
-	optiFan->types[i] = 2;
+	triFan->types[i] = 2;
       }
     }
     else{
@@ -107,8 +107,34 @@ void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, doub
       printf("For the point %d  with Bk  %lf  %lf   and B0k  %lf %lf: \n", i, Bk[0], Bk[1], B0k[0], B0k[1]);
       printf("                   and Bk1  %lf  %lf   and B0k1  %lf %lf: \n", Bk1[0], Bk1[1], B0k1[0], B0k1[1]);
     }
-    printf(" For the internal triangle %d  the type of curvy triangle is: %d\n\n", i, optiFan->types[i]);
+    printf(" For the internal triangle %d  the type of curvy triangle is: %d\n\n", i, triFan->types[i]);
   }
+}
+
+void update_alloc(updateS **update) {
+  *update = malloc(sizeof(update));
+  assert(*update != NULL);
+}
+
+void update_dealloc(updateS **update) {
+  free(*update);
+  *update = NULL;
+  assert(*update == NULL);
+}
+
+void update_init(updateS *update, triFanS *triFan) {
+  // initializes an update with a feasible set of mus and lambdas
+  update-> triFan = triFan;
+  double *params;
+  int nRegions = triFan->nRegions;
+  params = malloc(2*nRegions*sizeof(double));
+  for(int k=0; k<nRegions; k++){
+    params[k] = 0.75;
+    params[nRegions + k] = 0.5;
+  }
+  // now we project them back to find the initial feasible parameters
+  projectAll(params, triFan, 0.000000001, 50);
+  update->params = params;
 }
 
 // starting the section with auxiliary functions
@@ -322,33 +348,35 @@ double lambda_fromt2(double lambda0, double x0[2], double B0_k1[2], double ykPri
 // these are the functions used to project back on the feasible set
 // but they depend on the type of curvy triangle we are dealing with
 
-void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+void projectBack_type1(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // given all this information project back yk1. Here we assume that this triangle is
   // a type 1 curvy triangle
-  if(lambdak1 > 1){
-    lambdak1 = 1;
+  double tempLambda, lambdat1;
+  tempLambda = *lambdak1;
+  if(tempLambda > 1){
+    tempLambda = 1;
     yk1[0] = x_k1[0];
     yk1[1] = x_k1[1];
   }
-  else if(lambdak1 < 0){
-    lambdak1 = 0;
+  else if(tempLambda < 0){
+    tempLambda = 0;
     yk1[0] = x0[0];
     yk1[1] = x0[1];
   }
   // we need to know if yk1 is in the feasible set computed from ykPrime
-  double yk1MinykPrime[2], dotTest, lambdat1;
+  double yk1MinykPrime[2], dotTest;
   vec2_subtraction(yk1,ykPrime, yk1MinykPrime);
   dotTest = dotProd(yk1MinykPrime, Bk_mu_perp);
   if(dotTest < 0){
     // then we need to find lambdaMax/lambdaMin and project back
-    lambdat1 = lambda_fromt1(lambdak1, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
-    printf("Lambda from t1 found: %lf\n", lambdat1);
-    printf("Parameters used in lambda_fromt1:  \n");
-    printf("    B0_k1:  %lf   %lf\n", B0_k1[0], B0_k1[1]);
-    printf("    ykPrime:  %lf   %lf\n", ykPrime[0], ykPrime[1]);
-    printf("    Bk_mu:  %lf   %lf\n", Bk_mu[0], Bk_mu[1]);
-    printf("    x_k1:  %lf   %lf\n", x_k1[0], x_k1[1]);
-    printf("    B_k1:  %lf   %lf\n", B_k1[0], B_k1[1]);
+    lambdat1 = lambda_fromt1(tempLambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    /* printf("Lambda from t1 found: %lf\n", lambdat1); */
+    /* printf("Parameters used in lambda_fromt1:  \n"); */
+    /* printf("    B0_k1:  %lf   %lf\n", B0_k1[0], B0_k1[1]); */
+    /* printf("    ykPrime:  %lf   %lf\n", ykPrime[0], ykPrime[1]); */
+    /* printf("    Bk_mu:  %lf   %lf\n", Bk_mu[0], Bk_mu[1]); */
+    /* printf("    x_k1:  %lf   %lf\n", x_k1[0], x_k1[1]); */
+    /* printf("    B_k1:  %lf   %lf\n", B_k1[0], B_k1[1]); */
     if(lambdat1 < 0){
       lambdat1 = 0;
     }
@@ -357,19 +385,23 @@ void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double
     }
     // compute yk1 from this newly found lambda
     hermite_interpolationSpatial(lambdat1, x0, x_k1, B0_k1, B_k1, yk1);
+    tempLambda = lambdat1;
   }
+  *lambdak1 = tempLambda;
 }
 
-void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
+void projectBack_type2(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) {
   // given all this information project back yk1. Here we are going to assume that this
   // is a type 2 curvy triangle
-  if(lambdak1 > 1){
-    lambdak1 = 1;
+  double tempLambda;
+  tempLambda = *lambdak1;
+  if(tempLambda > 1){
+    tempLambda = 1;
     yk1[0] = x_k1[0];
     yk1[1] = x_k1[1];
   }
-  else if(lambdak1 < 0){
-    lambdak1 = 0;
+  else if(tempLambda < 0){
+    tempLambda = 0;
     yk1[0] = x0[0];
     yk1[1] = x0[1];
   }
@@ -379,7 +411,7 @@ void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double
   dotTest = dotProd(yk1MinykPrime, Bk1_lam_perp);
   if( dotTest<0){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
-    lambdat2 = lambda_fromt2(lambdak1, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
+    lambdat2 = lambda_fromt2(tempLambda, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
       lambdat2 = 0;
     }
@@ -388,19 +420,24 @@ void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double
     }
     // compute yk1 from this newly found lambda
     hermite_interpolationSpatial(lambdat2, x0, x_k1, B0_k1, B_k1, yk1);
+    tempLambda = lambdat2;
   }
+  *lambdak1 = tempLambda;
 }
 
-void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) {
+void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) {
   // given all of this information project back yk1. Here we are going to assume
   // that this is a type 4 curvy triangle
-  if(lambdak1 > 1){
-    lambdak1 = 1;
+  double tempLambda;
+  tempLambda = *lambdak1;
+  //printf("Value of initial lambda: %lf\n", tempLambda);
+  if(tempLambda > 1){
+    tempLambda = 1;
     yk1[0] = x_k1[0];
     yk1[1] = x_k1[1];
   }
-  else if(lambdak1 < 0){
-    lambdak1 = 0;
+  else if(tempLambda < 0){
+    tempLambda = 0;
     yk1[0] = x0[0];
     yk1[1] = x0[1];
   }
@@ -409,9 +446,15 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
   vec2_subtraction(yk1, ykPrime, yk1MinykPrime);
   dotTestMin = dotProd(yk1MinykPrime, B_k_mu_perp);
   dotTestMax = dotProd(yk1MinykPrime, B_k1_lam_perp);
+  /* printf("yk1: %lf %lf\n", yk1[0], yk1[1]); */
+  /* printf("ykPrime: %lf %lf \n", ykPrime[0], ykPrime[1]); */
+  /* printf("B_k_mu_perp: %lf %lf\n", B_k_mu_perp[0], B_k_mu_perp[1]); */
+  /* printf("B_k1_lam_perp: %lf %lf\n", B_k1_lam_perp[0], B_k1_lam_perp[1]); */
+  /* printf("dotTestMin: %lf\n", dotTestMin); */
+  /* printf("dotTestMax: %lf\n", dotTestMax); */
   if( dotTestMin < 0){
     // meaning we need to find lambdaMin
-    lambdat1 = lambda_fromt1(lambdak1, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
+    lambdat1 = lambda_fromt1(tempLambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
     if(lambdat1 < 0){
       lambdat1 = 0;
     }
@@ -423,7 +466,7 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
   }
   else if( dotTestMax){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
-    lambdat2 = lambda_fromt2(lambdak1, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
+    lambdat2 = lambda_fromt2(tempLambda, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
       lambdat2 = 0;
     }
@@ -432,9 +475,83 @@ void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double
     }
     // compute yk1 from this newly found lambda
     hermite_interpolationSpatial(lambdat2, x0, x_k1, B0_k1, B_k1, yk1);
+    tempLambda = lambdat2;
   }
+  *lambdak1 = tempLambda;
 }
 
 
+// projection for all the triangle fan
+
+void projectAll(double *params, triFanS *triFan, double tol, int maxIter){
+  // project all the lambdas (the mus are always free
+  // to stay where they are unless they are smaller than 0
+  // or greater than 1
+  int nRegions, k; // params should be a pointer to a vector of length 2*nRegions
+  // from 0 to n-1 we have lambdas, from n to 2n-1 we have mus
+  double lambdak1, muk, x_k[2], x_k1[2], B_k[2], B_k1[2], B0_k[2], B0_k1[2], ykPrime[2], Bk_mu[2], Bk_mu_perp[2], yk1[2], Bk1_lam[2], Bk1_lam_perp[2];
+  nRegions = triFan->nRegions;
+  for(k = 0; k<nRegions; k++){
+    lambdak1 = params[k];
+    muk = params[nRegions + k];
+    x_k[0] = triFan->points_fan[k+1][0];
+    x_k[1] = triFan->points_fan[k+1][1];
+    x_k1[0] = triFan->points_fan[k+2][0];
+    x_k1[1] = triFan->points_fan[k+2][1];
+    B_k[0] = triFan->B_xk[k][0];
+    B_k[1] = triFan->B_xk[k][1];
+    B0_k[0] = triFan->B_x0[k][0];
+    B0_k[1] = triFan->B_x0[k][1];
+    B_k1[0] = triFan->B_xk[k+1][0];
+    B_k1[1] = triFan->B_xk[k+1][1];
+    B0_k1[0] = triFan->B_x0[k+1][0];
+    B0_k1[1] = triFan->B_x0[k+1][1];
+    /* printf("For k = %d\n\n", k); */
+    /* printf("muk:  %lf   lambdak1: %lf\n", muk, lambdak1); */
+    /* printf("xk:  %lf  %lf\n", x_k[0], x_k[1]); */
+    /* printf("xk1: %lf  %lf\n", x_k1[0], x_k1[1]); */
+    /* printf("B_k:   %lf   %lf\n", B_k[0], B_k[1]); */
+    /* printf("B_k1:   %lf   %lf\n", B_k1[0], B_k1[1]); */
+    /* printf("B0_k:  %lf   %lf\n", B0_k[0], B0_k[1]); */
+    /* printf("B0_k1:  %lf   %lf\n", B0_k1[0], B0_k1[1]); */
+    // first project muk to [0,1]
+    if(muk < 0){
+      muk = 0;
+    }
+    else if(muk > 1){
+      muk = 1;
+    }
+    // compute ykPrime, Bk_mu, yk1 Bk1_lam, 
+    hermite_interpolationSpatial(muk, triFan->x0, x_k, B0_k, B_k, ykPrime);
+    grad_hermite_interpolationSpatial(muk, triFan->x0, x_k, B0_k, B_k, Bk_mu);
+    Bk_mu_perp[0] = -Bk_mu[1];
+    Bk_mu_perp[1] = Bk_mu[0];
+    hermite_interpolationSpatial(lambdak1, triFan->x0, x_k1, B0_k1, B_k1, yk1);
+    grad_hermite_interpolationSpatial(lambdak1, triFan->x0, x_k1, B0_k1, B_k1, Bk1_lam);
+    Bk1_lam_perp[0] = -Bk1_lam[1];
+    Bk1_lam_perp[1] = Bk1_lam[0];
+    // project back depending on the triangle we have
+    if(triFan->types[k] == 1){
+      projectBack_type1(&lambdak1, yk1, ykPrime, triFan->x0, B0_k1, Bk_mu, Bk_mu_perp, x_k, x_k1, B_k1, tol, maxIter);
+    }
+    else if(triFan->types[k] == 2){
+      projectBack_type2(&lambdak1, yk1, ykPrime, triFan->x0, B0_k1, Bk_mu, Bk1_lam_perp, x_k, x_k1, B_k1, tol, maxIter);
+    }
+    else if(triFan->types[k] == 3){
+      assert(false); // means there is an inflection point
+    }
+    else if(triFan->types[k] == 4){
+      projectBack_type4(&lambdak1, yk1, ykPrime, triFan->x0, B0_k1, Bk_mu, Bk_mu_perp, Bk1_lam_perp, x_k, x_k1, B_k1, tol, maxIter);
+    }
+    else{
+      assert(false); // we don't have any other case
+    }
+    params[k] = lambdak1;
+    params[nRegions + k] = muk;
+    printf("With muk: %lf  the coordinates of ykPrime are:  %lf   %lf\n", muk, ykPrime[0], ykPrime[1]);
+    printf("With lambdak: %lf  the coordinates of yk are:  %lf   %lf\n", lambdak1, yk1[0], yk1[1]);
+  }
+  
+}
 
 

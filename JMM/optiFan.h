@@ -10,18 +10,31 @@ typedef struct {
   double x1[2]; // farthest neighbor of x0 set to valid
   double T1; // eikonal value at x1
   double xHat[2]; // point we want to update
-  double (*points_fan)[2]; // coordinates of the points on the fan (total = n-1)
+  double (*points_fan)[2]; // coordinates of the points on the fan (total = n+1)
   double (*B_x0)[2]; // gradients at x0 from the boundary (total = n+1)
   double (*B_xk)[2]; // gradients at xk from the boundary (total = n+1)
   double *indicesRef; // n+2 different indices of refraction
   int *types; // types of curved boundaries inside the triangle fan (type 1, 2, 3, or 4)
-} optiFanS;
+} triFanS;
 
-void optiFan_alloc(optiFanS **optiFan);
+typedef struct {
+  // this is an update
+  triFanS *triFan;
+  double *params; // mus and lambdas vector of size 2n
+  //  from 0 to n-1 we have lambdas, from n to 2n-1 we have mus
+} updateS;
 
-void optiFan_dealloc(optiFanS **optiFan);
+void triFan_alloc(triFanS **triFan);
 
-void optiFan_init(optiFanS *optiFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]);
+void triFan_dealloc(triFanS **triFan);
+
+void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]);
+
+void update_alloc(updateS **update);
+
+void update_dealloc(updateS **update);
+
+void update_init(updateS *update, triFanS *triFan);
 
 //////////// AUXILIARY FUNCTIONS
 
@@ -55,10 +68,12 @@ double lambda_fromt2(double lambda0, double x0[2], double B0_k1[2], double ykPri
 
 // projections according to the triangle type
 
-void projectBack_type1(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+void projectBack_type1(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk_mu_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
 
-void projectBack_type2(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
+void projectBack_type2(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double Bk1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, int maxIter) ;
 
-void projectBack_type4(double lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) ;
+void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], double x0[2], double B0_k1[2], double Bk_mu[2], double B_k_mu_perp[2], double B_k1_lam_perp[2], double x_k[2], double x_k1[2], double B_k1[2], double tol, double maxIter) ;
 
+// projection for all the triangle fan
 
+void projectAll(double *params, triFanS *triFan, double tol, int maxIter);
