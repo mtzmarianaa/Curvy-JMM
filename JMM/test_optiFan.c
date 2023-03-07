@@ -11,7 +11,7 @@
 int main(){
   triFanS *triFan;
   int nRegions;
-  double x0[2], T0, x1[2], T1, xHat[2], (*points_fan)[2], (*B_x0)[2], (*B_xk)[2], *indicesRef;
+  double x0[2], T0, x1[2], T1, xHat[2], (*points_fan)[2], (*B_x0)[2], (*B_xk)[2], *indicesRef, grad0[2], grad1[2];
 
   T0 = 1;
   T1 = 1.4;
@@ -20,12 +20,16 @@ int main(){
   points_fan = malloc(5*2*sizeof(double));
   B_x0 = malloc(2*4*sizeof(double));
   B_xk = malloc(4*2*sizeof(double));
-  indicesRef = malloc(5*sizeof(double));
+  indicesRef = malloc(4*sizeof(double));
 
   x0[0] = 0;
   x0[1] = 0;
+  grad0[0] = 0;
+  grad0[1] = 1;
   x1[0] = 2;
   x1[1] = -0.2;
+  grad1[0] = 0;
+  grad1[1] = 1;
   points_fan[0][0] = 0.0;
   points_fan[0][1] = 0.0;
   points_fan[1][0] = 2.0;
@@ -60,11 +64,10 @@ int main(){
   indicesRef[0] = 0.8;
   indicesRef[1] = 1;
   indicesRef[2] = 1.001;
-  indicesRef[3] = 1.005;
-  indicesRef[4] = 1.5;
+  indicesRef[3] = 1.5;
 
   triFan_alloc(&triFan);
-  triFan_init(triFan, nRegions, x0, T0, x1, T1, xHat, indicesRef, points_fan, B_x0, B_xk);
+  triFan_init(triFan, nRegions, x0, T0, grad0, x1, T1, grad0, xHat, indicesRef, points_fan, B_x0, B_xk);
 
 
   printf("\n\n\n\n\n\n   Test the projections back on to the feasible set\n\n\n\n");

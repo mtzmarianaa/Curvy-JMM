@@ -12,10 +12,10 @@ typedef struct {
   double T1; // eikonal value at x1
   double grad1[2]; // gradient of the eikonal at x1
   double xHat[2]; // point we want to update
-  double (*points_fan)[2]; // coordinates of the points on the fan (total = n+1)
+  double (*points_fan)[2]; // coordinates of the points on the fan (total = n+2)
   double (*B_x0)[2]; // gradients at x0 from the boundary (total = n+1)
   double (*B_xk)[2]; // gradients at xk from the boundary (total = n+1)
-  double *indicesRef; // n+2 different indices of refraction
+  double *indicesRef; // n+1 different indices of refraction
   int *types; // types of curved boundaries inside the triangle fan (type 1, 2, 3, or 4)
 } triFanS;
 
@@ -30,7 +30,7 @@ void triFan_alloc(triFanS **triFan);
 
 void triFan_dealloc(triFanS **triFan);
 
-void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]);
+void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double grad0[2], double x1[2], double T1, double grad1[2], double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) ;
 
 void update_alloc(updateS **update);
 
@@ -79,3 +79,11 @@ void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], doubl
 // projection for all the triangle fan
 
 void projectAll(double *params, triFanS *triFan, double tol, int maxIter);
+
+
+// functions for optimizing the triangle fan update without tops
+
+double fObj_noTops(triFanS *triFan, double *params);
+
+
+

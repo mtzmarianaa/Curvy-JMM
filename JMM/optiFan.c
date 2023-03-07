@@ -23,16 +23,20 @@ void triFan_dealloc(triFanS **triFan) {
   assert(*triFan == NULL);
 }
 
-void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double x1[2], double T1, double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) {
+void triFan_init(triFanS *triFan, int nRegions, double x0[2], double T0, double grad0[2], double x1[2], double T1, double grad1[2], double xHat[2], double *indicesRef, double (*points_fan)[2], double (*B_x0)[2], double (*B_xk)[2]) {
   double gradTest_x0[2], xkMinx0[2], xk[2], B0k1[2], B0k[2], Bk1[2], Bk[2], xk1[2], dotB0k1B0k, dotBk1Bk;
   int i;
   triFan->nRegions = nRegions;
   triFan->x0[0] = x0[0];
   triFan->x0[1] = x0[1];
   triFan->T0 = T0;
+  triFan->grad0[0] = grad0[0];
+  triFan->grad0[1] = grad0[1];
   triFan->x1[0] = x1[0];
   triFan->x1[1] = x1[1];
   triFan->T1 = T1;
+  triFan->grad1[0] = grad1[0];
+  triFan->grad1[1] = grad1[1];
   triFan->xHat[0] = xHat[0];
   triFan->xHat[1] = xHat[1];
   triFan->points_fan = points_fan;
@@ -563,23 +567,45 @@ void projectAll(double *params, triFanS *triFan, double tol, int maxIter){
 ///////////////////////////////////////////////////////////////
 // Objective function for an update without the tops
 
-/* double fObj_noTops(triFanS *triFan, double *params){ */
-/*   // objective function of an update without the tops on a triangle fan */
-/*   int nRegions = triFan->nRegions; */
-/*   double sum, ykMinykPrime[2], muk, muk1, lambdak1, xk[2], B0_k1[2], B0_k[2], B_k[2], B_k1[2], x0[2], yk[2], ykPrime[2]; */
-/*   x0[0] = triFan->x0[0]; */
-/*   x0[1] = triFan->x0[1]; */
-/*   muk = params[0]; */
-/*   xk[0] = triFan->points_fan[1][0]; */
-/*   xk[1] = triFan->points_fan[1][1]; */
-/*   sum = hermite_interpolationT(muk, triFan, x0, xk, triFan->T0, triFan->T1, triFan->grad0, triFan->grad1); */
-/*   for(int i = 0; i<(nRegions-1); i++){ */
-/*     muk = params[nRegions + i]; */
-/*     muk1 = params[nRegions + i + 1]; */
-/*     lambdak1 = params[i]; */
-/*     hermite_interpolationSpatial(params[ */
-/*     vec2_subtraction(triFan->points_fan[i+2], tri */
-/*   } */
-/* } */
+double fObj_noTops(triFanS *triFan, double *params) {
+  // objective function of an update without the tops on a triangle fan
+  int nRegions = triFan->nRegions;
+  int k;
+  double sum, mu, lambda, mu1, eta_prev, eta_next, eta_min, ykMinykPrime[2], yk[2], yk1Prime[2], ykPrime[2];
+  double xk[2], xk1[2], B0_k[2], B0_k1[2], B_k[2], B_k1[2], x0[2], normRay, arclengthCreeping;
+  x0[0] = triFan->x0[0];
+  x0[1] = triFan->x0[1];
+  sum = hermite_interpolationT(params[nRegions], x0, triFan->x1, triFan->T0, triFan->T1, triFan->grad0, triFan->grad1); // T(y1Prime) using mu1
+  for(k = 0; k<(nRegions-1); k++){
+    mu1 = params[nRegions + k + 1];
+    mu = params[nRegions + k];
+    lambda = params[k];
+    eta_prev = triFan->indicesRef[k];
+    eta_next = triFan->indicesRef[k+1];
+    eta_min = min(eta_prev, eta_next);
+    hermite_interpolationSpatial(mu, x0, triFan->points_fan[k+1], triFan->B_x0[k], triFan->B_xk[k], ykPrime);
+    hermite_interpolationSpatial(lambda, x0, triFan->points_fan[k+2], triFan->B_x0[k+1], triFan->B_xk[k+1], yk);
+    hermite_interpolationSpatial(mu1, x0, triFan->points_fan[k+2], triFan->B_x0[k+1], triFan->B_xk[k+1], yk1Prime);
+    vec2_subtraction(yk, ykPrime, ykMinykPrime);
+    normRay = l2norm(ykMinykPrime);
+    arclengthCreeping = arclength_hermiteSimpson(lambda, mu1, x0, triFan->points_fan[k+2], triFan->B_x0[k+1], triFan->B_xk[k+1]);
+    sum += eta_prev*normRay + eta_min*arclengthCreeping;
+  }
+  k = nRegions-1;
+  lambda = params[nRegions-1];
+  mu = params[2*nRegions -1];
+  eta_prev = triFan->indicesRef[nRegions -1];
+  eta_next = triFan->indicesRef[nRegions];
+  eta_min = min(eta_prev, eta_next);
+  hermite_interpolationSpatial(mu, x0, triFan->points_fan[k+1], triFan->B_x0[k], triFan->B_xk[k], ykPrime);
+  hermite_interpolationSpatial(lambda, x0, triFan->points_fan[k+2], triFan->B_x0[k+1], triFan->B_xk[k+1], yk);
+  yk1Prime[0] = triFan->xHat[0];
+  yk1Prime[1] = triFan->xHat[1];
+  vec2_subtraction(yk, ykPrime, ykMinykPrime);
+  normRay = l2norm(ykMinykPrime);
+  arclengthCreeping = arclength_hermiteSimpson(lambda, mu1, x0, triFan->points_fan[k+2], triFan->B_x0[k+1], triFan->B_xk[k+1]);
+  sum += eta_prev*normRay + eta_min*arclengthCreeping;
+  return sum;
+}
 
 
