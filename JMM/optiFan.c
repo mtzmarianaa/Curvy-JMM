@@ -129,14 +129,16 @@ void update_init(updateS *update, triFanS *triFan) {
   int nRegions = triFan->nRegions;
   params = malloc(2*nRegions*sizeof(double));
   for(int k=0; k<nRegions; k++){
-    params[k] = 0.75;
-    params[nRegions + k] = 0.5;
+    params[k] = 0.5;
+    params[nRegions + k] = 0.75;
   }
   // now we project them back to find the initial feasible parameters
   projectAll(params, triFan, 0.000000001, 50);
   update->params = params;
 }
 
+////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
 // starting the section with auxiliary functions
 
 void hermite_interpolationSpatial(double param, double from[2], double to[2], double grad_from[2], double grad_to[2], double interpolation[2]) {
@@ -240,6 +242,8 @@ double der_hermite_interpolationT(double param, double xA[2], double xB[2], doub
   return (6*param2 - 6*param)*TA + (-6*param2 + 6*param)*TB + dotProd(xBminxA,sumGrads); 
 }
 
+////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
 // functions to find lambdaMin and lambdaMax for types 1,2, and 4
 
 double t1_ofLam(double lambda, double x0[2], double B0_k1[2], double ykPrime[2], double Bk_mu[2], double x_k1[2], double B_k1[2]) {
@@ -464,7 +468,7 @@ void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], doubl
     // compute yk1 from this newly found lambda
     hermite_interpolationSpatial(lambdat1, x0, x_k1, B0_k1, B_k1, yk1);
   }
-  else if( dotTestMax){
+  else if( dotTestMax < 0 ){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
     lambdat2 = lambda_fromt2(tempLambda, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
@@ -553,5 +557,29 @@ void projectAll(double *params, triFanS *triFan, double tol, int maxIter){
   }
   
 }
+
+
+////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////
+// Objective function for an update without the tops
+
+/* double fObj_noTops(triFanS *triFan, double *params){ */
+/*   // objective function of an update without the tops on a triangle fan */
+/*   int nRegions = triFan->nRegions; */
+/*   double sum, ykMinykPrime[2], muk, muk1, lambdak1, xk[2], B0_k1[2], B0_k[2], B_k[2], B_k1[2], x0[2], yk[2], ykPrime[2]; */
+/*   x0[0] = triFan->x0[0]; */
+/*   x0[1] = triFan->x0[1]; */
+/*   muk = params[0]; */
+/*   xk[0] = triFan->points_fan[1][0]; */
+/*   xk[1] = triFan->points_fan[1][1]; */
+/*   sum = hermite_interpolationT(muk, triFan, x0, xk, triFan->T0, triFan->T1, triFan->grad0, triFan->grad1); */
+/*   for(int i = 0; i<(nRegions-1); i++){ */
+/*     muk = params[nRegions + i]; */
+/*     muk1 = params[nRegions + i + 1]; */
+/*     lambdak1 = params[i]; */
+/*     hermite_interpolationSpatial(params[ */
+/*     vec2_subtraction(triFan->points_fan[i+2], tri */
+/*   } */
+/* } */
 
 

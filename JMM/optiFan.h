@@ -7,8 +7,10 @@ typedef struct {
   int nRegions; // number of indices of refraction inside the triangle fan
   double x0[2]; // recently accepted point
   double T0; // eikonal value at x0
+  double grad0[2]; // gradient of the eikonal at x0
   double x1[2]; // farthest neighbor of x0 set to valid
   double T1; // eikonal value at x1
+  double grad1[2]; // gradient of the eikonal at x1
   double xHat[2]; // point we want to update
   double (*points_fan)[2]; // coordinates of the points on the fan (total = n+1)
   double (*B_x0)[2]; // gradients at x0 from the boundary (total = n+1)

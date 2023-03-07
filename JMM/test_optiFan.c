@@ -127,6 +127,56 @@ int main(){
 
 
 
+  printf("\n\n\n\n\n\n\n\nTest with another set of initial mus and lambdas\n");
+
+  mu1 = 0.75;
+  hermite_interpolationSpatial(mu1, x0, x1, B_x0[0], B_xk[0], yk1Prime);
+  printf("With mu1: %lf   the coordinates are  %lf  %lf\n", mu1, yk1Prime[0], yk1Prime[1]);
+  lambda2 = 0.5; // this has to be at least 0.334212
+  hermite_interpolationSpatial(lambda2, x0, x2, B_x0[1], B_xk[1], yk2);
+  printf("With lambda2: %lf   the coordinates are  %lf  %lf\n", lambda2, yk2[0], yk2[1]);
+  mu2 = 0.75;
+  hermite_interpolationSpatial(mu2, x0, x2, B_x0[1], B_xk[1], yk2Prime);
+  printf("With mu2: %lf   the coordinates are  %lf  %lf\n", mu2, yk2Prime[0], yk2Prime[1]);
+  lambda3 = 0.5;
+  hermite_interpolationSpatial(lambda3, x0, x3, B_x0[2], B_xk[2], yk3);
+  printf("With lambda3: %lf   the coordinates are  %lf  %lf\n", lambda3, yk3[0], yk3[1]);
+  mu3 = 0.75;
+  hermite_interpolationSpatial(mu3, x0, x3, B_x0[2], B_xk[2], yk3Prime);
+  printf("With mu3: %lf   the coordinates are  %lf  %lf\n", mu3, yk3Prime[0], yk3Prime[1]);
+  lambda4 = 0.5; // this has to be up to 0.705223
+  hermite_interpolationSpatial(lambda4, x0, xHat, B_x0[3], B_xk[3], yk4);
+  printf("With lambda4: %lf   the coordinates are  %lf  %lf\n", lambda4, yk4[0], yk4[1]);
+
+
+  // we project
+  // first triangle
+  grad_hermite_interpolationSpatial(mu1, x0, x1, B_x0[0], B_xk[0], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  projectBack_type1(&lambda2, yk2, yk1Prime, x0, B_x0[1], B_xmu, B_xmu_perp, x1, x2, B_xk[1], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda2 is: %lf  with coordinates  %lf %lf\n", lambda2, yk2[0], yk2[1]);
+
+  // second triangle
+  grad_hermite_interpolationSpatial(mu2, x0, x2, B_x0[1], B_xk[1], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  projectBack_type1(&lambda3, yk3, yk2Prime, x0, B_x0[2], B_xmu, B_xmu_perp, x2, x3, B_xk[2], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda3 is: %lf  with coordinates  %lf %lf\n", lambda3, yk3[0], yk3[1]);
+
+  // third triangle
+  grad_hermite_interpolationSpatial(mu3, x0, x3, B_x0[2], B_xk[2], B_xmu);
+  B_xmu_perp[0] = -B_xmu[1];
+  B_xmu_perp[1] = B_xmu[0];
+  grad_hermite_interpolationSpatial(lambda4, x0, xHat, B_x0[3], B_xk[3], B_k1_lam);
+  B_k1_lam_perp[0] = -B_k1_lam[1];
+  B_k1_lam_perp[1] = B_k1_lam[0];
+  projectBack_type4(&lambda4, yk4, yk3Prime, x0, B_x0[3], B_xmu, B_xmu_perp,B_k1_lam_perp, x3, xHat, B_xk[3], 0.000001, 100);
+  printf("\n\nAfter projecting back lambda4 is: %lf  with coordinates  %lf %lf\n", lambda4, yk4[0], yk4[1]);
+  
+
+
+
   printf("\n\n\n\n\n\n\n\n\n\n WE NOW TEST THE FUNCTION THAT PROJECTS ALL OF THEM\n\n\n\n");
 
   double *params;
