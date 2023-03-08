@@ -132,7 +132,7 @@ BHat = np.array([-1, -0.4])
 BHat = BHat/norm(BHat)
 
 
-def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top = None, title = None):
+def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top = None, title = None, tangents = False):
      '''
      Draw one curvy triangle x0 xk x(k+1)
      '''
@@ -152,13 +152,19 @@ def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top =
           x0xk[i, :] = hermite_boundary(params[i], x0, B0k, xk, Bk)
           x0xk1[i, :] = hermite_boundary(params[i], x0, B0k1, xk1, Bk1)
      # Plot the curvy boundaries
-     plt.plot(x0xk[:, 0], x0xk[:, 1], linewidth = 1, c = "#483e64")
-     plt.plot(x0xk1[:, 0], x0xk1[:,1], linewidth = 1, c = "#483e64")
+     plt.plot(x0xk[:, 0], x0xk[:, 1], linewidth = 2, c = "#483e64")
+     plt.plot(x0xk1[:, 0], x0xk1[:,1], linewidth = 2, c = "#483e64")
      if(BkTop is not None and Bk1Top is not None):
-          plt.plot(xkxk1[:,0], xkxk1[:,1], linewdith = 1, c = "#3e6451")
+          plt.plot(xkxk1[:,0], xkxk1[:,1], linewdith = 2, c = "#3e6451")
      # Plot the points we are interested in
-     plt.scatter(x0[0], x0[1], s = 15, c = "#0027ff", label = "x0")
-     plt.scatter([xk[0], xk1[0]], [xk[1], xk1[1]],  s = 7, c = "#001871", label = "xk, x(k+1)")
+     plt.scatter(x0[0], x0[1], s = 20, c = "#0027ff", label = "x0")
+     plt.scatter([xk[0], xk1[0]], [xk[1], xk1[1]],  s = 12, c = "#001871", label = "xk, x(k+1)")
+     # If specified, plot the tangents
+     if(tangents):
+          plt.arrow(x0[0], x0[1], B0k[0], B0k[1], linewidth = 0.2, width = 0.005, color = "#858cb7", label = "B0k")
+          plt.arrow(x0[0], x0[1], B0k1[0], B0k1[1], linewidth = 0.2, width = 0.005, color = "#858cb7", label = "B0k1")
+          plt.arrow(xk[0], xk[1], Bk[0], Bk[1], linewidth = 0.2, width = 0.005, color = "#858cb7", label = "Bk")
+          plt.arrow(xk1[0], xk1[1], Bk1[0], Bk1[1], linewidth = 0.2, width = 0.005, color = "#858cb7", label = "Bk1")
      if(title is not None):
           plt.title(title)
      plt.legend()
@@ -179,30 +185,30 @@ def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top =
 # Bk1 = Bk1/norm(Bk1)
 
 ## For type 2
-x0 = np.array([0.0,0.0])
-xk = np.array([2, -0.2])
-xk1 = np.array([1.5, 0.8])
-B0k = np.array([0, -1])
-B0k = B0k/norm(B0k)
-B0k1 = np.array([0.4, 0.1])
-B0k1 = B0k1/norm(B0k1)
-Bk = np.array([1,1])
-Bk = Bk/norm(Bk)
-Bk1 = np.array([1, 2])
-Bk1 = Bk1/norm(Bk1)
+# x0 = np.array([0.0,0.0])
+# xk = np.array([2, -0.2])
+# xk1 = np.array([1.5, 0.8])
+# B0k = np.array([0, -1])
+# B0k = B0k/norm(B0k)
+# B0k1 = np.array([0.4, 0.1])
+# B0k1 = B0k1/norm(B0k1)
+# Bk = np.array([1,1])
+# Bk = Bk/norm(Bk)
+# Bk1 = np.array([1, 2])
+# Bk1 = Bk1/norm(Bk1)
 
 ## For type 3
-x0 = np.array([0.0,0.0])
-xk = np.array([2, -0.2])
-xk1 = np.array([1.5, 0.8])
-B0k = np.array([0, -1])
-B0k = B0k/norm(B0k)
-B0k1 = np.array([1, 1.5])
-B0k1 = B0k1/norm(B0k1)
-Bk = np.array([1,1])
-Bk = Bk/norm(Bk)
-Bk1 = np.array([2, -0.2])
-Bk1 = Bk1/norm(Bk1)
+# x0 = np.array([0.0,0.0])
+# xk = np.array([2, -0.2])
+# xk1 = np.array([1.5, 0.8])
+# B0k = np.array([0, -1])
+# B0k = B0k/norm(B0k)
+# B0k1 = np.array([1, 1.5])
+# B0k1 = B0k1/norm(B0k1)
+# Bk = np.array([1,1])
+# Bk = Bk/norm(Bk)
+# Bk1 = np.array([2, -0.2])
+# Bk1 = Bk1/norm(Bk1)
 
 ## For type 4
 # x0 = np.array([0.0,0.0])
