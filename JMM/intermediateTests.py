@@ -5,6 +5,8 @@ from math import sqrt, pi
 
 plt.ion()
 my_dpi = 96
+a = 800
+b = 800
 
 def archlength(a, b):
      chordLength = norm(a-b)
@@ -44,6 +46,10 @@ def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat,
      '''
      Plots a triangle fan with 3 intermediate points to xHat
      '''
+     axMin = min(x0[0], x1[0], x2[0], x3[0], xHat[0],
+                 x0[1], x1[1], x2[1], x3[1], xHat[1])
+     axMax = max(x0[0], x1[0], x2[0], x3[0], xHat[0],
+                 x0[1], x1[1], x2[1], x3[1], xHat[1])
      fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
      # Plot the triangles in the triangulation (straight lines)
      plt.plot([x0[0], x1[0], x2[0], x0[0]], [x0[1], x1[1], x2[1], x0[1]], linewidth = 0.5, alpha = 0.8, c = "#aaaaaa")
@@ -104,6 +110,8 @@ def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat,
           plt.plot([xmu3[0], xlam4[0]], [xmu3[1], xlam4[1]], linewidth = 1, c = "#0024ff")
           
      plt.legend()
+     plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
+     plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
      ax = plt.gca()
      ax.set_aspect("equal")
 
@@ -136,7 +144,7 @@ def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top =
      '''
      Draw one curvy triangle x0 xk x(k+1)
      '''
-     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+     fig = plt.figure(figsize=(a/my_dpi, b/my_dpi), dpi=my_dpi)
      # Plot the triangles in the triangulation (straight lines)
      plt.plot([x0[0], xk[0], xk1[0], x0[0]], [x0[1], xk[1], xk1[1], x0[1]], linewidth = 0.5, alpha = 0.8, c = "#aaaaaa")
      # Compute the curvy boundaries
@@ -172,17 +180,17 @@ def drawOneCurvyTriangle(x0, B0k, B0k1, xk, xk1, Bk, Bk1, BkTop = None, Bk1Top =
      ax.set_aspect("equal")
      
 ## For type 1
-# x0 = np.array([0.0,0.0])
-# xk = np.array([2, -0.2])
-# xk1 = np.array([1.5, 0.8])
-# B0k = np.array([2.2, 1])
-# B0k = B0k/norm(B0k)
-# B0k1 = np.array([1, 1.5])
-# B0k1 = B0k1/norm(B0k1)
-# Bk = np.array([1, -0.6])
-# Bk = Bk/norm(Bk)
-# Bk1 = np.array([2, -0.2])
-# Bk1 = Bk1/norm(Bk1)
+x0 = np.array([0.0,0.0])
+xk = np.array([2, -0.2])
+xk1 = np.array([1.5, 0.8])
+B0k = np.array([2.2, 1])
+B0k = B0k/norm(B0k)
+B0k1 = np.array([1, 1.5])
+B0k1 = B0k1/norm(B0k1)
+Bk = np.array([1, -0.6])
+Bk = Bk/norm(Bk)
+Bk1 = np.array([2, -0.2])
+Bk1 = Bk1/norm(Bk1)
 
 ## For type 2
 # x0 = np.array([0.0,0.0])
