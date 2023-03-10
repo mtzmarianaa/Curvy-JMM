@@ -417,7 +417,7 @@ void projectBack_type2(double *lambdak1, double yk1[2], double ykPrime[2], doubl
   double yk1MinykPrime[2], dotTest, lambdat2;
   vec2_subtraction(yk1, ykPrime, yk1MinykPrime);
   dotTest = dotProd(yk1MinykPrime, Bk1_lam_perp);
-  if( dotTest<0){
+  if( dotTest>0){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
     lambdat2 = lambda_fromt2(tempLambda, x0, B0_k1, ykPrime, x_k1, B_k1, tol, maxIter);
     if(lambdat2 < 0){
@@ -458,8 +458,6 @@ void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], doubl
   /* printf("ykPrime: %lf %lf \n", ykPrime[0], ykPrime[1]); */
   /* printf("B_k_mu_perp: %lf %lf\n", B_k_mu_perp[0], B_k_mu_perp[1]); */
   /* printf("B_k1_lam_perp: %lf %lf\n", B_k1_lam_perp[0], B_k1_lam_perp[1]); */
-  /* printf("dotTestMin: %lf\n", dotTestMin); */
-  /* printf("dotTestMax: %lf\n", dotTestMax); */
   if( dotTestMin < 0){
     // meaning we need to find lambdaMin
     lambdat1 = lambda_fromt1(tempLambda, x0, B0_k1, ykPrime, Bk_mu, x_k1, B_k1, tol, maxIter);
@@ -471,6 +469,7 @@ void projectBack_type4(double *lambdak1, double yk1[2], double ykPrime[2], doubl
     }
     // compute yk1 from this newly found lambda
     hermite_interpolationSpatial(lambdat1, x0, x_k1, B0_k1, B_k1, yk1);
+    tempLambda = lambdat1;
   }
   else if( dotTestMax < 0 ){
     // if means that we need to compute lambdaMax/lambdaMin from t2 and then project back
