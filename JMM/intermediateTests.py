@@ -18,14 +18,25 @@ def archlength_small(a, b):
 
 def gradientBoundary(param, xFrom, Bfrom, xTo, Bto):
      '''
-     Hermite interpolation for the boundary
+     Tangent to the boundary (interpolated using Hermite)
      '''
-     return 3*param**2*(2*xFrom + Bfrom - 2*xTo + Bto) + 2*param*(-3*xFrom - 2*Bfrom + 3*xTo - Bto) + Bfrom
+     return 3*(2*xFrom + Bfrom - 2*xTo + Bto)*param**2 + 2*(-3*xFrom - 2*Bfrom + 3*xTo - Bto)*param + Bfrom
 
 def hermite_boundary(param, xFrom, Bfrom, xTo, Bto):
+     '''
+     Hermite interpolation of the boundary
+     '''
      return (2*xFrom + Bfrom - 2*xTo + Bto)*param**3 + (-3*xFrom - 2*Bfrom + 3*xTo - Bto)*param**2 + Bfrom*param + xFrom
 
- 
+def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
+     '''
+     arclength along a boundary from xLam to xMu
+     '''
+     Bmu = gradientBoundary(mu, xFrom, Bfrom, xTo, Bto)
+     Blam = gradientBoundary(lam, xFrom, Bfrom, xTo, Bto)
+     B_mid = gradientBoundary((mu + lam)/2, xFrom, Bfrom, xTo, Bto)
+     return (norm(Bmu) + 4*norm(B_mid) + norm(Blam))/6
+
 
 def tMuMin(mu, xA, xR, BR, xHat, BHat):
      xMu = hermite_boundary(mu, xR, BR, xHat, BHat)

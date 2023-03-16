@@ -1,0 +1,12 @@
+# Before going into C with the optimization rutine
+# we test the projected coordinate gradient descent here
+# to make sure it works or it makes sense to try this approach
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.linalg import norm
+from math import sqrt, pi
+
+
+
+
