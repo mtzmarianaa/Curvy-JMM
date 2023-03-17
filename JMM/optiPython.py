@@ -116,6 +116,7 @@ def project_block(muk, lamk1, Bk_muk, Bk1_lamk1, yk1, zk, x0, xk1, B0k1, Bk1):
     Nk1_lamk1 = np.array([-Bk1_lamk1[1], Bk1_lamk1[0]])
     dotTestMin = np.dot( yk1 - zk, Nk_muk )
     dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
+    print("       dotTestMin: ", dotTestMin, "  dotTestMax: ", dotTestMax)
     # Test if lamk < lamMin
     if( dotTestMin < 0):
         # Means that we need to find lambdaMin
@@ -123,11 +124,13 @@ def project_block(muk, lamk1, Bk_muk, Bk1_lamk1, yk1, zk, x0, xk1, B0k1, Bk1):
         # Find the root of tMin
         rootMin = root_scalar(tMin, bracket=[0, 1])
         lamk1 = rootMin.root
+        print("       lambda < lambdaMin")
     if( dotTestMax < 0):
         # Means that we need to find lambdaMax
         tMax = lambda lam: t2(lam, x0, xk1, B0k1, Bk1, zk)
         rootMax = root_scalar(tMax, bracket=[0, 1])
         lamk1 = rootMax.root
+        print("       lambda > lambdaMax")
     if( muk < 0):
         muk = 0
     elif( muk > 1):
@@ -168,7 +171,7 @@ def forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, l
     B0k_muk = itt.gradientBoundary(muk, x0, listB0k[0], listxk[1], listBk[0])
     zk = itt.hermite_boundary(muk, x0, listB0k[0], x1, listBk[0])
     lamk1 = params[1]
-    yk1 = itt.hermite_boundary(muk, x0, listB0k[1], listxk[2], listBk[1])
+    yk1 = itt.hermite_boundary(lamk1, x0, listB0k[1], listxk[2], listBk[1])
     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, listB0k[1], listxk[2], listBk[1])
     etaMin = min(listIndices[0], listIndices[1])
     # Compute direction
@@ -194,7 +197,7 @@ def forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, l
         B0k_muk = itt.gradientBoundary(muk, x0, listB0k[j], listxk[j+1], listBk[j])
         zk = itt.hermite_boundary(muk, x0, listB0k[j], x1, listBk[j])
         lamk1 = params[k+1]
-        yk1 = itt.hermite_boundary(muk, x0, listB0k[j+1], listxk[j+2], listBk[j+1])
+        yk1 = itt.hermite_boundary(lamk1, x0, listB0k[j+1], listxk[j+2], listBk[j+1])
         B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, listB0k[j+1], listxk[j+2], listBk[j+1])
         etaMin = min(listIndices[j], listIndices[j+1])
         # Compute direction
@@ -294,6 +297,14 @@ itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 =
 ##### Test the forward and backward updates
 
 print("Start test foward pass update \n\n")
+
+mu1 = 1
+lam2 = 0
+mu2 = 1
+lam3 = 0
+mu3 = 1
+lam4 = 1
+params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
