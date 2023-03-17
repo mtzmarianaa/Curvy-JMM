@@ -102,7 +102,7 @@ def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
     return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
 
 def partial_fObj_mu(muk, etakM1, B0k_muk, yk, zkM1, etaMin):
-    return etakM1*np.dot(-B0k_muk, yk - zkM1)/norm(yk - zkM1) + etaMin*norm(gradBk_muk)
+    return etakM1*np.dot(-B0k_muk, yk - zkM1)/norm(yk - zkM1) + etaMin*norm(B0k_muk)
 
 def partial_fObj_lambda(lambdak, etakM1, B0k_lamk, yk, zkM1, etaMin):
     return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) - etaMin*norm(B0k_lamk)
@@ -149,7 +149,7 @@ def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, 
     params_test[k] = params[k] - alpha*dmuk
     params_test[k+1] = params[k+1] - alpha*dlamk1
     f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-    while( f_before <= f_after & i < 25):
+    while( f_before <= f_after and i < 25):
         alpha = alpha*0.5
         params_test[k] = params[k] - alpha*dmuk
         params_test[k+1] = params[k+1] - alpha*dlamk1
@@ -161,15 +161,18 @@ def forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, l
     '''
     Forward pass for the block coordinate gradient descent goes from k = 0 to k = 2n-1
     '''
+    print("  At block iteration ", -1, "  muk = ", params[0], "   lamk1 = ", params[1])
+    print("  At block iteration ", -1, " params:", params)
+    itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
     muk = params[0]
     B0k_muk = itt.gradientBoundary(muk, x0, listB0k[0], listxk[1], listBk[0])
     zk = itt.hermite_boundary(muk, x0, listB0k[0], x1, listBk[0])
-    lamk1 = param[1]
+    lamk1 = params[1]
     yk1 = itt.hermite_boundary(muk, x0, listB0k[1], listxk[2], listBk[1])
     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, listB0k[1], listxk[2], listBk[1])
     etaMin = min(listIndices[0], listIndices[1])
     # Compute direction
-    partial_muk = partial_fOBj_mu1(muk, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
+    partial_muk = partial_fObj_mu1(muk, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
     partial_lamk1 = partial_fObj_lambda(lamk1, listIndices[0], B0k1_lamk1, yk1, zk, etaMin)
     # Compute step size
     alpha = backTr_block(1, 0, partial_muk, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -177,8 +180,14 @@ def forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, l
     muk = muk - alpha*partial_muk
     lamk1 = lamk1 - alpha*partial_lamk1
     # Project back so that it is feasible
-    params[0], params[1] = project_block(muk, lamk1, B0k_muk, B0k1_lamk1, yk1, zk, x0, listxk[2], listB0k[1], listBk[1])
-    # Start the forward look
+    muk, lamk1 = project_block(muk, lamk1, B0k_muk, B0k1_lamk1, yk1, zk, x0, listxk[2], listB0k[1], listBk[1])
+    params[0] = muk
+    params[1] = lamk1
+    print("  At block iteration ", 0, "  muk = ", params[0], "   lamk1 = ", params[1])
+    print("  At block iteration ", 0, " params:", params)
+    itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+    # Start the forward loop
+    n = len(listxk) - 2
     for j in range(1, n):
         k = 2*j
         muk = params[k]
@@ -189,15 +198,20 @@ def forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, l
         B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, listB0k[j+1], listxk[j+2], listBk[j+1])
         etaMin = min(listIndices[j], listIndices[j+1])
         # Compute direction
-        partial_muk = partial_fOBj_mu1(muk, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
-        partial_lamk1 = partial_fObj_lambda(lamk1, listIndices[0], B0k1_lamk1, yk1, zk, etaMin)
+        partial_muk = partial_fObj_mu(muk, listIndices[j], B0k_muk, yk1, zk, etaMin)
+        partial_lamk1 = partial_fObj_lambda(lamk1, listIndices[j], B0k1_lamk1, yk1, zk, etaMin)
         # Compute step size
-        alpha = backTr_block(1, 0, partial_muk, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        alpha = backTr_block(1, k, partial_muk, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         # Update this block
         muk = muk - alpha*partial_muk
         lamk1 = lamk1 - alpha*partial_lamk1
         # Project back so that it is feasible
-        params[k], params[k+1] = project_block(muk, lamk1, B0k_muk, B0k1_lamk1, yk1, zk, x0, listxk[j+2], listB0k[j+1], listBk[j+1])
+        muk, lamk1 = project_block(muk, lamk1, B0k_muk, B0k1_lamk1, yk1, zk, x0, listxk[j+2], listB0k[j+1], listBk[j+1])
+        params[k] = muk
+        params[k+1] = lamk1
+        print("  At block iteration ", j, "  muk = ", params[k], "   lamk1 = ", params[k+1])
+        print("  At block iteration ", j, " params:", params)
+        itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
     return params
         
     
@@ -275,4 +289,14 @@ itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 =
 mu1, lam2 = project_block(mu1, lam2, Bk_muk, Bk1_lamk1, yk1, zk, x0, x2, B02, B2)
 
 itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
+
+
+##### Test the forward and backward updates
+
+print("Start test foward pass update \n\n")
+
+paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+
+print(paramsUp)
+
 
