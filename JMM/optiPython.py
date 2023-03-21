@@ -403,7 +403,7 @@ params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 # Compute the projected gradient descent
 
-maxIter = 200
+maxIter = 100
 tol = 1e-8
 
 paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
