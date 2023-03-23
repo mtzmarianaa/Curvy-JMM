@@ -231,6 +231,13 @@ def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, 
      # print("         Function value before: ", f_before, " function value after: ", f_after)
      return alpha
 
+def project_muk(muk):
+     if(muk < 0):
+          muk = 0
+     elif(muk > 1):
+          muk = 1
+     return muk
+
 def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Coordinate backtracking to find the step size for coordinate gradient descent
@@ -273,13 +280,18 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
     zk = itt.hermite_boundary(muk, x0, listB0k[0], listxk[1], listBk[0])
     # Compute direction for muk
     partial_muk = partial_fObj_mu1(muk, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
+    print("  partial muk: ", partial_muk)
     alpha = backTr_coord(1, 0, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
     muk = muk - alpha*partial_muk
+    muk = project_muk(muk)
+    params[0] = muk
     # Now coordinate descent for lamk1
     muk1 = params[2]
     partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1], listIndices[1], listIndices[0])
+    print("  partial lamk1: ", partial_lamk1)
     alpha = backTr_coord(1, 1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
     lamk1 = lamk1 - alpha*partial_lamk1
+    print("   initial before projecting: ", muk, " ,  ", lamk1)
     # Project back so that it is feasible
     muk, lamk1 = project_block(muk, lamk1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1])
     params[0] = muk
@@ -299,15 +311,20 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
         yk1 = itt.hermite_boundary(lamk1, x0, listB0k[j+1], listxk[j+2], listBk[j+1])
         zk = itt.hermite_boundary(muk, x0, listB0k[j], listxk[j+1], listBk[j])
         # Compute direction for muk
-        partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j] + listB0k[j+1], listxk[j+1], listBk[j+1], etak, etakM1)
-        alpha = backTr_coord(1, k, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+1], listBk[j+1], etak, etakM1)
+        print("  partial muk: ", partial_muk)
+        alpha = backTr_coord(1, k, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         muk = muk - alpha*partial_muk
+        muk = project_muk(muk)
+        params[k] = muk
         # Now coordinate descent for lamk1
         muk1 = params[k+1]
-        partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak, etak1)
-        alpha = backTr_coord(1, k+1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
+        print("  partial lamk1: ", partial_lamk1)
+        alpha = backTr_coord(1, k+1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         lamk1 = lamk1 - alpha*partial_lamk1
         # Project back so that it is feasible
+        print("   before projecting: ", muk, " ,  ", lamk1)
         muk, lamk1 = project_block(muk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1])
         params[k] = muk
         params[k+1] = lamk1
@@ -508,7 +525,7 @@ mu2 = 0.5
 lam3 = 0.5
 mu3 = 0.5
 lam4 = 0.5
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
+params = [mu1, lam2, mu2, lam3, mu3, lam4, 1]
 
 
 
@@ -517,9 +534,9 @@ params = [mu1, lam2, mu2, lam3, mu3, lam4]
 maxIter = 2
 tol = 1e-8
 
-paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
+#paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
 
-# paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
 # print(paramsUp)
 # print("Objective function value:", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
