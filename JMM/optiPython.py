@@ -224,12 +224,9 @@ def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, 
      
      if( f_before <= f_after):
          alpha = 0
-     #print("             At iteration of backtracking", i, "  f_after:", f_after, "  f_before:", f_before)
-     # print("         Iterations done for backtracking: ", i)
-     # print("         Params before:         ", params,   " params after:         ", params_test)
-     # print("         Descent direction:     ", dmuk, "    ,",   dlamk1)
-     # print("         Function value before: ", f_before, " function value after: ", f_after)
      return alpha
+
+#def backTr_middleBock(alpha0, k, dmu
 
 def project_box(param):
      if(param < 0):
@@ -267,6 +264,7 @@ def get_sk(muk, lamk):
 
 def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
     '''
+    Updates blocks [muk, lamk1]
     Forward pass for the block coordinate gradient descent goes from k = 0 to k = 2n-1
     '''
     # First coordinate in the block: muk
@@ -329,7 +327,27 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
         #print("  Objective function value: ", fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
         #itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
     return params
-        
+
+def forwardMiddlePassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Updates blocks [lamk, muk]
+     Forward middle pass for the block coordinate gradient descent goes from k = 1 to k = 2n-1
+     Doesnt update mu1 or lam(n+1)
+     '''
+     params = np.copy(params0)
+     n = len(listxk) - 2
+     for j in range(1,n):
+          k = 2*k
+          etakM1 = listIndices[j-1]
+          etak = listIndices[j]
+          etak1 = listIndices[j+1]
+          lamk1 = params[k+1]
+          muk1 = params[k+2]
+          lamk = params[k-1]
+          muk = params[k]
+          # Compute direction for lamk1
+          partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
+     
 
 def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
     '''
@@ -423,7 +441,7 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
          print("Objective function value:", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
          paramsDown, grad2T1 = backwardPassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
          print("Objective function value:", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-         params = paramsDown
+         params = paramsUp
          ##itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
          iter += 1
     return params
@@ -478,10 +496,10 @@ listBk = [B1, B2, B3, BHat]
 
 # Starting to plot everything
 
-# #itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
+itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
 
-# plt.scatter(xSource[0], xSource[1], s = 20, c = "#ff00f2")
-# plt.plot([xSource[0], xHat[0]], [xSource[1], xHat[1]], linestyle = ':', c = "#ab00a3")
+plt.scatter(xSource[0], xSource[1], s = 20, c = "#ff00f2")
+plt.plot([xSource[0], xHat[0]], [xSource[1], xHat[1]], linestyle = ':', c = "#ab00a3")
 
 
 f_init = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -508,10 +526,10 @@ f_init = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
 print("Start test foward pass update \n\n")
 
 mu1 = 0.5
-lam2 = 0.5
+lam2 = 0.75
 mu2 = 0.5
-lam3 = 0.5
-mu3 = 0.5
+lam3 = 0.75
+mu3 = 0.75
 lam4 = 0.5
 params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
@@ -519,10 +537,12 @@ params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 # Compute the projected gradient descent
 
-maxIter = 10
+maxIter = 50
 tol = 1e-8
 
 paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
+itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
