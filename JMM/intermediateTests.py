@@ -16,6 +16,12 @@ def archlength_small(a, b):
       chordLength = norm(a-b)
       return 2*np.arcsin(chordLength/2)
 
+def secondDer_Boundary(param, xFrom, Bfrom, xTo, Bto):
+     '''
+     d2B/dparam2
+     '''
+     return 6*(2*xFrom + Bfrom - 2*xTo + Bto)*param + 2*(-3*xFrom - 2*Bfrom + 3*xTo - Bto)
+
 def gradientBoundary(param, xFrom, Bfrom, xTo, Bto):
      '''
      Tangent to the boundary (interpolated using Hermite)
