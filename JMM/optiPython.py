@@ -101,11 +101,11 @@ def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
     der_hermite_inter = der_hermite_interpolationT(mu1, x0, T0, grad0, x1, T1, grad1)
     return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
 
-def partial_fObj_mu(muk, etakM1, B0k_muk, yk, zkM1, etaMin):
-    return etakM1*np.dot(-B0k_muk, yk - zkM1)/norm(yk - zkM1) + etaMin*norm(B0k_muk)
+def partial_fObj_mu(muk, etakM1, B0k_muk, yk, zkM1, etaMin, sk):
+    return etakM1*np.dot(-B0k_muk, yk - zkM1)/norm(yk - zkM1) + sk*etaMin*norm(B0k_muk)
 
-def partial_fObj_lambda(lambdak, etakM1, B0k_lamk, yk, zkM1, etaMin):
-    return etakM1*np.dot(-B0k_lamk, yk - zkM1)/norm(yk - zkM1) + etaMin*norm(B0k_lamk)
+def partial_fObj_lambda(lambdak, etakM1, B0k_lamk, yk, zkM1, etaMin, sk):
+    return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) - sk*etaMin*norm(B0k_lamk)
 
 
 def project_block(muk, lamk1, Bk_muk, Bk1_lamk1, yk1, zk, x0, xk1, B0k1, Bk1):
