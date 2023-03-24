@@ -101,11 +101,14 @@ def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B
      '''
      partial of the approximation of the arc length with respect to muk
      '''
-     normB0k_muk = norm(B0k_muk)
-     normB0k_halves = norm(B0k_halves)
-     firstPart = sk/6*(normB0k_muk + 4*normB0k_halves + norm(B0k_lamk) )
-     secondPart = (abs(muk - lamk)/6)*(np.dot(secondDer_B0k_muk, B0k_muk)/normB0k_muk + 2*np.dot(secondDer_B0khalves_muk, B0k_halves)/normB0k_halves)
-     return firstPart + secondPart
+     if(muk == lamk):
+          return 0
+     else:
+          normB0k_muk = norm(B0k_muk)
+          normB0k_halves = norm(B0k_halves)
+          firstPart = sk/6*(normB0k_muk + 4*normB0k_halves + norm(B0k_lamk) )
+          secondPart = (abs(muk - lamk)/6)*(np.dot(secondDer_B0k_muk, B0k_muk)/normB0k_muk + 2*np.dot(secondDer_B0khalves_muk, B0k_halves)/normB0k_halves)
+          return firstPart + secondPart
 
 def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k_lamk, secondDer_B0k_lamk, sk):
      '''
@@ -200,6 +203,25 @@ def project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     return muk, lamk1
 
 
+def project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk):
+     '''
+     Projection so that when we move the block [lamk, muk] the blocks
+     [mukM1, lamk], [muk, lamk1] are feasible
+     '''
+     B0kM1 = listB0k[k-1]
+     xkM1 = listxk[k]
+     BkM1 = listBk[k-1]
+     B0k = listB0k[k]
+     xk = listxk[k+1]
+     Bk = listBk[k]
+     B0k1 = listB0k[k+1]
+     xk1 = listxk[k+2]
+     Bk1 = listBk[k+1]
+     mukM1, lamk = project_block(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+     muk, lamk1 = project_block(muk, lamk1, x0, B0k, xk, B0k, B0k1, xk1, Bk1)
+     return mukM1, lamk, muk, lamk1
+
+
 def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Backtracking to find the step size for block coordinate gradint descent
@@ -218,7 +240,7 @@ def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, 
          alpha = alpha*0.5
          params_test[k] = params[k] - alpha*dmuk
          params_test[k+1] = params[k+1] - alpha*dlamk1
-         print("     test params backTr: ", params_test)
+         #print("     test params backTr: ", params_test)
          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
          i += 1
      
@@ -226,7 +248,26 @@ def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, 
          alpha = 0
      return alpha
 
-#def backTr_middleBock(alpha0, k, dmu
+def backTr_middleBock(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the step size for the middle block coordinate gradient descent
+     '''
+     i = 0
+     alpha = alpha0
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     params_test = np.copy(params)
+     params_test[k] = params[k] - alpha*dlamk
+     params_test[k+1] = params[k+1] - alpha*dmuk
+     f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_after and i < 25):
+          alpha = alpha*0.75
+          params_test[k] = params[k] - alpha*dlamk
+          params_test[k+1] = params[k+1] - alpha*dmuk
+          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_after):
+         alpha = 0
+     return alpha
 
 def project_box(param):
      if(param < 0):
@@ -297,12 +338,14 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
     n = len(listxk) - 2
     for j in range(1, n):
         k = 2*j
+        params_test = np.copy(params)
         etakM1 = listIndices[j-1]
         etak = listIndices[j]
         etak1 = listIndices[j+1]
         lamk = params[k-1]
         muk = params[k]
         lamk1 = params[k+1]
+        f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         # Compute direction for muk
         partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak, etakM1)
         #print("  partial muk: ", partial_muk)
@@ -319,8 +362,12 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
         # Project back so that it is feasible
         #print("   before projecting: ", muk, " ,  ", lamk1)
         muk, lamk1 = project_block(muk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1])
-        params[k] = muk
-        params[k+1] = lamk1
+        params_test[k] = muk
+        params_test[k+1] = lamk1
+        f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        if(f_test < f_before):
+             params[k] = muk
+             params[k+1] = lamk1
         #print("   coordinate descent: ", params)
         # print("  At block iteration ", j, "  muk = ", params[k], "   lamk1 = ", params[k+1])
         # print("  At block iteration ", j, " params:", params)
@@ -337,16 +384,42 @@ def forwardMiddlePassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      params = np.copy(params0)
      n = len(listxk) - 2
      for j in range(1,n):
-          k = 2*k
+          params_test = np.copy(params)
+          f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          print("fObj before middle update: ", f_before)
+          k = 2*j - 1
           etakM1 = listIndices[j-1]
           etak = listIndices[j]
           etak1 = listIndices[j+1]
-          lamk1 = params[k+1]
-          muk1 = params[k+2]
-          lamk = params[k-1]
-          muk = params[k]
-          # Compute direction for lamk1
-          partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
+          lamk1 = params[k+2]
+          lamk = params[k]
+          muk = params[k+1]
+          lamkM1 = params[k-2]
+          mukM1 = params[k-1]
+          # Compute directions for lamk1, muk1
+          partial_lamk = partial_fObj_lambdak1(mukM1, muk, lamk, x0, listB0k[j-1], listxk[j], listBk[j-1], listB0k[j], listxk[j+1], listBk[j], etak1, etak)
+          print("  partial lamk: ", partial_lamk)
+          partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak, etakM1)
+          print("  partial muk: ", partial_muk)
+          # Compute step size
+          alpha = backTr_middleBock(1, k, partial_lamk, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          # Compute update
+          lamk = lamk - alpha*partial_lamk
+          muk = muk - alpha*partial_muk
+          # Project back all the necessary parts involved in this update
+          mukM1, lamk, muk, lamk1 = project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk)
+          params_test[k-1] = mukM1
+          params_test[k] = lamk
+          params_test[k+1] = muk
+          params_test[k+2] = lamk1
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          print("fObj after middle update: ", f_test)
+          if (f_test < f_before):
+               params[k-1] = mukM1
+               params[k] = lamk
+               params[k+1] = muk
+               params[k+2] = lamk1
+     return params
      
 
 def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
@@ -360,6 +433,8 @@ def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
     for j in range(n-1, 0, -1):
         # Going backwards through the blocks
         k = 2*j # from 2n-2 to 1
+        params_test = np.copy(params)
+        f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         # First coordinate in the block: lamk1
         lamk1 = params[k+1]
         muk1 = params[k+2]
@@ -383,8 +458,12 @@ def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
         # Project back so that it is feasible
         #print("   before projecting: ", muk, " ,  ", lamk1)
         muk, lamk1 = project_block(muk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1])
-        params[k] = muk
-        params[k+1] = lamk1
+        params_test[k] = muk
+        params_test[k+1] = lamk1
+        f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        if(f_test < f_before):
+             params[k] = muk
+             params[k+1] = lamk1
         #print("   coordinate descent: ", params)
         p_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+1], listBk[j+1], etak, etakM1)
         p_lamk1 = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+1], listBk[j+1], etak, etakM1)
@@ -424,6 +503,7 @@ def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
     return params, grad2T
 
 
+
 def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol):
     '''
     Block coordinate projected gradient descent for an update in a triangle fan without tops
@@ -438,9 +518,11 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
         # Start with the forward pass update
          print("Starting iteration: ", iter)
          paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-         print("Objective function value:", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-         paramsDown, grad2T1 = backwardPassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-         print("Objective function value:", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         print("Objective function value: ", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         paramsMiddle = forwardMiddlePassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         print("Objective function value: :", fObj_noTops(paramsMiddle, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         paramsDown, grad2T1 = backwardPassUpdate(paramsMiddle, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         print("Objective function value: ", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
          params = paramsUp
          ##itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
          iter += 1
@@ -537,12 +619,12 @@ params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 # Compute the projected gradient descent
 
-maxIter = 50
+maxIter = 5
 tol = 1e-8
 
 paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
+#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
