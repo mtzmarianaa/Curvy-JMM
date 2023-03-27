@@ -225,6 +225,7 @@ def project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk)
      muk, lamk1 = project_block(muk, lamk1, x0, B0k, xk, B0k, B0k1, xk1, Bk1)
      return mukM1, lamk, muk, lamk1
 
+def project_4Block0(mu1, lam2, mu2, 
 
 def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
