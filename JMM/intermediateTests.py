@@ -84,10 +84,10 @@ def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat,
           x0x3[i, :] = hermite_boundary(params[i], x0, B03, x3, B3)
           x0xHat[i, :] = hermite_boundary(params[i], x0, B0Hat, xHat, BHat)
      # Plot the curvy boundaries
-     plt.plot(x0x1[:, 0], x0x1[:,1], linewidth = 1, c = "#483e64")
-     plt.plot(x0x2[:, 0], x0x2[:,1], linewidth = 1, c = "#483e64")
-     plt.plot(x0x3[:, 0], x0x3[:,1], linewidth = 1, c = "#483e64")
-     plt.plot(x0xHat[:, 0], x0xHat[:,1], linewidth = 1, c = "#483e64")
+     plt.plot(x0x1[:, 0], x0x1[:,1], linewidth = 1, c = "#aaaaaa")
+     plt.plot(x0x2[:, 0], x0x2[:,1], linewidth = 1, c = "#aaaaaa")
+     plt.plot(x0x3[:, 0], x0x3[:,1], linewidth = 1, c = "#aaaaaa")
+     plt.plot(x0xHat[:, 0], x0xHat[:,1], linewidth = 1, c = "#aaaaaa")
      # The points we are interested in
      plt.scatter(x0[0], x0[1], s = 15, c = "#0027ff", label = "x0")
      plt.scatter(x1[0], x1[1], s = 7, c = "#001871", label = "x1")
