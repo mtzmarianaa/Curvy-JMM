@@ -32,20 +32,48 @@ def der_hermite_interpolationT(param, x0, T0, grad0, x1, T1, grad1):
     sumGrads = (3*param**2 - 4*param + 1)*grad0 + (3*param**2 - 2*param)*grad1
     return (6*param**2 - 6*param)*T0 + (-6*param**2 + 6*param)*T1 + np.dot(x1 - x0, sumGrads)
 
+
+####### Projections
+
+## Finding lamk1Min and lamk1Max given muk
+
 def t1(lam, x0, xk1, B0k1, Bk1, zk, Bk_mu):
     '''
-    This function is useful to solve for lamMin
+    This function is useful to solve for lamk1Min
+    given muk
     '''
     yk1 = itt.hermite_boundary(lam, x0, B0k1, xk1, Bk1)
     return Bk_mu[0]*(yk1[1] - zk[1]) - Bk_mu[1]*(yk1[0] - zk[0])
 
 def t2(lam, x0, xk1, B0k1, Bk1, zk):
     '''
-    This function is useful to solve for lamMax
+    This function is useful to solve for lamk1Max
+    given muk
     '''
     yk1 = itt.hermite_boundary(lam, x0, B0k1, xk1, Bk1)
     Bk_lam = itt.gradientBoundary(lam , x0, B0k1, xk1, Bk1)
     return Bk_lam[0]*(yk1[1] - zk[1]) - Bk_lam[1]*(yk1[0] - zk[0])
+
+## Find mukMin and mukMAx given lamk1
+
+def t3(mu, x0, xk, B0k, Bk, yk1):
+     '''
+     This function is useful to solve for mukMax
+     given lamk1
+     '''
+     zk = itt.hermite_boundary(mu, x0, B0k, xk, Bk)
+     Bk_mu = itt.gradientBoundary(mu, x0, B0k, xk, Bk)
+     return Bk_mu[0]*(yk1[1] - zk[1]) - Bk_mu[1]*(yk1[0] - zk[0])
+     
+
+def t4(mu, x0, xk, B0k, Bk, yk1, Bk_lam):
+     '''
+     This function is useful to solve for mukMin
+     given lamk1
+     '''
+     zk = itt.hermite_boundary(mu, x0, B0k, xk, Bk)
+     return Bk_lam[0]*(yk1[1] - zk[1]) - Bk_lam[1]*(yk1[0] - zk[0])
+
 
 # Find a root finding method
 
@@ -225,7 +253,76 @@ def project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk)
      muk, lamk1 = project_block(muk, lamk1, x0, B0k, xk, B0k, B0k1, xk1, Bk1)
      return mukM1, lamk, muk, lamk1
 
-def project_4Block0(mu1, lam2, mu2, 
+def project_4Block0(mu1, lam2, mu2, lam3, x0, B01, x1, B1, B02, x2, B2, B03, x3, B3):
+     '''
+     Project the block [mu1, lam2, mu2] back to the feasible set
+     (mainly: given mu1, project back lam2, given lam3 project back mu2)
+     '''
+     mu1, lam2 = project_block(mu1, lam2, x0, B01, x1, B1, B02, x2, B2)
+     # Then we need to project back mu2 given lam3
+     y3 = itt.hermite_boundary(lam3, x0, B03, x3, B3)
+     B03_lam3 = itt.gradientBoundary(lam3, x0, B03, x3, B3)
+     z2 = itt.hermite_boundary(mu2, x0, B02, x2, B2)
+     B02_mu2 = itt.gradientBoundary(mu2, x0, B02, x2, B2)
+     # Compute the normals
+     N03_lam3 = np.array([-B03_lam3[1], B03_lam3[0]])
+     N02_mu2 = np.array([-B02_mu2[1], B02_mu2[0]])
+     dotTestMin = np.dot(N03_lam3, y3 - z2)
+     dotTestMax = np.dot(N02_mu2, y3 - z2)
+     # Test if mu2 < mu2Min
+     if( dotTestMin < 0):
+          # Means that we need to find mu2Min
+          tMin = lambda mu: t4(mu, x0, x2, B02, B2, y3, B03_lam3)
+          # Find the root of tMin
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          mu2 = rootMin.root
+     if( dotTestMax < 0):
+          # Means that we need to find mu2Max
+          tMax = lambda mu: t3(mu, x0, x2, B02, B2, y3)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          mu2 = rootMax.root
+     if( mu2 < 0):
+          mu2 = 0
+     elif( mu2 > 1):
+          mu2 = 1
+     return mu1, lam2, mu2
+
+def project_4Block(mukM1, lamk, muk, lamk1, muk1, lamk2, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, B0k1, xk1, Bk1, B0k2, xk2, Bk2):
+     '''
+     Project block [lamk, muk, lamk1, muk1] back to the feasible set
+     mainly:  given mukM1 project back lamk,
+              given lamk2 project back muk1,
+              given muk project back lamk1
+     '''
+     # First step: given mukM1 project back lamk
+     mukM1, lamk = project_block(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+     # Second step: given lamk2 project back muk1
+     yk2 = itt.hermite_boundary(lamk2, x0, B0k2, xk2, Bk2)
+     B0k2_lamk2 = itt.gradientBoundary(lamk2, x0, B0k2, xk2, Bk2)
+     zk1 = itt.hermite_boundary(muk1, x0, B0k1, xk1, Bk1)
+     B0k1_muk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+     #Compute the normals
+     N0k2_lamk2 = np.array([-B0k2_lamk2[1], B0k2_lamk2[0]])
+     N0k1_muk1 = np.array([-B0k1_muk1[1], B0k1_muk1[0]])
+     dotTestMin = np.dot(N0k2_lamk2, yk2 - zk1)
+     dotTestMax = np.dot(N0k1_muk1, yk2 - zk1)
+     #Test if muk1 < muk1Min
+     if(dotTestMin<0):
+          tMin = lambda mu: t4(mu, x0, xk1, B0k1, Bk1, yk2, B0k2_lamk2)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          muk1 = rootMin.root
+     if(dotTestMax<0):
+          tMax = lambda mu: t3(mu, x0, xk1, B0k1, Bk1, yk2)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          muk1 = rootMax.root
+     muk1 = project_box(muk1)
+     # Third step: given muk project back lamk1
+     muk, lamk1 = project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+     return lamk, muk, lamk1, muk1
+
+def project_4Blockn(
+     
+     
 
 def backTr_block(alpha0, k, dmuk, dlamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
@@ -715,7 +812,7 @@ paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, 
 itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
 itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
 
-plt.close("all")
+#plt.close("all")
 
 gradient = gradient_TY(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
