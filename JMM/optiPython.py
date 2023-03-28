@@ -447,6 +447,56 @@ def backTr_4Block0(alpha0, dmu1, dlam2, dmu2, params, x0, T0, grad0, x1, T1, gra
      if (f_before <= f_after):
           alpha = 0
      return alpha
+
+
+def backTr_4Block(alpha0, k, dlamk, dmuk, dlamk1, dmuk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking for the 4 pass update in the general block [lamk, muk, lamk1, muk1]
+     '''
+     i = 0
+     alpha = alpha0
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     params_test = np.copy(params)
+     params_test[k] = params[k] - alpha*dlamk
+     params_test[k+1] = params[k+1] - alpha*dmuk
+     params_test[k+2] = params[k+2] - alpha*dlamk1
+     params_test[k+3] = params[k+3] - alpha*dmuk1
+     f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while(f_before <= f_after and i < 25):
+          alpha = alpha*0.5
+          params_test[k] = params[k] - alpha*dlamk
+          params_test[k+1] = params[k+1] - alpha*dmuk
+          params_test[k+2] = params[k+2] - alpha*dlamk1
+          params_test[k+3] = params[k+3] - alpha*dmuk1
+          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if(f_before <= f_after):
+          alpha = 0
+     return alpha
+
+def backTr_4Blockn(alpha0, n, dlamn, dmun, dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking for the 4 pass update for the last block [lamn, mun, lamn1]
+     '''
+     i = 0
+     alpha = alpha0
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     params_test = np.copy(params)
+     params_test[2*n - 3] = params[2*n - 3] - alpha*dlamn
+     params_test[2*n - 2] = params[2*n - 2] - alpha*dmun
+     params_test[2*n - 1] = params[2*n - 1] - alpha*dlamn1
+     f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while(f_before <= f_after and i < 25):
+          alpha = alpha*0.5
+          params_test[2*n - 3] = params[2*n - 3] - alpha*dlamn
+          params_test[2*n - 2] = params[2*n - 2] - alpha*dmun
+          params_test[2*n - 1] = params[2*n - 1] - alpha*dlamn1
+          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if(f_before <= f_after):
+          alpha = 0
+     return alpha
+     
           
 
 def get_sk(muk, lamk):
@@ -634,7 +684,16 @@ def forward4PassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
      lam2 = lam2 - alpha*partial_lam2
      mu2 = mu2 - alpha*partial_mu2
      # Project back if necessary
-     
+     if(n>1):
+          lam3 = params[3]
+          mu1, lam2, mu2 = project_4Block0(mu1, lam2, mu2, lam3, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1], listB0k[2], listxk[3], listBk[2])
+     else:
+          mu1, lam2 = project_block(mu1, lam1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1])
+     params[0] = mu1
+     params[1] = lam2
+     params[2] = mu2
+
+     # NOW WE CYCLE
      
 
 def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
