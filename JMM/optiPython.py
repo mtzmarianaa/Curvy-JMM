@@ -196,9 +196,39 @@ def partial_fObj_lambda(lambdak, etakM1, B0k_lamk, yk, zkM1, etaMin, sk):
     return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) - sk*etaMin*norm(B0k_lamk)
 
 
+def project_blockBackwards(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
+     '''
+     Project a block [muk, lamk1] such that it is feasible
+     project back muk given lamk1
+     '''
+     lamk1 = project_box(lamk1)
+     # Fiven lamk1 project back muk
+     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     # Compute the normals
+     N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[1]])
+     dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
+     dotTestMax = np.dot(N0k_muk, yk1 - zk)
+     if(dotTestMin<0):
+          tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          muk = rootMin.root
+     if(dotTestMax<0):
+          tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          muk = rootMax.root
+     muk = project_box(muk)
+     return muk, lamk1
+     
+
+
 def project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     '''
     Project a block [mu_k, lambda_k+1] such that it is feasible
+    project back lamk1 given muk
     '''
     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
@@ -782,34 +812,40 @@ def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
     '''
     params = np.copy(params0)
     n = len(listxk) -2
-    for j in range(n-1, 0, -1):
+    for j in range(n, 1, -1):
         # Going backwards through the blocks
-        k = 2*j # from 2n-2 to 1
+        k = 2*j - 1 # from 2n-1 to 3
         params_test = np.copy(params)
         f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
         # First coordinate in the block: lamk1
-        lamk1 = params[k+1]
-        muk1 = params[k+2]
-        muk = params[k]
+        muk1 = params[k+1]
+        lamk1 = params[k]
+        muk = params[k-1]
+        lamk = params[k-2]
         etak1 = listIndices[j+1]
         etak = listIndices[j]
         etakM1 = listIndices[j-1]
-        # Compute direction for lamk1
-        partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
-        #print("  partial lamk1: ", partial_lamk1)
-        alpha = backTr_coord(1, k+1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-        lamk1 = lamk1 - alpha*partial_lamk1
+        B0k1 = listB0k[k]
+        xk1 = listxk[k+1]
+        Bk1 = listBk[k]
+        B0k = listB0k[k-1]
+        xk = listxk[k]
+        Bk = listBk[k-1]
+        # Compute directions
+        partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1)
+        # Compute step size
+        alpha_lamk1 = backTr_coord(1, k, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        lamk1 = lamk1 - alpha_lamk1*partial_lamk1
         lamk1 = project_box(lamk1)
-        params[k+1] = lamk1
+        params[k] = lamk1
         # Second coordinate in the block: muk
         # Compute direction for muk
-        lamk = params[k-1]
-        partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak, etakM1)
-        alpha = backTr_coord(1, k, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-        muk = muk - alpha*partial_muk
+        partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1)
+        alpha_muk = backTr_coord(1, k-1, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+        muk = muk - alpha_muk*partial_muk
         # Project back so that it is feasible
         #print("   before projecting: ", muk, " ,  ", lamk1)
-        muk, lamk1 = project_block(muk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1])
+        muk, lamk1 = project_blockBackwards(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
         params_test[k] = muk
         params_test[k+1] = lamk1
         f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -827,23 +863,27 @@ def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
     muk = params[0]
     etak1 = listIndices[1]
     etak = listIndices[0]
-    partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1], etak1, etak)
-    #print("  partial lam1: ", partial_lamk1)
-    alpha = backTr_coord(1, 1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-    lamk1 = lamk1 - alpha*partial_lamk1
+    B0k1 = listB0k[1]
+    xk1 = listB0k[2]
+    Bk = listBk[1]
+    B0k = listB0k[0]
+    xk = listxk[1]
+    Bk = listBk[0]
+    partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1)
+    # Compute direction
+    alpha_lamk1 = backTr_coord(1, 1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    # Compute step size
+    alpha_lamk1 = backTr_coord(1, 1, partial_lamk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    lamk1 = lamk1 - alpha_lamk1*partial_lamk1
     lamk1 = project_box(lamk1)
-    params[k+1] = lamk1
-    # Second coordinate block mu1
-    B0k_muk = itt.gradientBoundary(muk, x0, listB0k[0], listxk[1], listBk[0])
-    yk1 = itt.hermite_boundary(lamk1, x0, listB0k[1], listxk[2], listBk[1])
-    zk = itt.hermite_boundary(muk, x0, listB0k[0], listxk[1], listBk[0])
-    partial_muk = partial_fObj_mu1(muk, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
-    #print("  partial muk: ", partial_muk)
-    alpha = backTr_coord(1, 0, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-    muk = muk - alpha*partial_muk
-    # We project back so that it is feasible
-    #print("   before projecting: ", muk, " ,  ", lamk1)
-    muk, lamk1 = project_block(muk, lamk1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1])
+    # For mu1
+    y2 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+    z1 = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+    partial_muk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1)
+    alpha_muk = backTr_coord(1, 0, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    muk = muk - alpha_muk*partial_muk
+    # Project back so that it is feasible
+    muk, lamk1 = project_blockBackwards(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
     params_test[0] = muk
     params_test[1] = lamk1
     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
