@@ -1058,11 +1058,11 @@ gradient2 = gradient_TY(params2, x0, T0, grad0, x1, T1, grad1, xHat, listIndices
 print("\nGradient Final: \n", gradient)
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.plot(range(0, len(listVals)), listVals)
+plt.loglog(range(0, len(listVals)), listVals)
 
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.plot(range(0, len(listGrads)), listVals)
+plt.loglog(range(0, len(listGrads)), listVals)
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
