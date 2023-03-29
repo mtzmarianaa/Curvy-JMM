@@ -129,7 +129,7 @@ def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B
      '''
      partial of the approximation of the arc length with respect to muk
      '''
-     if( abs(muk - lamk) <= 1e-3):
+     if( abs(muk - lamk) <= 1e-7):
           return 0
      else:
           normB0k_muk = norm(B0k_muk)
@@ -143,7 +143,7 @@ def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k
      '''
      partial of the approximation of the arc length with respect to lamk
      '''
-     if( abs(muk - lamk) <= 1e-3):
+     if( abs(muk - lamk) <= 1e-7):
           return 0
      else:
           normB0k_halves = norm(B0k_halves)
@@ -272,12 +272,14 @@ def project_4Block0(mu1, lam2, mu2, lam3, x0, B01, x1, B1, B02, x2, B2, B03, x3,
      # Test if mu2 < mu2Min
      if( dotTestMin < 0):
           # Means that we need to find mu2Min
+          print(" dotTestMin -- 4 block0")
           tMin = lambda mu: t4(mu, x0, x2, B02, B2, y3, B03_lam3)
           # Find the root of tMin
           rootMin = root_scalar(tMin, bracket = [0,1])
           mu2 = rootMin.root
      if( dotTestMax < 0):
           # Means that we need to find mu2Max
+          print(" dotTestMax -- 4 block0")
           tMax = lambda mu: t3(mu, x0, x2, B02, B2, y3)
           rootMax = root_scalar(tMax, bracket = [0,1])
           mu2 = rootMax.root
@@ -308,19 +310,21 @@ def project_4Block(mukM1, lamk, muk, lamk1, muk1, lamk2, x0, B0kM1, xkM1, BkM1, 
      dotTestMax = np.dot(N0k1_muk1, yk2 - zk1)
      #Test if muk1 < muk1Min
      if(dotTestMin<0):
+          print(" dotTestMin -- 4 block")
           tMin = lambda mu: t4(mu, x0, xk1, B0k1, Bk1, yk2, B0k2_lamk2)
           rootMin = root_scalar(tMin, bracket = [0,1])
           muk1 = rootMin.root
      if(dotTestMax<0):
+          print(" dotTestMax -- 4 block")
           tMax = lambda mu: t3(mu, x0, xk1, B0k1, Bk1, yk2)
           rootMax = root_scalar(tMax, bracket = [0,1])
           muk1 = rootMax.root
      muk1 = project_box(muk1)
      # Third step: given muk project back lamk1
-     muk, lamk1 = project_block(muk, lamk1, x0, B0nM1, xnM1, BnM1, B0k, xk, Bk)
+     muk, lamk1 = project_block(muk, lamk1, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
      return lamk, muk, lamk1, muk1
 
-def project_4Blockn(munM1, lamn, mun, lamn1, x0, B0n, xn, Bn, B0n1, xn1, Bn1):
+def project_4Blockn(munM1, lamn, mun, lamn1, x0, B0nM1, xnM1, BnM1, B0n, xn, Bn, B0n1, xn1, Bn1):
      '''
      Project block [lamn, mun, lamn1] back to the feasible set
      mainly:  given munM1 project back lamn
@@ -330,20 +334,30 @@ def project_4Blockn(munM1, lamn, mun, lamn1, x0, B0n, xn, Bn, B0n1, xn1, Bn1):
      # First step: given munM1 project back lamn
      munM1, lamn = project_block(munM1, lamn, x0, B0nM1, xnM1, BnM1, B0n, xn, Bn)
      # Second step: given lamn1 project back mun
-     yn1 = itt.hermite_boundary(lamn1, B0n1, xn1, Bn1)
-     B0n1_lamn1 = itt.gradientBoundary(lamn1, B0n1, xn1, Bn1)
-     zn = itt.hermite_boundary(mun, B0n, xn, Bn)
-     B0n_mun = itt.gradientBoundary(mun, B0n, xn, Bn)
+     yn1 = itt.hermite_boundary(lamn1, x0, B0n1, xn1, Bn1)
+     B0n1_lamn1 = itt.gradientBoundary(lamn1, x0, B0n1, xn1, Bn1)
+     zn = itt.hermite_boundary(mun, x0, B0n, xn, Bn)
+     B0n_mun = itt.gradientBoundary(mun, x0, B0n, xn, Bn)
      # Compute the normals
      N0n1_lamn1 = np.array([-B0n1_lamn1[1], B0n1_lamn1[0]])
      N0n_mun = np.array([-B0n_mun[1], B0n_mun[0]])
      dotTestMin = np.dot(N0n1_lamn1, yn1 - zn)
      dotTestMax = np.dot(N0n_mun, yn1 - zn)
      if(dotTestMin<0):
+          print(" dotTestMin -- 4 block n")
+          print("B0n: ", B0n, "  xn: ", xn, "  Bn: ", Bn)
+          print("  mun: ", mun)
+          print("zn: ", zn, "   yn1:", yn1)
+          print(" t4 at mun: ", t4(mun, x0, xn, B0n, Bn, yn1, B0n1_lamn1))
           tMin = lambda mu: t4(mu, x0, xn, B0n, Bn, yn1, B0n1_lamn1)
           rootMin = root_scalar(tMin, bracket = [0,1])
           mun = rootMin.root
      if(dotTestMax<0):
+          print(" dotTestMax -- 4 block n")
+          print("zn: ", zn, "   yn1:", yn1)
+          print("B0n: ", B0n, "  xn: ", xn, "  Bn: ", Bn)
+          print("  mun: ", mun)
+          print(" t3 at mun: ", t3(mun, x0, xn, B0n, Bn, yn1))
           tMax = lambda mu: t3(mu, x0, xn, B0n, Bn, yn1)
           rootMax = root_scalar(tMax, bracket = [0,1])
           mun = rootMax.root
@@ -618,7 +632,7 @@ def forwardMiddlePassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      for j in range(1,(n-1)):
           params_test = np.copy(params)
           f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-          print("fObj before middle update: ", f_before)
+          #print("fObj before middle update: ", f_before)
           k = 2*j - 1
           etakM1 = listIndices[j-1]
           etak = listIndices[j]
@@ -638,7 +652,7 @@ def forwardMiddlePassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
           # Compute update
           lamk = lamk - alpha*partial_lamk
           muk = muk - alpha*partial_muk
-          print(" Proposed lamk ", lamk, "  proposed muk ", muk)
+          #print(" Proposed lamk ", lamk, "  proposed muk ", muk)
           # Project back all the necessary parts involved in this update
           mukM1, lamk, muk, lamk1 = project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk)
           params_test[k-1] = mukM1
@@ -646,13 +660,12 @@ def forwardMiddlePassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
           params_test[k+1] = muk
           params_test[k+2] = lamk1
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-          print("fObj after middle update: ", f_test)
+          #print("fObj after middle update: ", f_test)
           if (f_test < f_before):
                params[k-1] = mukM1
                params[k] = lamk
                params[k+1] = muk
                params[k+2] = lamk1
-     print("Middle params: ",params)
      return params
 
 def forward4PassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
@@ -663,10 +676,11 @@ def forward4PassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
      '''
      params = np.copy(params0)
      n = len(listxk) - 2
+     # FOR THE FIRST BLOCK [mu1, lam2, mu2]
      mu1 = params[0]
      lam2 = params[1]
      mu2 = params[2]
-     B01_mu1 = itt.gradientBoundary(muk, x0, listB0k[0], listxk[1], listBk[0])
+     B01_mu1 = itt.gradientBoundary(mu1, x0, listB0k[0], listxk[1], listBk[0])
      z1 = itt.hermite_boundary(mu1, x0, listB0k[0], listxk[1], listBk[0])
      y2 = itt.hermite_boundary(lam2, x0, listB0k[1], listxk[2], listBk[1])
      z2 = itt.hermite_boundary(mu2, x0, listB0k[1], listxk[2], listBk[1])
@@ -674,11 +688,11 @@ def forward4PassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
      partial_mu1 = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu1, y2, z1)
      partial_lam2 = partial_fObj_lambdak1(mu1, mu2, lam2, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1], listIndices[1], listIndices[0])
      if(n > 1):
-          parital_mu2 = partial_fObj_muk(mu2, lam2, params[3], x0, listB0k[2], listxk[3], listBk[2], listB0k[3], listxk[4], listBk[3], listIndices[1], listIndices[0])
+          partial_mu2 = partial_fObj_muk(mu2, lam2, params[3], x0, listB0k[2], listxk[3], listBk[2], listB0k[3], listxk[4], listBk[3], listIndices[1], listIndices[0])
      else:
           partial_mu2 = 0 # this is when we only have one section mu2 = 1 always
      # Backtracking
-     alpha = backTr_4Block0(alpha0, partial_mu1, partial_lam2, partial_mu2, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     alpha = backTr_4Block0(1, partial_mu1, partial_lam2, partial_mu2, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      # Update
      mu1 = mu1 - alpha*partial_mu1
      lam2 = lam2 - alpha*partial_lam2
@@ -694,6 +708,72 @@ def forward4PassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
      params[2] = mu2
 
      # NOW WE CYCLE
+     for j in range(1, n-1):
+          k = 2*j - 1 # From 1 to 2n - 5
+          mukM1 = params[k-1]
+          lamk = params[k]
+          muk = params[k+1]
+          lamk1 = params[k+2]
+          muk1 = params[k+3]
+          lamk2 = params[k+4]
+          etakM1 = listIndices[j-1]
+          etak = listIndices[j]
+          etak1 = listIndices[j+1]
+          B0kM1 = listB0k[j-1]
+          xkM1 = listxk[j]
+          BkM1 = listBk[j-1]
+          B0k = listB0k[j]
+          xk = listxk[j+1]
+          Bk = listBk[j]
+          B0k1 = listB0k[j+1]
+          xk1 = listxk[j+2]
+          Bk1 = listBk[j+1]
+          B0k2 = listB0k[j+2]
+          xk2 = listxk[j+3]
+          Bk2 = listBk[j+2]
+          # Compute directions
+          partial_lamk = partial_fObj_lambdak1(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
+          partial_muk = partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1)
+          partial_lamk1 = partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1)
+          partial_muk1 = partial_fObj_muk(muk1, lamk1, lamk2, x0, B0k1, xk1, Bk1, B0k2, xk2, Bk2, etak1, etak)
+          alpha = backTr_4Block(1, k, partial_lamk, partial_muk, partial_lamk1, partial_muk1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          lamk = lamk - alpha*partial_lamk
+          muk = muk - alpha*partial_muk
+          lamk1 = lamk1 - alpha*partial_lamk1
+          muk1 = muk1 - alpha*partial_muk1
+          # Project back
+          lamk, muk, lamk1, muk1 = project_4Block(mukM1, lamk, muk, lamk1, muk1, lamk2, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, B0k1, xk1, Bk1, B0k2, xk2, Bk2)
+     if(n>1):
+     # FOR THE LAST BLOCK [lamn, mun, lamn1]
+          munM1 = params[2*n -2]
+          lamn = params[2*n-3]
+          mun = params[2*n-2]
+          lamn1 = params[2*n-1]
+          B0nM1 = listB0k[n-2]
+          xnM1 = listxk[n-1]
+          BnM1 = listBk[n-2]
+          B0n = listB0k[n-1]
+          xn = listxk[n]
+          Bn = listBk[n-1]
+          B0n1 = listB0k[n]
+          xn1 = listxk[n+1]
+          Bn1 = listBk[n]
+          etanM1 = listIndices[n-2]
+          etan = listIndices[n-1]
+          etan1 = listIndices[n]
+          partial_lamn = partial_fObj_lambdak1(munM1, mun, lamn, x0, B0nM1, xnM1, BnM1, B0n, xn, Bn, etanM1, etan)
+          partial_mun = partial_fObj_muk(mun, lamn, lamn1, x0, B0n, xn, Bn, B0n1, xn1, Bn1, etan, etanM1)
+          partial_lamn1 = partial_fObj_lambdak1(mun, 1, lamn1, x0, B0n, xn, Bn, B0n1, xn1, Bn1, etan, etan1)
+          alpha = backTr_4Blockn(1, n, partial_lamn, partial_mun, partial_lamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          lamn = lamn - alpha*partial_lamn
+          mun = mun - alpha*partial_mun
+          lamn1 = lamn1 - alpha*partial_lamn1
+          lamn, mun, lamn1 = project_4Blockn(munM1, lamn, mun, lamn1, x0, B0nM1, xnM1, BnM1, B0n, xn, Bn, B0n1, xn1, Bn1)
+          params[2*n-3] = lamn
+          params[2*n-2] = mun
+          params[2*n-1] = lamn1
+     return params
+          
      
 
 def backwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
@@ -788,14 +868,19 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
     iter = 0
     while(norm(gradk)>tol and iter<maxIter):
         # Start with the forward pass update
-         print("Starting iteration: ", iter)
-         paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-         print("Objective function value: ", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-         paramsMiddle = forwardMiddlePassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-         print("Objective function value: :", fObj_noTops(paramsMiddle, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-         paramsDown = backwardPassUpdate(paramsMiddle, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         print("\nStarting iteration: ", iter)
+         #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         #print("Objective function value: ", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         #itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsUp[:-1])
+         #paramsMiddle = forwardMiddlePassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         #print("Objective function value: :", fObj_noTops(paramsMiddle, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         #itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsMiddle[:-1])
+         paramsDown = backwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
          print("Objective function value: ", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-         params = paramsDown
+         itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsDown[:-1])
+         params4Block = forward4PassUpdate(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+         print("Objective function value: ", fObj_noTops(params4Block, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
+         params = params4Block
          gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
          iter += 1
          itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params[:-1])
@@ -851,13 +936,13 @@ listBk = [B1, B2, B3, BHat]
 
 # Starting to plot everything
 
-itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
+#itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
 
-plt.scatter(xSource[0], xSource[1], s = 20, c = "#ff00f2")
-plt.plot([xSource[0], xHat[0]], [xSource[1], xHat[1]], linestyle = ':', c = "#ab00a3")
+#plt.scatter(xSource[0], xSource[1], s = 20, c = "#ff00f2")
+#plt.plot([xSource[0], xHat[0]], [xSource[1], xHat[1]], linestyle = ':', c = "#ab00a3")
 
 
-f_init = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+#f_init = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
 
 ##### Test the projection
@@ -896,8 +981,8 @@ maxIter = 20
 tol = 1e-8
 
 paramsOpt = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
+#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
 
 #plt.close("all")
 
