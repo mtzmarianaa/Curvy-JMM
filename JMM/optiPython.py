@@ -303,7 +303,190 @@ def close_to_identity(lamk, muk):
      proj = project_ontoLine(p)
      return norm(p - proj)
 
+def backTrClose_firstBlock(alpha0, dmu1, dlam2, dmu2, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [mu1, lam2, mu2]
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line lam2 = mu2
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamk2, dmu2]) # "normal" steespest descent
+     d_middle_proj = project_ontoLine(d_middle) # steepest descent projected onto the line lam2 = mu2
+     params_test = np.copy(params)
+     params_test[0] = params[0] - alpha*dmu1
+     params_test[1:3] = params[1:3] - alpha*d_middle
+     params_test_proj = np.copy(params)
+     params_test_proj[0] = params[0] - alpha*dmu1
+     params_test_proj[1:3] = params[1:3] - alpha*d_middle_proj
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.75
+          params_test[0] = params[0] - alpha*dmu1
+          params_test[1:3] = params[1:3] - alpha*d_middle
+          params_test_proj[0] = params[0] - alpha*dmu1
+          params_test_proj[1:3] = params[1:3] - alpha*d_middle_proj
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test and f_before <= f_test_proj ):
+          paramsOpt = params
+     elif( f_test < f_test_proj):
+          paramsOpt = f_test
+     elif( f_test_proj <= f_test ):
+          paramsOpt = f_test_proj
+     return paramsOpt
 
+def backTr_firstBlock(alpha0, dmu1, dlam2, dmu2, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [mu1, lam2, mu2]
+     it considers one direction:  steepest descent
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamk2, dmu2]) # "normal" steespest descent
+     params_test = np.copy(params)
+     params_test[0] = params[0] - alpha*dmu1
+     params_test[1:3] = params[1:3] - alpha*d_middle
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and i < 25):
+          alpha = alpha*0.75
+          params_test[0] = params[0] - alpha*dmu1
+          params_test[1:3] = params[1:3] - alpha*d_middle
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test ):
+          paramsOpt = params
+     else:
+          paramsOpt = f_test
+     return paramsOpt
+
+
+def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [lamk, muk]
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line lamk = muk
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
+     d_middle_proj = project_ontoLine(d_middle) # steepest descent projected onto the line lamk = muk
+     params_test = np.copy(params)
+     params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     params_test_proj = np.copy(params)
+     params_test_proj[k:(k+2)] = params[k:(k+2)] - alpha*d_middle_proj
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.75
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_test_proj[k:(k+2)] = params[k:(k+2)] - alpha*d_middle_proj
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test and f_before <= f_test_proj ):
+          paramsOpt = params
+     elif( f_test < f_test_proj):
+          paramsOpt = f_test
+     elif( f_test_proj <= f_test ):
+          paramsOpt = f_test_proj
+     return paramsOpt
+
+def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [lamk, muk]
+     it considers one direction:  steepest descent
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
+     params_test = np.copy(params)
+     params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.75
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test ):
+          paramsOpt = params
+     else:
+          paramsOpt = f_test
+     return paramsOpt
+
+def backtrClose_lastBlock(alpha0, nRegions, dlamn, dmun, dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [lamn, mun, lamn1]
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line lam2 = mu2
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamn, dmun]) # "normal" steepest descent
+     d_middle_proj = project_ontoLine(d_middle) # steepest descent projected onto the line lamn = mun
+     params_test = np.copy(params)
+     params_test[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle
+     params_test[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+     params_test_proj = np.copy(params)
+     params_test_proj[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle_proj
+     params_test_proj[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.75
+          params_test[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle
+          params_test[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+          params_test_proj[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle_proj
+          params_test_proj[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test and f_before <= f_test_proj ):
+          paramsOpt = params
+     elif( f_test < f_test_proj):
+          paramsOpt = f_test
+     elif( f_test_proj <= f_test ):
+          paramsOpt = f_test_proj
+     return paramsOpt
+
+def backtr_lastBlock(alpha0, nRegions, dlamn, dmun, dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [lamn, mun, lamn1]
+     it considers one direction:  steepest descent
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamn, dmun]) # "normal" steepest descent
+     params_test = np.copy(params)
+     params_test[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle
+     params_test[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.75
+          params_test[(2*nRegions - 3):(2*nRegions - 1)] = params[(2*nRegions - 3):(2*nRegions - 1)] - alpha*d_middle
+          params_test[2*nRegions -1] = params[2*nRegions - 1] - alpha*dlamn1
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test ):
+          paramsOpt = params
+     else:
+          paramsOpt = f_test
+     return paramsOpt
+     
 
 def project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     '''
