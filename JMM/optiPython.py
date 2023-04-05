@@ -1,3 +1,4 @@
+
 # Before going into C with the optimization rutine
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
@@ -129,7 +130,7 @@ def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B
      '''
      partial of the approximation of the arc length with respect to muk
      '''
-     if( abs(muk - lamk) <= 1e-7):
+     if( abs(muk - lamk) <= 1e-14):
           return 0
      else:
           normB0k_muk = norm(B0k_muk)
@@ -143,7 +144,7 @@ def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k
      '''
      partial of the approximation of the arc length with respect to lamk
      '''
-     if( abs(muk - lamk) <= 1e-7):
+     if( abs(muk - lamk) <= 1e-14):
           return 0
      else:
           normB0k_halves = norm(B0k_halves)
@@ -196,6 +197,65 @@ def partial_fObj_lambda(lambdak, etakM1, B0k_lamk, yk, zkM1, etaMin, sk):
     return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) - sk*etaMin*norm(B0k_lamk)
 
 
+def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
+    '''
+    Project back lamk1 given muk
+    '''
+    zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+    yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+    B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+    B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+    
+    Nk_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+    Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+    dotTestMin = np.dot( yk1 - zk, Nk_muk )
+    dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
+    #print("       dotTestMin: ", dotTestMin, "  dotTestMax: ", dotTestMax)
+    # Test if lamk < lamMin
+    if( dotTestMin < 0):
+        # Means that we need to find lambdaMin
+        tMin = lambda lam: t1(lam, x0, xk1, B0k1, Bk1, zk, B0k_muk)
+        # Find the root of tMin
+        rootMin = root_scalar(tMin, bracket=[0, 1])
+        lamk1 = rootMin.root
+        #print("       lambda < lambdaMin")
+    if( dotTestMax < 0):
+        # Means that we need to find lambdaMax
+        tMax = lambda lam: t2(lam, x0, xk1, B0k1, Bk1, zk)
+        rootMax = root_scalar(tMax, bracket=[0, 1])
+        lamk1 = rootMax.root
+        #print("       lambda > lambdaMax")
+    lamk1 = project_box(lamk1) # Such that 0<=lamk1 <=1
+    return lamk1
+
+def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
+     '''
+     Project back muk given lamk1
+     '''
+     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     # Compute the normals
+     N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[1]])
+     dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
+     dotTestMax = np.dot(N0k_muk, yk1 - zk)
+     if(dotTestMin<0):
+          print("  failed dotTestMin")
+          print("  zk: ", zk, "  yk1: ", yk1)
+          tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          muk = rootMin.root
+     if(dotTestMax<0):
+          print("  failed dotTestMax")
+          print("  zk: ", zk, "  yk1: ", yk1)
+          tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          muk = rootMax.root
+     muk = project_box(muk)
+     return muk
+
 def project_blockBackwards(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      '''
      Project a block [muk, lamk1] such that it is feasible
@@ -227,6 +287,22 @@ def project_blockBackwards(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      muk = project_box(muk)
      return muk, lamk1
      
+def project_ontoLine(d):
+     '''
+     Projection of a vector d along the line x=y
+     '''
+     projector = 0.5*np.array([ [1,1], [1,1]])
+     return projector@d
+
+def close_to_identity(lamk, muk):
+     '''
+     Computes the distance of the vector [lamk, muk]
+     to the line lamk = muk
+     '''
+     p = np.array([lamk, muk])
+     proj = project_ontoLine(p)
+     return norm(p - proj)
+
 
 
 def project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
@@ -1058,11 +1134,11 @@ gradient2 = gradient_TY(params2, x0, T0, grad0, x1, T1, grad1, xHat, listIndices
 print("\nGradient Final: \n", gradient)
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.plot(range(0, len(listVals)), listVals)
+plt.loglog(range(0, len(listVals)), listVals)
 
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.plot(range(0, len(listGrads)), listVals)
+plt.loglog(range(0, len(listGrads)), listVals)
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
