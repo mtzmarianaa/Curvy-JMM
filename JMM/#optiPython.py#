@@ -500,8 +500,10 @@ def backtr_lastBlock(alpha0, nRegions, dlamn, dmun, dlamn1, params, x0, T0, grad
 
 
 
-def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+def forwardPassUpdate(params0, gamma0, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
+     gamma0 : radius for the circle centered at [lamk, muk], if such circle intersects the line lamk = muk then do a close update
+     theta_gamma : rate of decrease in the circle centered at [lamk, muk]
      Updates blocks     [mu1]
                         [lam2, mu2]
                         [lamk, muk]
@@ -509,6 +511,7 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
      '''
      # First block [mu1, lam2, mu2]
      params = np.copy(params0)
+     gamma = gamma0
      mu1 = params[0]
      lam2 = params[1]
      B0k = listB0k[0]
@@ -521,7 +524,7 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
      yk1 = itt.hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
      zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
      # Compute direction for muk
-     partial_muk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
+     dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      alpha = backTr_coord(1, 0, partial_muk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      mu1 = mu1 - alpha*partial_muk
      mu1 = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1) # project back so that it is feasible
@@ -530,12 +533,33 @@ def forwardPassUpdate(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, 
      nRegions = len(listxk) - 2
      for j in range(1, n):
           k = 2*j
+          mukM1 = params[k-2]
+          lamk = params[k-1]
+          muk = params[k]
+          B0kM1 = listB0k[j-1]
+          xkM1 = listB0k[j]
+          BkM1 = listBk[j-1]
+          B0k = listB0k[j]
+          xk = listB0k[j+1]
+          Bk = listBk[j]
+          B0k1 = listB0k[j+1]
+          xk1 = listB0k[j+2]
+          Bk1 = listBk[j+1]
           etakM1 = listIndices[j-1]
           etak = listIndices[j]
           etak1 = listIndices[j+1]
-          lamk = params[k-1]
-          muk = params[k-1]
           # Compute directions
+          dlamk = partial_fObj_lambdak(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
+          dmuk = partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1)
+          # See if we need to do a close update or not
+          r = close_to_identity(lamk, muk)
+          if( r <= gamma ):
+               # Meaning we have to do a close update
+               params = backTrClose_block(1, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+               gamma = gamma*theta_gamma
+          else:
+               # We don't have to consider a close update
+               params = backTr_block(1, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           
 
 
