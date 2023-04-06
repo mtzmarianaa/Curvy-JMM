@@ -191,20 +191,20 @@ def partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, et
      return etakM1*np.dot(-B0k_muk, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_muk
 
 
-# def partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
-#      '''
-#      Partial of the objective function (triangle fan no tops) with respect to lamk1
-#      '''
-#      zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-#      yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-#      B0k1_muk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
-#      secondDer_B0k1_lamk1 = itt.secondDer_Boundary(lamk1, x0, B0k1, xk1, Bk1)
-#      B0k1_halves = itt.gradientBoundary( (muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
-#      secondDer_B0k1halves_lamk1 = itt.secondDer_Boundary((muk1 + lamk1)/2, x0, B0k, xk, Bk)
-#      B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
-#      perL_lamk1 = partial_L_lamk(muk1, lamk1, B0k1_muk1, B0k1_halves, secondDer_B0k1halves_lamk1, B0k1_lamk1, secondDer_B0k1_lamk1)
-#      etaMin = min(etak, etak1)
-#      return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
+def partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
+     '''
+     Partial of the objective function (triangle fan no tops) with respect to lamk1
+     '''
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_muk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+     secondDer_B0k1_lamk1 = itt.secondDer_Boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_halves = itt.gradientBoundary( (muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
+     secondDer_B0k1halves_lamk1 = itt.secondDer_Boundary((muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     perL_lamk1 = partial_L_lamk(muk1, lamk1, B0k1_muk1, B0k1_halves, secondDer_B0k1halves_lamk1, B0k1_lamk1, secondDer_B0k1_lamk1)
+     etaMin = min(etak, etak1)
+     return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
 
 
 
@@ -229,6 +229,10 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
         # Find the root of tMin
         rootMin = root_scalar(tMin, bracket=[0, 1])
         lamk1 = rootMin.root
+        yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+        B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+        Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+        dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
         #print("       lambda < lambdaMin")
     if( dotTestMax < 0):
         # Means that we need to find lambdaMax
@@ -249,18 +253,28 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
      # Compute the normals
      N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
-     N0k_muk = np.array([-B0k_muk[1], B0k_muk[1]])
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
      dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
      dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMin<0):
           print("  failed dotTestMin")
           print("  zk: ", zk, "  yk1: ", yk1)
+          print("  muk: ", muk, " lamk1: ", lamk1)
+          print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, bracket = [0,1])
           muk = rootMin.root
+          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+          N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+          dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMax<0):
           print("  failed dotTestMax")
           print("  zk: ", zk, "  yk1: ", yk1)
+          print("  muk: ", muk, " lamk1: ", lamk1)
+          print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
           rootMax = root_scalar(tMax, bracket = [0,1])
           muk = rootMax.root
@@ -376,37 +390,36 @@ def close_to_identity(lamk, muk):
 #           return params_test[0], params_test[1], params_test[2]
 
 
-# def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
-#      '''
-#      Backtracking to find the next block [lamk, muk]
-#      it considers two directions: steepest descent
-#                                   steepest descent projected onto the line lamk = muk
-#      '''
-#      f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#      i = 0
-#      alpha = alpha0
-#      d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
-#      d_middle_proj = project_ontoLine(d_middle) # steepest descent projected onto the line lamk = muk
-#      params_test = np.copy(params)
-#      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
-#      params_test_proj = np.copy(params)
-#      params_test_proj[k:(k+2)] = params[k:(k+2)] - alpha*d_middle_proj
-#      # Compare the function value
-#      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#      f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#      while( f_before <= f_test and f_before <= f_test_proj and i < 25):
-#           alpha = alpha*0.75
-#           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
-#           params_test_proj[k:(k+2)] = params[k:(k+2)] - alpha*d_middle_proj
-#           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#           f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#           i += 1
-#      if( f_before <= f_test and f_before <= f_test_proj ):
-#           return params[k], params[k+1]
-#      elif( f_test < f_test_proj):
-#           return params_test[k], params_test[k+1]
-#      elif( f_test_proj <= f_test ):
-#           return params_test_proj[k], params_test_proj[k+1]
+def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Backtracking to find the next block [lamk, muk]
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line lamk = muk
+     '''
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     i = 0
+     alpha = alpha0
+     d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
+     params_test = np.copy(params)
+     params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     params_test_proj = np.copy(params)
+     params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+     # Compare the function value
+     f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
+          alpha = alpha*0.5
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_test and f_before <= f_test_proj ):
+          return params[k], params[k+1]
+     elif( f_test < f_test_proj):
+          return params_test[k], params_test[k+1]
+     elif( f_test_proj <= f_test ):
+          return params_test_proj[k], params_test_proj[k+1]
 
 def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
@@ -421,8 +434,8 @@ def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, x
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
-          alpha = alpha*0.75
+     while( f_before <= f_test  and i < 25):
+          alpha = alpha*0.5
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           i += 1
@@ -519,7 +532,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # Compute direction for muk
      dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      alpha = backTr_coord(1, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-     mu1 = mu1 - alpha*partial_muk
+     mu1 = mu1 - alpha*dmuk
      mu1 = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1) # project back so that it is feasible
      params[0] = mu1
      # Now we start with the blocks of size 2
@@ -532,13 +545,13 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           muk = params[k]
           lamk1 = params[k+1]
           B0kM1 = listB0k[j-1]
-          xkM1 = listB0k[j]
+          xkM1 = listxk[j]
           BkM1 = listBk[j-1]
           B0k = listB0k[j]
-          xk = listB0k[j+1]
+          xk = listxk[j+1]
           Bk = listBk[j]
           B0k1 = listB0k[j+1]
-          xk1 = listB0k[j+2]
+          xk1 = listxk[j+2]
           Bk1 = listBk[j+1]
           etakM1 = listIndices[j-1]
           etak = listIndices[j]
@@ -577,7 +590,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # Compute direction
      dlamn1 = partial_fObj_lambdak(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
      # Compute step size
-     alpha = backTr_coord(1, (2*nRegions - 1), dlamn, params, x0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     alpha = backTr_coord(1, (2*nRegions - 1), dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      # Update
      lamn1 = lamn1 - alpha*dlamn1
      # Project back
@@ -809,31 +822,33 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 #          alpha = 0
 #      return alpha
 
-# def project_box(param):
-#      if(param < 0):
-#           param = 0
-#      elif(param > 1):
-#           param = 1
-#      return param
+def project_box(param):
+     if(param < 0):
+          param = 0
+     elif(param > 1):
+          param = 1
+     else:
+          param = param
+     return param
 
-# def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
-#      '''
-#      Coordinate backtracking to find the step size for coordinate gradient descent
-#      '''
-#      i = 0
-#      alpha = alpha0
-#      f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#      params_test = np.copy(params)
-#      params_test[k] = params[k] - alpha*d
-#      f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#      while( f_before <= f_after and i < 25):
-#           alpha = alpha*0.5
-#           params_test[k] = params[k] - alpha*d
-#           f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-#           i += 1
-#      if( f_before <= f_after):
-#           alpha = 0
-#      return alpha
+def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     Coordinate backtracking to find the step size for coordinate gradient descent
+     '''
+     i = 0
+     alpha = alpha0
+     f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     params_test = np.copy(params)
+     params_test[k] = params[k] - alpha*d
+     f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_before <= f_after and i < 25):
+          alpha = alpha*0.5
+          params_test[k] = params[k] - alpha*d
+          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     if( f_before <= f_after):
+          alpha = 0
+     return alpha
 
 # def backTr_4Block0(alpha0, dmu1, dlam2, dmu2, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
 #      '''
@@ -1312,7 +1327,7 @@ def gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
 #     return params, listObjVals, listGrads
 
 
-def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 0.8):
+def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1):
      '''
      Block coordinate subgradient descent (modified) for an update in a triangle fan without
      tops. Inspired by gradient sampling but in this case we know where our (geometric)
@@ -1440,6 +1455,8 @@ params = [mu1, lam2, mu2, lam3, mu3, lam4]
 maxIter = 20
 tol = 1e-8
 
+itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+
 paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
 #itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
 #itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
@@ -1455,11 +1472,11 @@ gradient2 = gradient_TY(params2, x0, T0, grad0, x1, T1, grad1, xHat, listIndices
 print("\nGradient Final: \n", gradient)
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.loglog(range(0, len(listVals)), listVals)
+plt.loglog(range(0, len(listObjVals)), listObjVals)
 
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.loglog(range(0, len(listGrads)), listVals)
+plt.loglog(range(0, len(listGrads)), listGrads)
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
