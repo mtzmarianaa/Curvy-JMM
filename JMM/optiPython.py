@@ -548,7 +548,7 @@ def gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
 
 
 
-def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1):
+def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1, plotSteps = True):
      '''
      Block coordinate subgradient descent (modified) for an update in a triangle fan without
      tops. Inspired by gradient sampling but in this case we know where our (geometric)
@@ -556,10 +556,11 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      '''
      params = np.copy(params0)
      params = np.append(params, [1])
-     print(" Initial params: \n", params)
+     #print(" Initial params: \n", params)
      # Initialize the useful things
      listObjVals = []
      listGrads = []
+     listChangefObj = []
      nRegions = len(listxk) -2
      gammas = 0.05*np.ones((nRegions - 1)) # Might be an array of length 0, it's fine
      gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -568,234 +569,63 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      listGrads.append(norm_gradk)
      listObjVals.append(fVal)
      iter = 0
-     while( norm_gradk > tol and iter < maxIter):
+     change_fVal = 1
+     while( abs(change_fVal) > tol and iter < maxIter):
           # Start with a forward pass
           params, gammas = forwardPassUpdate(params, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           norm_gradk = norm(gradk)
+          fVal_prev = fVal
           fVal = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          change_fVal = fVal_prev - fVal
           listGrads.append(norm_gradk)
           listObjVals.append(fVal)
+          listChangefObj.append( change_fVal )
           iter += 1
-          itt.plotFann(x0, listB0k, listxk, listBk, params = params)
-     return params, listObjVals, listGrads
+          if plotSteps:
+               itt.plotFann(x0, listB0k, listxk, listBk, params = params)
+     return params, listObjVals, listGrads, listChangefObj
      
+
+
+def plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None):
+     '''
+     Plots results from blockCoordinateGradient
+     '''
+     # First plot the original parameters
+     itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
+     plt.title("Initial parameters")
+     # Then plot the parameters found by this method
+     itt.plotFann(x0, listB0k, listxk, listBk, params = paramsOpt)
+     plt.title("Optimal parameters found")
+     # Now plot the function value at each iteration
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+     plt.semilogy( range(0, len(listObjVals)), listObjVals, c = "#00011f", linewidth = 0.8)
+     plt.xlabel("Iteration")
+     plt.ylabel("Function value")
+     plt.title("Function value at each iteration")
+     # Now plot the norm of the gradient at each iteration
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+     plt.semilogy( range(0, len(listGrads)), listGrads, c = "#34273e", linewidth = 0.8)
+     plt.xlabel("Iteration")
+     plt.ylabel("Norm of gradient")
+     plt.title("Norm of gradient at each iteration")
+     # Finally plot the change of the function value at each iteration
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+     plt.semilogy( range(0, len(listChangefObj)), listChangefObj, c = "#27353e", linewidth = 0.8)
+     plt.xlabel("Iteration")
+     plt.ylabel("Change of function value")
+     plt.title("Change of function value at each iteration")
+     # If we know the true solution for this triangle fan, plot the decrease in the error
+     if trueSol is not None:
+          errRel = np.array(listObjVals)
+          errRel = (errRel-trueSol)/trueSol
+          fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+          plt.semilogy( range(0, len(listObjVals)), errRel, c = "#00011f", linewidth = 0.8)
+          plt.xlabel("Iteration")
+          plt.ylabel("Relative error")
+          plt.title("Relative error at each iteration")
+
      
-        
-    
-## TESTS FOR THESE FUNCTIONS
-
-x0 = np.array([0.0,0.0])
-x1 = np.array([2, -0.2])
-x2 = np.array([1.5, 0.8])
-x3 = np.array([0.2, 1.2])
-xHat = np.array([-0.8, 0.7])
-B01 = np.array([2.2, 1])
-B01 = B01/norm(B01)
-B02 = np.array([1, 1.5])
-B02 = B02/norm(B02)
-B03 = np.array([0.2, 2])
-B03 = B03/norm(B03)
-B0Hat = np.array([-1, 0.4])
-B0Hat = B0Hat/norm(B0Hat)
-B1 = np.array([1, -0.6])
-B1 = B1/norm(B1)
-B2 = np.array([2, -0.2])
-B2 = B2/norm(B2)
-B3 = np.array([1, 2])
-B3 = B3/norm(B3)
-BHat = np.array([-1, 1])
-BHat = BHat/norm(BHat)
-
-# params = [mu1, lam2, mu2, lam3, mu3, lam4, mu4, ..., lambda_n, mu_n, lambda_n1]
-mu1 = 0.15
-lam2 = 0.15
-mu2 = 0.13
-lam3 = 0.17
-mu3 = 0.15
-lam4 = 1
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
-
-xSource = np.array([ 1, -0.5 ])
-T0 = norm(xSource - x0)
-grad0 = (x0 - xSource)/T0
-T1 = norm(xSource - x1)
-grad1 = (x1 - xSource)/T1
-
-THat_true = norm(xHat - xSource)
-
-listIndices = [1.0, 1.0, 1.0, 1.0]
-listxk = [x0, x1, x2, x3, xHat]
-listB0k = [B01, B02, B03, B0Hat]
-listBk = [B1, B2, B3, BHat]
-
-
-# Starting to plot everything
-
-#itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
-
-#plt.scatter(xSource[0], xSource[1], s = 20, c = "#ff00f2")
-#plt.plot([xSource[0], xHat[0]], [xSource[1], xHat[1]], linestyle = ':', c = "#ab00a3")
-
-
-#f_init = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-
-##### Test the projection
-
-# lam2 = 0
-# mu1 = 1
-# Bk_muk = itt.gradientBoundary(mu1, x0, B01, x1, B1)
-# Bk1_lamk1 = itt.gradientBoundary(lam2, x0, B02, x2, B2)
-# yk1 = itt.hermite_boundary(lam2, x0, B02, x2, B2)
-# zk = itt.hermite_boundary(mu1, x0, B01, x1, B1)
-
-# #itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
-
-# mu1, lam2 = project_block(mu1, lam2, Bk_muk, Bk1_lamk1, yk1, zk, x0, x2, B02, B2)
-
-# #itt.plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat, mu1 = mu1, lam2 = lam2, mu2 = mu2, lam3 = lam3, mu3 = mu3, lam4 = lam4)
-
-
-##### Test the forward and backward updates
-
-# print("Start test foward pass update \n\n")
-
-# mu1 = 0.5
-# lam2 = 0.65
-# mu2 = 0.5
-# lam3 = 0.75
-# mu3 = 0.5
-# lam4 = 0.45
-# params = [mu1, lam2, mu2, lam3, mu3, lam4]
-
-
-
-# # Compute the projected gradient descent
-
-maxIter = 20
-tol = 1e-8
-
-# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-
-# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-
-
-
-
-# Another example
-print("Start test foward pass update \n\n")
-
-mu1 = 0.1
-lam2 = 0.5
-mu2 = 0.5
-lam3 = 0.9
-mu3 = 0.9
-lam4 = 0
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
-
-
-
-paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-
-fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.semilogy( range(0, len(listObjVals)), listObjVals)
-plt.title("Decrease in function value")
-
-
-fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.semilogy( range(0, len(listGrads)), listGrads)
-plt.title("Decrease in norm of gradient")
-
-
-# # Another example
-
-# print("Start test foward pass update \n\n")
-
-
-# mu1 = 0.5
-# lam2 = 0.65
-# mu2 = 0.5
-# lam3 = 0.75
-# mu3 = 0.5
-# lam4 = 0.45
-# params = [mu1, lam2, mu2, lam3, mu3, lam4]
-# listIndices = [1.0, 1.5, 2, 1.0]
-
-
-# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-
-# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-
-
-# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-# plt.semilogy( range(0, len(listObjVals)), listObjVals)
-# plt.title("Decrease in function value")
-
-# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-# plt.semilogy( range(0, len(listGrads)), listGrads)
-# plt.title("Decrease in norm of gradient")
-
-
-
-# print("Start test foward pass update \n\n")
-
-
-# mu1 = 0.5
-# lam2 = 0.65
-# mu2 = 0.5
-# lam3 = 0.75
-# mu3 = 0.5
-# lam4 = 0.45
-# params = [mu1, lam2, mu2, lam3, mu3, lam4]
-# listIndices = [3.5, 1, 0.5, 1.0]
-
-
-# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-
-# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-
-
-# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-# plt.semilogy( range(0, len(listObjVals)), listObjVals)
-# plt.title("Decrease in function value")
-
-# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-# plt.semilogy( range(0, len(listGrads)), listGrads)
-# plt.title("Decrease in norm of gradient")
-
-
-#paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-# print(paramsUp)
-# print("Objective function value:", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-
-# print(" \n\n Start test backward pass update \n\n")
-
-
-# paramsDown, grad2T1 = backwardPassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-# print(paramsDown)
-
-# print("Objective function value:", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-
-
-# print("Start test2 foward pass update \n\n")
-
-# paramsUp = forwardPassUpdate(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-# print(paramsUp)
-# print("Objective function value:", fObj_noTops(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-
-# print(" \n\n Start test2 backward pass update \n\n")
-
-
-# paramsDown, grad2T2 = backwardPassUpdate(paramsUp, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-# print(paramsDown)
-
-# print("Objective function value:", fObj_noTops(paramsDown, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk) )
-
-
 
 

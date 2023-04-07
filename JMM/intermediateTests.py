@@ -191,8 +191,8 @@ def plotFann(x0, listB0k, listxk, listBk, params = None):
                # Scatter them
                plt.scatter([xmuk[0], xlamk1[0]], [xmuk[1], xlamk1[1]], s = 5, c = "#117783")
      plt.legend()
-     plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
-     plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
+     #plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
+     #plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
      ax = plt.gca()
      ax.set_aspect("equal")
                
