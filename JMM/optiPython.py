@@ -156,8 +156,11 @@ def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k
      
 
 def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
-    der_hermite_inter = der_hermite_interpolationT(mu1, x0, T0, grad0, x1, T1, grad1)
-    return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
+     der_hermite_inter = der_hermite_interpolationT(mu1, x0, T0, grad0, x1, T1, grad1)
+     if( norm(y2 - z1) < 1e-8 ):
+          return der_hermite_inter
+     else:
+          return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
 
 
 def partial_fObj_lambdak(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak):
@@ -173,7 +176,10 @@ def partial_fObj_lambdak(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, e
      B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
      perL_lamk = partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k_lamk, secondDer_B0k_lamk)
      etaMin = min(etakM1, etak)
-     return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) + etaMin*perL_lamk
+     if( mukM1 == lamk ):
+          return etaMin*perL_lamk
+     else:
+          return etakM1*np.dot(B0k_lamk, yk - zkM1)/norm(yk - zkM1) + etaMin*perL_lamk
 
 def partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1):
      '''
@@ -188,7 +194,10 @@ def partial_fObj_muk(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, et
      B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
      parL_muk = partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B0khalves_muk, B0k_lamk)
      etaMin = min(etak, etakM1)
-     return etakM1*np.dot(-B0k_muk, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_muk
+     if( muk == lamk1 ):
+          return etaMin*parL_muk
+     else:
+          return etakM1*np.dot(-B0k_muk, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_muk
 
 
 def partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
@@ -204,7 +213,10 @@ def partial_fObj_lambdak1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, eta
      B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
      perL_lamk1 = partial_L_lamk(muk1, lamk1, B0k1_muk1, B0k1_halves, secondDer_B0k1halves_lamk1, B0k1_lamk1, secondDer_B0k1_lamk1)
      etaMin = min(etak, etak1)
-     return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
+     if( muk == lamk1 ):
+          return etaMin*perL_lamk1
+     else:
+          return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
 
 
 
@@ -212,6 +224,7 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     '''
     Project back lamk1 given muk
     '''
+    lamk1 = project_box(lamk1)
     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
@@ -247,6 +260,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      '''
      Project back muk given lamk1
      '''
+     muk = project_box(muk)
      yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
      B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
      zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
@@ -256,7 +270,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
      dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
      dotTestMax = np.dot(N0k_muk, yk1 - zk)
-     if(dotTestMin<0):
+     if(dotTestMin<0 ):
           print("  failed dotTestMin")
           print("  zk: ", zk, "  yk1: ", yk1)
           print("  muk: ", muk, " lamk1: ", lamk1)
@@ -269,14 +283,14 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
-     if(dotTestMax<0):
+     if(dotTestMax<0 ):
           print("  failed dotTestMax")
           print("  zk: ", zk, "  yk1: ", yk1)
           print("  muk: ", muk, " lamk1: ", lamk1)
           print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
           print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
-          rootMax = root_scalar(tMax, bracket = [0,1])
+          rootMax = root_scalar(tMax, bracket = [0, 1])
           muk = rootMax.root
      muk = project_box(muk)
      return muk
@@ -301,13 +315,13 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
 #           print("  failed dotTestMin")
 #           print("  zk: ", zk, "  yk1: ", yk1)
 #           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
-#           rootMin = root_scalar(tMin, bracket = [0,1])
+#           rootMin = root_scalar(tMin, bracket = [-2, 2])
 #           muk = rootMin.root
 #      if(dotTestMax<0):
 #           print("  failed dotTestMax")
 #           print("  zk: ", zk, "  yk1: ", yk1)
 #           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
-#           rootMax = root_scalar(tMax, bracket = [0,1])
+#           rootMax = root_scalar(tMax, bracket = [-2, 2])
 #           muk = rootMax.root
 #      muk = project_box(muk)
 #      return muk, lamk1
@@ -398,17 +412,17 @@ def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, gra
      '''
      f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      i = 0
-     alpha = alpha0
      d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
      params_test = np.copy(params)
+     alpha = alpha0*0.2*1/(max(norm(d_middle), 1))
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
      params_test_proj = np.copy(params)
      params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-     while( f_before <= f_test and f_before <= f_test_proj and i < 25):
-          alpha = alpha*0.5
+     while( f_before <= f_test and f_before <= f_test_proj and i < 25 ):
+          alpha = alpha*0.2*1/(max(norm(d_middle), 1))
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -428,14 +442,14 @@ def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, x
      '''
      f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      i = 0
-     alpha = alpha0
      d_middle = np.array([dlamk, dmuk]) # "normal" steespest descent
      params_test = np.copy(params)
+     alpha = alpha0*0.2*1/(max(norm(d_middle), 1))
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      while( f_before <= f_test  and i < 25):
-          alpha = alpha*0.5
+          alpha = alpha*0.2*1/(max(norm(d_middle), 1))
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           i += 1
@@ -588,7 +602,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      etakM1 = listIndices[nRegions - 2]
      etak = listIndices[nRegions - 1]
      # Compute direction
-     dlamn1 = partial_fObj_lambdak(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
+     dlamn1 = partial_fObj_lambdak(mun, mun1, lamn1, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
      # Compute step size
      alpha = backTr_coord(1, (2*nRegions - 1), dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      # Update
@@ -600,7 +614,23 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      return params, gammas
      
      
-          
+def backwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+     '''
+     gammas : radius for the circle centered at [lamk, muk], if such circle intersects the line lamk = muk then do a close update, it is an array of size nRegions - 1 (notice that it can be an array of size 0)
+     theta_gamma : rate of decrease in the circle centered at [lamk, muk]
+     Updates blocks     [lamn1]
+                        [lamn, mun]
+                        [lamk, muk]
+                        [mu1]
+     '''
+     params = np.copy(params0)
+     nRegions = len(listxk) - 2
+     # Start by updating lamn1
+     mun = params[2*nRegions - 2]
+     lamn1 = params[2*nRegions - 1]
+     mun1 = 1 # Always
+     
+     
           
 
 
@@ -684,13 +714,13 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 #           print(" dotTestMin -- 4 block0")
 #           tMin = lambda mu: t4(mu, x0, x2, B02, B2, y3, B03_lam3)
 #           # Find the root of tMin
-#           rootMin = root_scalar(tMin, bracket = [0,1])
+#           rootMin = root_scalar(tMin, bracket = [-2, 2])
 #           mu2 = rootMin.root
 #      if( dotTestMax < 0):
 #           # Means that we need to find mu2Max
 #           print(" dotTestMax -- 4 block0")
 #           tMax = lambda mu: t3(mu, x0, x2, B02, B2, y3)
-#           rootMax = root_scalar(tMax, bracket = [0,1])
+#           rootMax = root_scalar(tMax, bracket = [-2, 2])
 #           mu2 = rootMax.root
 #      if( mu2 < 0):
 #           mu2 = 0
@@ -721,12 +751,12 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 #      if(dotTestMin<0):
 #           print(" dotTestMin -- 4 block")
 #           tMin = lambda mu: t4(mu, x0, xk1, B0k1, Bk1, yk2, B0k2_lamk2)
-#           rootMin = root_scalar(tMin, bracket = [0,1])
+#           rootMin = root_scalar(tMin, bracket = [-2, 2])
 #           muk1 = rootMin.root
 #      if(dotTestMax<0):
 #           print(" dotTestMax -- 4 block")
 #           tMax = lambda mu: t3(mu, x0, xk1, B0k1, Bk1, yk2)
-#           rootMax = root_scalar(tMax, bracket = [0,1])
+#           rootMax = root_scalar(tMax, bracket = [-2, 2])
 #           muk1 = rootMax.root
 #      muk1 = project_box(muk1)
 #      # Third step: given muk project back lamk1
@@ -759,7 +789,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 #           print("zn: ", zn, "   yn1:", yn1)
 #           print(" t4 at mun: ", t4(mun, x0, xn, B0n, Bn, yn1, B0n1_lamn1))
 #           tMin = lambda mu: t4(mu, x0, xn, B0n, Bn, yn1, B0n1_lamn1)
-#           rootMin = root_scalar(tMin, bracket = [0,1])
+#           rootMin = root_scalar(tMin, bracket = [-2, 2])
 #           mun = rootMin.root
 #      if(dotTestMax<0):
 #           print(" dotTestMax -- 4 block n")
@@ -768,7 +798,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 #           print("  mun: ", mun)
 #           print(" t3 at mun: ", t3(mun, x0, xn, B0n, Bn, yn1))
 #           tMax = lambda mu: t3(mu, x0, xn, B0n, Bn, yn1)
-#           rootMax = root_scalar(tMax, bracket = [0,1])
+#           rootMax = root_scalar(tMax, bracket = [-2, 2])
 #           mun = rootMax.root
 #      mun = project_box(mun)
 #      return lamn, mun, lamn1
@@ -954,6 +984,7 @@ def gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
           lamk = params[k-1]
           muk = params[k]
           lamk1 = params[k+1]
+          muk1 = params[k+2]
           gradient[k] = partial_fObj_muk(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak, etakM1)
           gradient[k+1] = partial_fObj_lambdak1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
      gradient[2*n] = 0
