@@ -271,11 +271,11 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
      dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMin<0 ):
-          print("  failed dotTestMin")
-          print("  zk: ", zk, "  yk1: ", yk1)
-          print("  muk: ", muk, " lamk1: ", lamk1)
-          print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
-          print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
+          # print("  failed dotTestMin")
+          # print("  zk: ", zk, "  yk1: ", yk1)
+          # print("  muk: ", muk, " lamk1: ", lamk1)
+          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, bracket = [0,1])
           muk = rootMin.root
@@ -284,11 +284,11 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMax<0 ):
-          print("  failed dotTestMax")
-          print("  zk: ", zk, "  yk1: ", yk1)
-          print("  muk: ", muk, " lamk1: ", lamk1)
-          print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
-          print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
+          # print("  failed dotTestMax")
+          # print("  zk: ", zk, "  yk1: ", yk1)
+          # print("  muk: ", muk, " lamk1: ", lamk1)
+          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
           rootMax = root_scalar(tMax, bracket = [0, 1])
           muk = rootMax.root
@@ -630,50 +630,7 @@ def backwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad
      lamn1 = params[2*nRegions - 1]
      mun1 = 1 # Always
      
-     
-          
-
-
-# def project_block(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
-#     '''
-#     Project a block [mu_k, lambda_k+1] such that it is feasible
-#     project back lamk1 given muk
-#     '''
-#     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-#     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-#     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
-#     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
-    
-#     Nk_muk = np.array([-B0k_muk[1], B0k_muk[0]])
-#     Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
-#     dotTestMin = np.dot( yk1 - zk, Nk_muk )
-#     dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
-#     #print("       dotTestMin: ", dotTestMin, "  dotTestMax: ", dotTestMax)
-#     # Test if lamk < lamMin
-#     if( dotTestMin < 0):
-#         # Means that we need to find lambdaMin
-#         tMin = lambda lam: t1(lam, x0, xk1, B0k1, Bk1, zk, B0k_muk)
-#         # Find the root of tMin
-#         rootMin = root_scalar(tMin, bracket=[0, 1])
-#         lamk1 = rootMin.root
-#         #print("       lambda < lambdaMin")
-#     if( dotTestMax < 0):
-#         # Means that we need to find lambdaMax
-#         tMax = lambda lam: t2(lam, x0, xk1, B0k1, Bk1, zk)
-#         rootMax = root_scalar(tMax, bracket=[0, 1])
-#         lamk1 = rootMax.root
-#         #print("       lambda > lambdaMax")
-#     if( muk < 0):
-#         muk = 0
-#     elif( muk > 1):
-#         muk = 1
-#     if( lamk1 < 0):
-#         lamk1 = 0
-#     elif( lamk1 > 1):
-#         lamk1 = 1
-#     return muk, lamk1
-
-
+ 
 # def project_middleBlock(k, mukM1, lamk, muk, lamk1, x0, listB0k, listxk, listBk):
 #      '''
 #      Projection so that when we move the block [lamk, muk] the blocks
@@ -1371,7 +1328,7 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      listObjVals = []
      listGrads = []
      nRegions = len(listxk) -2
-     gammas = 0.1*np.ones((nRegions - 1)) # Might be an array of length 0, it's fine
+     gammas = 0.05*np.ones((nRegions - 1)) # Might be an array of length 0, it's fine
      gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      norm_gradk = norm(gradk)
      fVal = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -1387,7 +1344,7 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
           listGrads.append(norm_gradk)
           listObjVals.append(fVal)
           iter += 1
-          itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params[:-1])
+          itt.plotFann(x0, listB0k, listxk, listBk, params = params)
      return params, listObjVals, listGrads
      
      
@@ -1469,45 +1426,111 @@ listBk = [B1, B2, B3, BHat]
 
 ##### Test the forward and backward updates
 
-print("Start test foward pass update \n\n")
+# print("Start test foward pass update \n\n")
 
-mu1 = 0.5
-lam2 = 0.65
-mu2 = 0.5
-lam3 = 0.75
-mu3 = 0.5
-lam4 = 0.45
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
+# mu1 = 0.5
+# lam2 = 0.65
+# mu2 = 0.5
+# lam3 = 0.75
+# mu3 = 0.5
+# lam4 = 0.45
+# params = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 
 
-# Compute the projected gradient descent
+# # Compute the projected gradient descent
 
 maxIter = 20
 tol = 1e-8
 
-itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+
+# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
+
+
+
+
+# Another example
+print("Start test foward pass update \n\n")
+
+mu1 = 0.1
+lam2 = 0.5
+mu2 = 0.5
+lam3 = 0.9
+mu3 = 0.9
+lam4 = 0
+params = [mu1, lam2, mu2, lam3, mu3, lam4]
+
+
 
 paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
-#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
-#itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *paramsOpt[:-1])
-
-#plt.close("all")
-
-gradient = gradient_TY(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-params2 = paramsOpt - 0.001*gradient
-
-gradient2 = gradient_TY(params2, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-
-print("\nGradient Final: \n", gradient)
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.loglog(range(0, len(listObjVals)), listObjVals)
+plt.semilogy( range(0, len(listObjVals)), listObjVals)
+plt.title("Decrease in function value")
 
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-plt.loglog(range(0, len(listGrads)), listGrads)
+plt.semilogy( range(0, len(listGrads)), listGrads)
+plt.title("Decrease in norm of gradient")
+
+
+# # Another example
+
+# print("Start test foward pass update \n\n")
+
+
+# mu1 = 0.5
+# lam2 = 0.65
+# mu2 = 0.5
+# lam3 = 0.75
+# mu3 = 0.5
+# lam4 = 0.45
+# params = [mu1, lam2, mu2, lam3, mu3, lam4]
+# listIndices = [1.0, 1.5, 2, 1.0]
+
+
+# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+
+# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
+
+
+# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+# plt.semilogy( range(0, len(listObjVals)), listObjVals)
+# plt.title("Decrease in function value")
+
+# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+# plt.semilogy( range(0, len(listGrads)), listGrads)
+# plt.title("Decrease in norm of gradient")
+
+
+
+# print("Start test foward pass update \n\n")
+
+
+# mu1 = 0.5
+# lam2 = 0.65
+# mu2 = 0.5
+# lam3 = 0.75
+# mu3 = 0.5
+# lam4 = 0.45
+# params = [mu1, lam2, mu2, lam3, mu3, lam4]
+# listIndices = [3.5, 1, 0.5, 1.0]
+
+
+# itt.plotFan3(x0, *listB0k, listxk[1], listBk[0], listxk[2], listBk[1], listxk[3], listBk[2], xHat, listBk[3], *params)
+
+# paramsOpt, listObjVals, listGrads = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol)
+
+
+# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+# plt.semilogy( range(0, len(listObjVals)), listObjVals)
+# plt.title("Decrease in function value")
+
+# fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+# plt.semilogy( range(0, len(listGrads)), listGrads)
+# plt.title("Decrease in norm of gradient")
+
 
 #paramsUp = forwardPassUpdate(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 

@@ -134,6 +134,72 @@ def plotFan3(x0, B01, B02, B03, B0Hat, x1, B1, x2, B2, x3, B3, xHat, BHat,
 
 
 
+def plotFann(x0, listB0k, listxk, listBk, params = None):
+     '''
+     Plots a triangle fan with n regions (i.e. n triangles)
+     '''
+     axMin = np.min(listxk) # To set the ax limits
+     axMax = np.max(listxk) # To set the ax limits
+     nRegions = len(listxk) - 2 # Number of triangles
+     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+     # Plot the triangles in the triangulation (straight lines)
+     x0 = listxk[0]
+     x1 = listxk[1]
+     # Plot "base" straight line
+     plt.plot([x0[0], x1[0]], [x0[1], x1[1]], linewidth = 0.5, alpha = 0.8, c = "#aaaaaa")
+     # Plot the "base" curvy line
+     params_inter = np.linspace(0,1, 100)
+     x0x1 = np.empty((100, 2))
+     for i in range(100):
+          x0x1[i, :] = hermite_boundary(params_inter[i], x0, listB0k[0], x1, listBk[0])
+     plt.plot(x0x1[:, 0], x0x1[:, 1], linewidth = 1, c = "#aaaaaa")
+     # Plot x0
+     plt.scatter(x0[0], x0[1], s = 15, c = "#0027ff", label = "x0")
+     plt.scatter(x1[0], x1[1], s = 7, c = "#001871", label = "x1")
+     # Plot the rest of the edges of the triangles
+     for j in range (nRegions):
+          # j from 0 to nRegions - 1
+          # PLOT THE STRAIGHT LINE TRIANGLES
+          xkM1 = listxk[j+1]
+          xk = listxk[j+2]
+          # Plot the top of the triangle
+          plt.plot([x0[0], xk[0]], [x0[1], xk[1]], linewidth = 0.5, alpha = 0.8, c = "#aaaaaa")
+          # Plot the side of the triangle
+          plt.plot([xkM1[0], xk[0]], [xkM1[1], xk[1]], linewidth = 0.5, alpha = 0.8, c = "#aaaaaa")
+          # PLOT THE CURVY TRIANGLES
+          x0xk = np.empty((100, 2))
+          for i in range(100):
+               x0xk[i, :] = hermite_boundary(params_inter[i], x0, listB0k[j+1], xk, listBk[j+1])
+          plt.plot(x0xk[:, 0], x0xk[:, 1], linewidth = 1, c = "#aaaaaa")
+          plt.scatter(xk[0], xk[1], s = 7, c = "#001871", label = "x" + str(j+2))
+     # Now, if given information about points on the curvy triangles plot straight lines
+     if(params is not None):
+          for j in range(nRegions):
+               k = 2*j
+               muk = params[k]
+               lamk1 = params[k+1]
+               B0k = listB0k[j]
+               xk = listxk[j+1]
+               Bk = listBk[j]
+               B0k1 = listB0k[j+1]
+               xk1 = listxk[j+2]
+               Bk1 = listBk[j+1]
+               xmuk = hermite_boundary(muk, x0, B0k, xk, Bk)
+               xlamk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+               # Plot a straight line between them
+               plt.plot([xmuk[0], xlamk1[0]], [xmuk[1], xlamk1[1]], linewidth = 1, c = "#0024ff")
+               # Scatter them
+               plt.scatter([xmuk[0], xlamk1[0]], [xmuk[1], xlamk1[1]], s = 5, c = "#117783")
+     plt.legend()
+     plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
+     plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
+     ax = plt.gca()
+     ax.set_aspect("equal")
+               
+          
+     
+     
+
 x0 = np.array([0.0,0.0])
 x1 = np.array([2, -0.2])
 x2 = np.array([1.5, 0.8])
