@@ -7,9 +7,19 @@ import numpy as np
 from numpy.linalg import norm
 from math import sqrt, pi, cos, sin
 import intermediateTests as itt
-from optiPython import blockCoordinateGradient, plotResults
+from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY
 from analyticSol_circle import trueSolution # So that we can test all of this in an actual "true geometry
+import colorcet as cc
+import matplotlib.colors as clr
+from mpl_toolkits.mplot3d import axes3d
 
+
+colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
+                                                   [(0,    '#000000'),
+                                                    (0.1, '#2c3454'),
+                                                    (0.25, '#0033ff'),
+                                                    (0.60, '#00f3ff'),
+                                                    (1,    '#e800ff')], N=256)
 
       
 ###########################################
@@ -122,13 +132,17 @@ plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGra
 
 plt.close("all")
 
-      
+###########################################
+###########################################
+###########################################
 ###########################################
 ## TEST OPTIPYTHON IN THE CIRCLE 
 ## Recall that we know the analytic solution to the circle problem
 
 # Test 1: x0 and x1 are on the boundary, xHat=x2 is inside the circle
 
+
+###########################################
 print("\n\n\n x0 and x1 on the boundary close\n\n")
 
 xSource = np.array([-15, -10])
@@ -169,19 +183,62 @@ T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
 # Use blockCoordinateGradient
 
-mu1 = 0.5
-lam2 = 0.5
-params = [mu1, lam2]
+mu1 = 0.4
+lam2 = 0.6
+params0 = [mu1, lam2]
+f0 = fObj_noTops(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
+itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
+plt.title("Initial parameters")
 
-plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
+paramsOpt, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False, saveIterates = True)
+
+plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
 
 
 
 
+# Since this is a just a 2d problem we can plot the objective function and see how well
+# this models the situation and if the optimization method converges to the minimum of
+# our model
+
+mus1 , lams2 = np.meshgrid( np.linspace(-0.1, 1.1, 200), np.linspace(-0.1, 1.1, 200) )
+fObjMesh = np.empty(mus1.shape)
+
+for i in range(200):
+    for j in range(200):
+        params = [mus1[i,j], lams2[i,j]]
+        fObjMesh[i, j] = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+
+# plot it
+# 2d
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+plt.imshow( fObjMesh, cmap = colormap2, extent = [-0.1, 1.1, -0.1, 1.1], origin = "lower")
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    plt.scatter(pointk[0], pointk[1], marker = "o", s = 0.75, color = "#999999")
+plt.scatter(params0[0], params0[1], marker = "o", color = "white", label = "starting point")
+plt.scatter(paramsOpt[0], paramsOpt[1], marker = "*", color = "white", label = "optimum found")
+plt.title("Objective function")
+plt.xlabel("mu1")
+plt.ylabel("lam2")
+plt.legend()
+
+# 3d
+ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+ax.plot_surface(mus1, lams2, fObjMesh, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    fk = fObj_noTops(pointk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    ax.scatter(pointk[0], pointk[1], fk, c = "#565656", marker = "o", s = 2)
+ax.scatter(paramsOpt[0], paramsOpt[1], listObjVals[-1], label = "optimum found", c = "black", marker = "*")
+ax.scatter(params0[0], params0[1], f0, label = "starting point", c = "black")
+ax.legend()
 
 
+
+
+###########################################
 print("\n\n\n x0 and x1 on the boundary far\n\n")
 
 xSource = np.array([-15, -10])
@@ -222,17 +279,61 @@ T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
 # Use blockCoordinateGradient
 
-mu1 = 0.5
-lam2 = 0.5
-params = [mu1, lam2]
+mu1 = 0.4
+lam2 = 0.6
+params0 = [mu1, lam2]
+f0 = fObj_noTops(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol)
+itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
+plt.title("Initial parameters")
 
-plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
+paramsOpt, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol, saveIterates = True)
+
+plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
+
+
+# Since this is a just a 2d problem we can plot the objective function and see how well
+# this models the situation and if the optimization method converges to the minimum of
+# our model
+
+mus1 , lams2 = np.meshgrid( np.linspace(-0.1, 1.1, 200), np.linspace(-0.1, 1.1, 200) )
+fObjMesh = np.empty(mus1.shape)
+
+for i in range(200):
+    for j in range(200):
+        params = [mus1[i,j], lams2[i,j]]
+        fObjMesh[i, j] = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+
+# plot it
+# 2d
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+plt.imshow( fObjMesh, cmap = colormap2, extent = [-0.1, 1.1, -0.1, 1.1], origin = "lower")
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    plt.scatter(pointk[0], pointk[1], marker = "o", s = 0.75, color = "#999999")
+plt.scatter(params0[0], params0[1], marker = "o", color = "white", label = "starting point")
+plt.scatter(paramsOpt[0], paramsOpt[1], marker = "*", color = "white", label = "optimum found")
+plt.title("Objective function")
+plt.xlabel("mu1")
+plt.ylabel("lam2")
+plt.legend()
+
+
+# 3d
+ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+ax.plot_surface(mus1, lams2, fObjMesh, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    fk = fObj_noTops(pointk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    ax.scatter(pointk[0], pointk[1], fk, c = "#565656", marker = "o", s = 2)
+ax.scatter(paramsOpt[0], paramsOpt[1], listObjVals[-1], label = "optimum found", c = "black", marker = "*")
+ax.scatter(params0[0], params0[1], f0, label = "starting point", c = "black")
+ax.legend()
 
 
 
 
+###########################################
 print("\n\n\n x0 and x1 on the boundary far far\n\n")
 
 xSource = np.array([-15, -10])
@@ -273,12 +374,57 @@ T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
 # Use blockCoordinateGradient
 
-mu1 = 0.5
-lam2 = 0.5
-params = [mu1, lam2]
+mu1 = 0.4
+lam2 = 0.6
+params0 = [mu1, lam2]
+f0 = fObj_noTops(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
 
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol)
+itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
+plt.title("Initial parameters")
 
-plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
+paramsOpt, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol, saveIterates = True)
+
+plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
+
+
+
+# Since this is a just a 2d problem we can plot the objective function and see how well
+# this models the situation and if the optimization method converges to the minimum of
+# our model
+
+mus1 , lams2 = np.meshgrid( np.linspace(-0.1, 1.1, 200), np.linspace(-0.1, 1.1, 200) )
+fObjMesh = np.empty(mus1.shape)
+
+for i in range(200):
+    for j in range(200):
+        params = [mus1[i,j], lams2[i,j]]
+        fObjMesh[i, j] = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+
+# plot it
+# 2d
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+plt.imshow( fObjMesh, cmap = colormap2, extent = [-0.1, 1.1, -0.1, 1.1], origin = "lower")
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    plt.scatter(pointk[0], pointk[1], marker = "o", s = 0.75, color = "#999999")
+plt.scatter(params0[0], params0[1], marker = "o", color = "white", label = "starting point")
+plt.scatter(paramsOpt[0], paramsOpt[1], marker = "*", color = "white", label = "optimum found")
+plt.title("Objective function")
+plt.xlabel("mu1")
+plt.ylabel("lam2")
+plt.legend()
+
+# 3d
+
+ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+ax.plot_surface(mus1, lams2, fObjMesh, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+for i in range(len(listIterates)):
+    pointk = listIterates[i]
+    fk = fObj_noTops(pointk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+    ax.scatter(pointk[0], pointk[1], fk, c = "#565656", marker = "o", s = 2)
+ax.scatter(paramsOpt[0], paramsOpt[1], listObjVals[-1], label = "optimum found", c = "black", marker = "*")
+ax.scatter(params0[0], params0[1], f0, label = "starting point", c = "black")
+ax.legend()
+
 
 

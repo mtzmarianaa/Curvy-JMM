@@ -1,4 +1,5 @@
 
+
 # Before going into C with the optimization rutine
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
@@ -126,6 +127,10 @@ def fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
 ##########
 ## THESE ARE THE AUXILIARY FUNCTIONS FOR THE BLOCK COORDINATE PROJECTED GRADIENT DESCENT
 
+
+
+          
+
 def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B0khalves_muk, B0k_lamk):
      '''
      partial of the approximation of the arc length with respect to muk
@@ -237,6 +242,11 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     #print("       dotTestMin: ", dotTestMin, "  dotTestMax: ", dotTestMax)
     # Test if lamk < lamMin
     if( dotTestMin < 0):
+        # print("  failed dotTestMin project lamk1 given muk")
+        # print("  zk: ", zk, "  yk1: ", yk1)
+        # print("  muk: ", muk, " lamk1: ", lamk1)
+        # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+        # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
         # Means that we need to find lambdaMin
         tMin = lambda lam: t1(lam, x0, xk1, B0k1, Bk1, zk, B0k_muk)
         # Find the root of tMin
@@ -248,6 +258,11 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
         dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
         #print("       lambda < lambdaMin")
     if( dotTestMax < 0):
+        # print("  failed dotTestMax project lamk1 given muk")
+        # print("  zk: ", zk, "  yk1: ", yk1)
+        # print("  muk: ", muk, " lamk1: ", lamk1)
+        # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+        # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
         # Means that we need to find lambdaMax
         tMax = lambda lam: t2(lam, x0, xk1, B0k1, Bk1, zk)
         rootMax = root_scalar(tMax, bracket=[0, 1])
@@ -271,7 +286,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
      dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMin<0 ):
-          # print("  failed dotTestMin")
+          # print("  failed dotTestMin project muk given lamk1")
           # print("  zk: ", zk, "  yk1: ", yk1)
           # print("  muk: ", muk, " lamk1: ", lamk1)
           # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
@@ -284,7 +299,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMax<0 ):
-          # print("  failed dotTestMax")
+          # print("  failed dotTestMax project muk given lamk1")
           # print("  zk: ", zk, "  yk1: ", yk1)
           # print("  muk: ", muk, " lamk1: ", lamk1)
           # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
@@ -332,7 +347,7 @@ def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, gra
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      while( f_before <= f_test and f_before <= f_test_proj and i < 25 ):
-          alpha = alpha*0.2*1/(max(norm(d_middle), 1))
+          alpha = alpha*0.2
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -359,7 +374,7 @@ def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, x
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      while( f_before <= f_test  and i < 25):
-          alpha = alpha*0.2*1/(max(norm(d_middle), 1))
+          alpha = alpha*0.2
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           i += 1
@@ -441,12 +456,12 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      mun = params[2*nRegions - 2]
      lamn1 = params[2*nRegions - 1]
      mun1 = 1 # Always
-     B0kM1 = listB0k[nRegions - 2]
-     xkM1 = listxk[nRegions - 1]
-     BkM1 = listBk[nRegions - 2]
-     B0k = listB0k[nRegions - 1]
-     xk = listxk[nRegions]
-     Bk = listBk[nRegions - 1]
+     B0kM1 = listB0k[nRegions - 1]
+     xkM1 = listxk[nRegions ]
+     BkM1 = listBk[nRegions - 1]
+     B0k = listB0k[nRegions ]
+     xk = listxk[nRegions + 1]
+     Bk = listBk[nRegions ]
      etakM1 = listIndices[nRegions - 2]
      etak = listIndices[nRegions - 1]
      # Compute direction
@@ -460,23 +475,6 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # Update
      params[2*nRegions - 1] = lamn1
      return params, gammas
-     
-     
-def backwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
-     '''
-     gammas : radius for the circle centered at [lamk, muk], if such circle intersects the line lamk = muk then do a close update, it is an array of size nRegions - 1 (notice that it can be an array of size 0)
-     theta_gamma : rate of decrease in the circle centered at [lamk, muk]
-     Updates blocks     [lamn1]
-                        [lamn, mun]
-                        [lamk, muk]
-                        [mu1]
-     '''
-     params = np.copy(params0)
-     nRegions = len(listxk) - 2
-     # Start by updating lamn1
-     mun = params[2*nRegions - 2]
-     lamn1 = params[2*nRegions - 1]
-     mun1 = 1 # Always
      
 
 
@@ -495,7 +493,7 @@ def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat, listI
      Coordinate backtracking to find the step size for coordinate gradient descent
      '''
      i = 0
-     alpha = alpha0
+     alpha = alpha0*0.2/(max(abs(d), 1))
      f_before = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      params_test = np.copy(params)
      params_test[k] = params[k] - alpha*d
@@ -548,7 +546,7 @@ def gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
 
 
 
-def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1, plotSteps = True):
+def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1, plotSteps = True, saveIterates = False):
      '''
      Block coordinate subgradient descent (modified) for an update in a triangle fan without
      tops. Inspired by gradient sampling but in this case we know where our (geometric)
@@ -561,6 +559,8 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      listObjVals = []
      listGrads = []
      listChangefObj = []
+     listIterates = []
+     listGradIterations = []
      nRegions = len(listxk) -2
      gammas = 0.05*np.ones((nRegions - 1)) # Might be an array of length 0, it's fine
      gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -584,7 +584,13 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
           iter += 1
           if plotSteps:
                itt.plotFann(x0, listB0k, listxk, listBk, params = params)
-     return params, listObjVals, listGrads, listChangefObj
+          if saveIterates:
+               listIterates.append( params )
+               listGradIterations.append( gradk)
+     if saveIterates:
+          return params, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations
+     else:
+          return params, listObjVals, listGrads, listChangefObj
      
 
 
@@ -599,27 +605,27 @@ def plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, li
      itt.plotFann(x0, listB0k, listxk, listBk, params = paramsOpt)
      plt.title("Optimal parameters found")
      # Now plot the function value at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-     plt.semilogy( range(0, len(listObjVals)), listObjVals, c = "#00011f", linewidth = 0.8)
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     plt.semilogy( range(0, len(listChangefObj)), listChangefObj, c = "#394664", linewidth = 0.8)
+     plt.xlabel("Iteration")
+     plt.ylabel("Change of function value")
+     plt.title("Change of function value at each iteration")
+     # Now plot the function value at each iteration
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     plt.semilogy( range(0, len(listObjVals)), listObjVals, c = "#396064", linewidth = 0.8)
      plt.xlabel("Iteration")
      plt.ylabel("Function value")
      plt.title("Function value at each iteration")
      # Now plot the norm of the gradient at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-     plt.semilogy( range(0, len(listGrads)), listGrads, c = "#34273e", linewidth = 0.8)
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     plt.semilogy( range(0, len(listGrads)), listGrads, c = "#4d3964", linewidth = 0.8)
      plt.xlabel("Iteration")
-     plt.ylabel("Norm of gradient")
-     plt.title("Norm of gradient at each iteration")
-     # Finally plot the change of the function value at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
-     plt.semilogy( range(0, len(listChangefObj)), listChangefObj, c = "#27353e", linewidth = 0.8)
-     plt.xlabel("Iteration")
-     plt.ylabel("Change of function value")
-     plt.title("Change of function value at each iteration")
+     plt.ylabel("Norm of (sub)gradient")
+     plt.title("Norm of (sub)gradient at each iteration")
      # If we know the true solution for this triangle fan, plot the decrease in the error
      if trueSol is not None:
           errRel = np.array(listObjVals)
-          errRel = (errRel-trueSol)/trueSol
+          errRel = abs(errRel-trueSol)/trueSol
           fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
           plt.semilogy( range(0, len(listObjVals)), errRel, c = "#00011f", linewidth = 0.8)
           plt.xlabel("Iteration")
