@@ -132,13 +132,15 @@ R = 10.0
 eta1 = 1.0
 eta2 = 1.452
 
-t0 = 14*pi/8
-t1 = 15*pi/8
+t0 = 1.865*pi
+t1 = 1.87*pi
 
 # Define the points
 x0 = np.array([10*cos(t0), 10*sin(t0)])
 x1 = np.array([10*cos(t1), 10*sin(t1)])
-x2 = np.array([x1[0] - 1.5, x1[1]])
+x2 = np.array([x1[0] - 0.05, x1[1]])
+
+h = ( norm(x0-x1) + norm(x0-x2) + norm(x1-x2) )/3
 
 # Their derivatives
 B01 = np.array([-sin(t0), cos(t0)])
@@ -200,7 +202,7 @@ for i in range(len(listIterates)):
     plt.scatter(pointk[0], pointk[1], marker = "o", s = 0.75, color = "#999999")
 plt.scatter(params0[0], params0[1], marker = "o", color = "white", label = "starting point")
 plt.scatter(paramsOpt[0], paramsOpt[1], marker = "*", color = "white", label = "optimum found")
-plt.title("Objective function")
+plt.title("Objective function, h=" + str(h) )
 plt.xlabel("mu1")
 plt.ylabel("lam2")
 plt.legend()
@@ -214,6 +216,7 @@ for i in range(len(listIterates)):
     ax.scatter(pointk[0], pointk[1], fk, c = "#565656", marker = "o", s = 2)
 ax.scatter(paramsOpt[0], paramsOpt[1], listObjVals[-1], label = "optimum found", c = "black", marker = "*")
 ax.scatter(params0[0], params0[1], f0, label = "starting point", c = "black")
+plt.title("Objective function h=" + str(h))
 ax.legend()
 
 
