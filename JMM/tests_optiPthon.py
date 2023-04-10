@@ -76,23 +76,6 @@ listBk = [B1, B2, B3, BHat]
 maxIter = 20
 tol = 1e-8
 
-# Another example
-print("Start test foward pass update \n\n")
-
-mu1 = 0.1
-lam2 = 0.5
-mu2 = 0.5
-lam3 = 0.9
-mu3 = 0.9
-lam4 = 0
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
-
-
-
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
-
-plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj)
-
 # # Another example
 
 print("Start test foward pass update \n\n")
@@ -105,15 +88,13 @@ lam3 = 0.75
 mu3 = 0.5
 lam4 = 0.45
 params = [mu1, lam2, mu2, lam3, mu3, lam4]
-listIndices = [1.0, 1.5, 2, 1.0]
+listIndices = [1.0, 1.0, 1.0, 1.0]
 
 
 paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
 
 plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj)
 
-
-print("Start test foward pass update \n\n")
 
 
 mu1 = 0.5
@@ -130,7 +111,7 @@ paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(para
 
 plotResults(x0, listB0k, listxk, listBk, params, paramsOpt, listObjVals, listGrads, listChangefObj)
 
-plt.close("all")
+#ruplt.close("all")
 
 ###########################################
 ###########################################

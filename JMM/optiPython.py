@@ -124,6 +124,9 @@ def fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
     sum += etaPrev*norm(yk - zkPrev) + etaMin*arclengthSimpson(lamk, 1, x0, B0k, xk, Bk)
     return sum
 
+
+
+
 ##########
 ## THESE ARE THE AUXILIARY FUNCTIONS FOR THE BLOCK COORDINATE PROJECTED GRADIENT DESCENT
 
