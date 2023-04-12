@@ -1,5 +1,6 @@
 
 
+
 # Before going into C with the optimization rutine
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
@@ -10,6 +11,16 @@ from numpy.linalg import norm
 from math import sqrt, pi
 import intermediateTests as itt
 from scipy.optimize import root_scalar # to project back blocks [mu_k, lambda_k+1]
+import colorcet as cc
+import matplotlib.colors as clr
+
+
+colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
+                                                   [(0,    '#000000'),
+                                                    (0.1, '#2c3454'),
+                                                    (0.25, '#0033ff'),
+                                                    (0.60, '#00f3ff'),
+                                                    (1,    '#e800ff')], N=256)
 
 def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
      '''
@@ -349,6 +360,14 @@ def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, gra
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( (f_test < f_before or f_test_proj < f_before) and i < 8):
+          alpha = alpha*1.3 # Increase step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          f_test_proj = fObj_noTops(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     i = 0
      while( f_before <= f_test and f_before <= f_test_proj and i < 25 ):
           alpha = alpha*0.2
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
@@ -376,6 +395,12 @@ def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, x
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
      # Compare the function value
      f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_test < f_before and i < 8):
+          alpha = alpha*1.3 # Increase step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          f_test = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     i = 0
      while( f_before <= f_test  and i < 25):
           alpha = alpha*0.2
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
@@ -411,7 +436,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
      # Compute direction for muk
      dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
-     alpha = backTr_coord(1, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      mu1 = mu1 - alpha*dmuk
      mu1 = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1) # project back so that it is feasible
      params[0] = mu1
@@ -443,12 +468,12 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           r = close_to_identity(lamk, muk)
           if( r <= gamma ):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block(1, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+               lamk, muk = backTrClose_block(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
                gamma = gamma*theta_gamma
                gammas[j - 1] = gamma # Update this gamma
           else:
                # We don't have to consider a close update
-               lamk, muk = backTr_block(1, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+               lamk, muk = backTr_block(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           # Either way we need to project back to the feasible set
           lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
           muk = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
@@ -470,7 +495,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # Compute direction
      dlamn1 = partial_fObj_lambdak(mun, mun1, lamn1, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
      # Compute step size
-     alpha = backTr_coord(1, (2*nRegions - 1), dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     alpha = backTr_coord(2, (2*nRegions - 1), dlamn1, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
      # Update
      lamn1 = lamn1 - alpha*dlamn1
      # Project back
@@ -501,8 +526,14 @@ def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat, listI
      params_test = np.copy(params)
      params_test[k] = params[k] - alpha*d
      f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     while( f_after < f_before and i < 8 ):
+          alpha = alpha*1.3 # increase step size
+          params_test[k] = params[k] - alpha*d
+          f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          i += 1
+     i = 0
      while( f_before <= f_after and i < 25):
-          alpha = alpha*0.5
+          alpha = alpha*0.2
           params_test[k] = params[k] - alpha*d
           f_after = fObj_noTops(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           i += 1
@@ -597,7 +628,7 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      
 
 
-def plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None):
+def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None):
      '''
      Plots results from blockCoordinateGradient
      '''
@@ -608,23 +639,47 @@ def plotResults(x0, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, li
      itt.plotFann(x0, listB0k, listxk, listBk, params = paramsOpt)
      plt.title("Optimal parameters found")
      # Now plot the function value at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
      plt.semilogy( range(0, len(listChangefObj)), listChangefObj, c = "#394664", linewidth = 0.8)
      plt.xlabel("Iteration")
      plt.ylabel("Change of function value")
      plt.title("Change of function value at each iteration")
      # Now plot the function value at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
      plt.semilogy( range(0, len(listObjVals)), listObjVals, c = "#396064", linewidth = 0.8)
      plt.xlabel("Iteration")
      plt.ylabel("Function value")
      plt.title("Function value at each iteration")
      # Now plot the norm of the gradient at each iteration
-     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) #27353e", linewidth = 0.8)
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
      plt.semilogy( range(0, len(listGrads)), listGrads, c = "#4d3964", linewidth = 0.8)
      plt.xlabel("Iteration")
      plt.ylabel("Norm of (sub)gradient")
      plt.title("Norm of (sub)gradient at each iteration")
+     # For pairs of parameters we plot level sets
+     nRegions = len(listxk) - 2
+     fObjMesh = np.empty((200,200))
+     for k in range(2*nRegions - 1):
+          # We plot level sets by changins sequential parameters (2 at a time)
+          param1, param2 = np.meshgrid( np.linspace(0,1,200), np.linspace(0,1,200) )
+          # Compute the solution, compute this level set
+          for i in range(200):
+               for j in range(200):
+                    p1 = param1[i,j]
+                    p2 = param2[i,j]
+                    paramsMesh = np.copy(paramsOpt)
+                    paramsMesh[k] = p1
+                    paramsMesh[k+1] = p2
+                    fObjMesh[i,j] = fObj_noTops(paramsMesh, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+          # Plot it
+          fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+          im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
+          plt.scatter(paramsOpt[k], paramsOpt[k+1], c = "white", marker = "*", label = "optimum found")
+          plt.title("Level set of objective function")
+          plt.xlabel("Parameter " + str(k))
+          plt.ylabel("Parameter " + str(k+1))
+          plt.legend()
+          plt.colorbar(im)
      # If we know the true solution for this triangle fan, plot the decrease in the error
      if trueSol is not None:
           errRel = np.array(listObjVals)
