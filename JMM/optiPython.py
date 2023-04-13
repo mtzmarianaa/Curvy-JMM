@@ -690,6 +690,32 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
           plt.ylabel("Relative error")
           plt.title("Relative error at each iteration")
 
-     
+######################################################
+######################################################
+######################################################
+######################################################
+######################################################
+# Optimization for a generalized triangle fan i.e. the tops of the triangle fan are curved parametric curves
+
+def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1 = None,
+                     indCrTop = None, paramsCrTop = None, indStTop = None, paramsStTop = None):
+     '''
+     Generalized objective function for when the tops on the triangle fan are also parametric curves.
+     '''
+     # Set indStTop if indCrTop is given
+     if(paramsCrTop is not None and paramsStTop is None):
+          indStTop = [0]
+          paramsStTop = [0,0]
+     # Set indCrTop if indStTop is given
+     if(paramsStTop is not None and paramsCrTop is None):
+          indCrTop = [0]
+          paramsCrTop = [0,0]
+     n = len(listxk) - 2
+     muk = params[0]
+     etak = listIndices[0]
+     Bk = listBk[0]
+     B0k = listB0k[0]
+     zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
+     sum = hermite_interpolationT(muk, x0, T0, grad0, x1, T1, grad1)
 
 
