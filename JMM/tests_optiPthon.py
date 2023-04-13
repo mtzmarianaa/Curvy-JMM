@@ -7,7 +7,7 @@ import numpy as np
 from numpy.linalg import norm
 from math import sqrt, pi, cos, sin
 import intermediateTests as itt
-from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY
+from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY, fObj_generalized
 from analyticSol_circle import trueSolution # So that we can test all of this in an actual "true geometry
 import colorcet as cc
 import matplotlib.colors as clr
@@ -79,38 +79,126 @@ listBk = [B1, B2, B3, BHat]
 
 
 
-# # Another example
+# # # Another example
 
-print("Start test foward pass update \n\n")
+# print("Start test foward pass update \n\n")
 
 
-mu1 = 0.5
-lam2 = 0.65
-mu2 = 0.5
-lam3 = 0.75
-mu3 = 0.5
-lam4 = 0.45
+# mu1 = 0.5
+# lam2 = 0.65
+# mu2 = 0.5
+# lam3 = 0.75
+# mu3 = 0.5
+# lam4 = 0.45
+# params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
+# listIndices = [1.0, 1.0, 1.0, 1.0]
+
+
+# paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
+
+# plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
+
+
+
+# mu1 = 0.5
+# lam2 = 0.65
+# mu2 = 0.5
+# lam3 = 0.75
+# mu3 = 0.5
+# lam4 = 0.45
+# params = [mu1, lam2, mu2, lam3, mu3, lam4]
+# listIndices = [3.5, 1, 0.5, 1.0]
+
+
+# paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
+
+# plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
+
+
+
+# Test the generalized triangle fan (with tops)
+
+
+x0 = np.array([0.0,0.0])
+x1 = np.array([2, -0.2])
+x2 = np.array([1.5, 0.8])
+x3 = np.array([0.2, 1.2])
+xHat = np.array([-0.8, 0.7])
+B01 = np.array([2.2, 1])
+B01 = B01/norm(B01)
+B02 = np.array([1, 1.5])
+B02 = B02/norm(B02)
+B03 = np.array([0.2, 2])
+B03 = B03/norm(B03)
+B0Hat = np.array([-1, 0.4])
+B0Hat = B0Hat/norm(B0Hat)
+B1 = np.array([1, -0.6])
+B1 = B1/norm(B1)
+B2 = np.array([2, -0.2])
+B2 = B2/norm(B2)
+B3 = np.array([1, 2])
+B3 = B3/norm(B3)
+BHat = np.array([-1, 1])
+BHat = BHat/norm(BHat)
+# For the triangle top
+B1B2_0 = np.array([-1,1])
+B1B2_0 = (B1B2_0/norm(B1B2_0))*0.3
+B1B2_1 = np.array([-1, 4])
+B1B2_1 = (B1B2_1/norm(B1B2_1))*0.7
+B2B3_0 = np.array([-3,1])
+B2B3_0 = (B2B3_0/norm(B2B3_0))*0.3
+B2B3_1 = np.array([-1, 4])
+B2B3_1 = (B2B3_1/norm(B2B3_1))*0.7
+B3B4_0 = np.array([-1,-1])
+B3B4_0 = (B3B4_0/norm(B3B4_0))*0.3
+B3B4_1 = np.array([-1.5, 1])
+B32B4_1 = (B3B4_1/norm(B3B4_1))*0.7
+
+
+mu1 = 0.15
+lam2 = 0.15
+mu2 = 0.13
+lam3 = 0.17
+mu3 = 0.15
+lam4 = 1
 params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
-listIndices = [1.0, 1.0, 1.0, 1.0]
+
+xSource = np.array([ 1, -0.5 ])
+T0 = norm(xSource - x0)
+grad0 = (x0 - xSource)/T0
+T1 = norm(xSource - x1)
+grad1 = (x1 - xSource)/T1
+
+THat_true = norm(xHat - xSource)
+
+listIndices = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+listxk = [x0, x1, x2, x3, xHat]
+listB0k = [B01, B02, B03, B0Hat]
+listBk = [B1, B2, B3, BHat]
+listBkBk1 = [B1B2_0, B1B2_1, B2B3_0, B2B3_1, B3B4_0, B3B4_1]
+
+mu1 = 0.7
+lam2 = 0.8
+mu2 = 0.1
+lam3 = 0.1
+mu3 = 0.4
+lam4 = 0.5
+params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
+
+indCrTop = [1]
+paramsCrTop = [0.3, 0.5]
+indStTop = [3]
+paramsStTop = [0.3, 0.7]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+         indStTop = indStTop, paramsStTop = paramsStTop)
+plt.title("Generalized triangle fan, creeping and going through tops")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = indStTop, paramsStTop = paramsStTop)
 
 
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
 
-plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
-
-
-
-mu1 = 0.5
-lam2 = 0.65
-mu2 = 0.5
-lam3 = 0.75
-mu3 = 0.5
-lam4 = 0.45
-params = [mu1, lam2, mu2, lam3, mu3, lam4]
-listIndices = [3.5, 1, 0.5, 1.0]
-
-
-paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
-
-plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
 
