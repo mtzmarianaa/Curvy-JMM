@@ -697,19 +697,21 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
 ######################################################
 # Optimization for a generalized triangle fan i.e. the tops of the triangle fan are curved parametric curves
 
-def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1 = None,
+def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1,
                      indCrTop = None, paramsCrTop = None, indStTop = None, paramsStTop = None):
      '''
      Generalized objective function for when the tops on the triangle fan are also parametric curves.
      '''
      # Set indStTop if indCrTop is given
-     if(paramsCrTop is not None and paramsStTop is None):
+     if(paramsStTop is None):
           indStTop = [0]
           paramsStTop = [0,0]
      # Set indCrTop if indStTop is given
-     if(paramsStTop is not None and paramsCrTop is None):
+     if(paramsCrTop is None):
           indCrTop = [0]
           paramsCrTop = [0,0]
+     currentCrTop = 0
+     currentStTop = 0
      n = len(listxk) - 2
      muk = params[0]
      etak = listIndices[0]
@@ -717,5 +719,64 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
      B0k = listB0k[0]
      zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
      sum = hermite_interpolationT(muk, x0, T0, grad0, x1, T1, grad1)
+     for j in range(1, n+1):
+          # We have to circle around all the regions
+          k = 2*j  # Starts in k = 1, all the way to k = 2n-1
+          nTop = j # Number of boundary on the top that we are considering
+          mukM1 = params[k-1]
+          lamk = params[k]
+          muk = params[k+1]
+          B0k = listB0k[j]
+          xk = listxk[j+1]
+          Bk = listBk[j]
+          BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+          BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
+          etakPrev = etak
+          etak = listIndices[j]
+          etaMin = min(etakPrev, etak)
+          # Compute the points
+          zkPrev = zk
+          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+          # Then we need to know if we have points on the triangle top
+          # See if there are points on the triangle top and if they are associated with a creeping ray
+          if( nTop == indCrTop[currentCrTop] ):
+               # This means that there is creeping along this triangle top
+               # Hence from zkPrev the path goes to ak and creeps to bk
+               # which then shoots to yk and then creeps to zk
+               etaRegionOutside = listIndices[n + j]
+               etaMinCr = min(etaRegionOutside, etaPrev)
+               rk = paramsStTop[2*currentStTop]
+               sk = paramsStTop[2*currentStTop + 1]
+               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+               bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               sum += etaPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
+               sum += etaMinCr*arclengthSimpson(rk, sk, xk, BkBk1_0, xk1, BkBk1_1) # creeps from ak to bk
+               sum += etaPrev*norm( yk - bk ) # shoots from bk to yk
+               sum += etaMin*arclengthSimpson(muk, lamk, x0, B0k, xk, Bk) # creeps from yk to zk
+               # Update the current index of the creeping updates
+               if (currentCrTop  < len(indCrTop) - 1):
+                    currentCrTop += 1
+          elif( nTop == indStTop[currentStTop]):
+               # This means that there is no creeping along this triangle top, it goes
+               # straight through that ouside region
+               # from zkPrev the path goes to ak, from ak it goes to bk, from bk to yk
+               # from yk it creeps to zk
+               etaRegionOutside = listIndices[n + j]
+               rk = paramsStTop[2*currentStTop]
+               sk = paramsStTop[2*currentStTop + 1]
+               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+               bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               sum += etaPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
+               sum += etaRegionOutside*norm( bk - ak )  # shoots from ak to bk
+               sum += etaPrev*norm( yk - bk ) # shoots from bk to yk
+               sum += etaMin*arclengthSimpson(muk, lamk, x0, B0k, xk, Bk) # creeps from yk to zk
+               # Update the current index of the creeping updates
+               if (currentCrTop  < len(indCrTop) - 1):
+                    currentCrTop += 1
+          else:
+               # This means that there are no points along this triangle top, we proceed as "usual"
+               sum += etaPrev*norm(yk - zkPrev) + etaMin*arclengthSimpson(muk, lamk, x0, B0k, xk, Bk)
+          
 
 
