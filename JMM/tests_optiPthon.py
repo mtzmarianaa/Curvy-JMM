@@ -50,12 +50,23 @@ BHat = np.array([-1, 1])
 BHat = BHat/norm(BHat)
 
 
-mu1 = 0.15
-lam2 = 0.15
-mu2 = 0.13
-lam3 = 0.17
-mu3 = 0.15
-lam4 = 1
+# No tops = straight lines on the top of the triangles
+B1B2_0 = x2 - x1
+B1B2_1 = x2 - x1
+B2B3_0 = x3 - x2
+B2B3_1 = x3 - x2
+B3B4_0 = xHat - x3
+B3B4_1 = xHat - x3
+listBkBk1 = [B1B2_0, B1B2_1, B2B3_0, B2B3_1, B3B4_0, B3B4_1]
+
+
+
+mu1 = 0.5
+lam2 = 0.65
+mu2 = 0.5
+lam3 = 0.75
+mu3 = 0.5
+lam4 = 0.45
 params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
 
 xSource = np.array([ 1, -0.5 ])
@@ -72,31 +83,24 @@ listB0k = [B01, B02, B03, B0Hat]
 listBk = [B1, B2, B3, BHat]
 
 
-# # Compute the projected gradient descent
-
-
-
-
-
-
 # # # Another example
 
-# print("Start test foward pass update \n\n")
+print("Start test foward pass update \n\n")
 
 
-# mu1 = 0.5
-# lam2 = 0.65
-# mu2 = 0.5
-# lam3 = 0.75
-# mu3 = 0.5
-# lam4 = 0.45
-# params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
-# listIndices = [1.0, 1.0, 1.0, 1.0]
+paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
+
+plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
 
 
-# paramsOpt, listObjVals, listGrads, listChangefObj = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, plotSteps = False)
+print("Value of objective function using old no tops function:\n")
+print(listObjVals[-1])
 
-# plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None)
+fObj_gen = fObj_generalized(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1 = listBkBk1,
+                            indCrTop = None, paramsCrTop = None, indStTop = None, paramsStTop = None)
+
+print("Value of objective function using new generalized function \n")
+print(fObj_gen)
 
 
 
@@ -183,7 +187,7 @@ mu2 = 0.1
 lam3 = 0.1
 mu3 = 0.4
 lam4 = 0.5
-params0 = [mu1, lam2, mu2, lam3, mu3, lam4]
+params0 = [mu1, lam2, mu2, lam3, mu3, lam4, 1.0]
 
 indCrTop = [1]
 paramsCrTop = [0.3, 0.5]
@@ -198,6 +202,9 @@ plt.title("Generalized triangle fan, creeping and going through tops")
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1,
                             indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = indStTop, paramsStTop = paramsStTop)
+
+print("    ", fObj_gen)
+
 
 
 

@@ -720,15 +720,16 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
      zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
      sum = hermite_interpolationT(muk, x0, T0, grad0, x1, T1, grad1)
      for j in range(1, n+1):
+          # j goes from 1 to n
           # We have to circle around all the regions
-          k = 2*j  # Starts in k = 1, all the way to k = 2n-1
+          k = 2*j - 1  # Starts in k = 1, all the way to k = 2n - 1
           nTop = j # Number of boundary on the top that we are considering
           mukM1 = params[k-1]
           lamk = params[k]
           muk = params[k+1]
           B0k = listB0k[j]
+          xkM1 = listxk[j]
           xk = listxk[j+1]
-          xk1 = listxk[j+2]
           Bk = listBk[j]
           BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
           BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
@@ -749,10 +750,10 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
                etaMinCr = min(etaRegionOutside, etakPrev)
                rk = paramsStTop[2*currentStTop]
                sk = paramsStTop[2*currentStTop + 1]
-               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
                sum += etakPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
-               sum += etaMinCr*arclengthSimpson(rk, sk, xk, BkBk1_0, xk1, BkBk1_1) # creeps from ak to bk
+               sum += etaMinCr*arclengthSimpson(rk, sk, xkM1, BkBk1_0, xk, BkBk1_1) # creeps from ak to bk
                sum += etakPrev*norm( yk - bk ) # shoots from bk to yk
                sum += etaMin*arclengthSimpson(muk, lamk, x0, B0k, xk, Bk) # creeps from yk to zk
                # Update the current index of the creeping updates
@@ -766,8 +767,8 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
                etaRegionOutside = listIndices[n + j]
                rk = paramsStTop[2*currentStTop]
                sk = paramsStTop[2*currentStTop + 1]
-               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
                sum += etakPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
                sum += etaRegionOutside*norm( bk - ak )  # shoots from ak to bk
                sum += etakPrev*norm( yk - bk ) # shoots from bk to yk
