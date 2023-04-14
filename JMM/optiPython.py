@@ -15,12 +15,15 @@ import colorcet as cc
 import matplotlib.colors as clr
 
 
-colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
-                                                   [(0,    '#000000'),
-                                                    (0.1, '#2c3454'),
-                                                    (0.25, '#0033ff'),
-                                                    (0.60, '#00f3ff'),
-                                                    (1,    '#e800ff')], N=256)
+# colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
+#                                                    [(0,    '#000000'),
+#                                                     (0.1, '#2c3454'),
+#                                                     (0.25, '#0033ff'),
+#                                                     (0.60, '#00f3ff'),
+#                                                     (1,    '#e800ff')], N=256)
+
+colormap2 = "cet_linear_worb_100_25_c53_r"
+colormap2_r = "cet_linear_worb_100_25_c53"
 
 def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
      '''
@@ -628,7 +631,7 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      
 
 
-def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None):
+def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None, contours = True):
      '''
      Plots results from blockCoordinateGradient
      '''
@@ -675,6 +678,8 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
           fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
           im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
           plt.scatter(paramsOpt[k], paramsOpt[k+1], c = "white", marker = "*", label = "optimum found")
+          if(contours):
+               plt.contour(param1[0, :], param1[0, :], fObjMesh, cmap = colormap2_r, extent = [0,1,0,1], origin = "lower", levels = 15)
           plt.title("Level set of objective function")
           plt.xlabel("Parameter " + str(k))
           plt.ylabel("Parameter " + str(k+1))
