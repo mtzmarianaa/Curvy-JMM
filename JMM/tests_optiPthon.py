@@ -258,5 +258,5 @@ print("    ", fObj_gen)
 
 print("The value of this function should be just the permiter:")
 
-print(norm(x1-x0)+norm(x2-x1)+norm(x3-x2)+norm(xHat-x3))
+print(T0 + norm(x1-x0)+norm(x2-x1)+norm(x3-x2)+norm(xHat-x3))
 
