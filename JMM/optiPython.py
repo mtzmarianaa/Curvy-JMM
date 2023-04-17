@@ -90,6 +90,15 @@ def t4(mu, x0, xk, B0k, Bk, yk1, Bk_lam):
      zk = itt.hermite_boundary(mu, x0, B0k, xk, Bk)
      return Bk_lam[0]*(yk1[1] - zk[1]) - Bk_lam[1]*(yk1[0] - zk[0])
 
+def findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, pointFrom):
+     '''
+     Find a_tan
+     '''
+     a_tan = itt.hermite_boundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     BkM1Bk_tan = itt.gradientBoundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
+     return np.dot(N_tan, a_tan - pointFrom)
+
 
 # Find a root finding method
 
@@ -790,7 +799,7 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
           
 
 ################################
-#### Knowing when an update is feasible
+#### Knowing when an update is feasible in a generalized triangle
 
 
 # Project back lamk given mukM1 when there is no creeping or shooting through the side edge
@@ -808,11 +817,16 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      B0kM1_mukM1 = itt.gradientBoundary(mukM1, x0, B0kM1, xkM1, BkM1)
      B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
      # We need to find a_tan = hkM1hk(r_tan)
-     rPass = lambda r: t2(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     rootTan = root_scalar(rPass, bracket = [0,1])
+     rPass = lambda r: findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, zkM1)
+     rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
      r_tan = rootTan.root
      a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
      BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     # print("zkM1: ", zkM1)
+     # print("yk: ", yk)
+     # print("r_tan: ", r_tan)
+     # print("a_tan: ", a_tan)
+     # print("BkM1Bk_tan: ", BkM1Bk_tan)
 
      # The normals
      NkM1_mukM1 = np.array([-B0kM1_mukM1[1], B0kM1_mukM1[0]])
@@ -823,5 +837,165 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      dotTestMin_fromh0kM1 = np.dot( yk - zkM1, NkM1_mukM1 ) # should be positive
      dotTestMax_fromh0kM1 = np.dot( yk - zkM1, Nk_lamk ) # should be positive
      dotTestMax_fromhkM1hk = np.dot( yk - a_tan, N_tan ) # should be positive
+
+     # Test if lamk < lamMin
+     if( dotTestMin_fromh0kM1 < 0 ):
+          #print(" dotTestMin_fromh0kM1 failed", yk, ",   ", zkM1)
+          tMin = lambda lam: t1(lam, x0, xk, B0k, Bk, zkM1, B0kM1_mukM1)
+          rootMin = root_scalar(tMin, bracket=[0, 1])
+          lamk = rootMin.root
+          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+          B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+          Nk_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
+          dotTestMax_fromh0kM1 = np.dot( yk - zkM1, Nk_lamk )
+     # Test if lamk > lamkMax (from h0hkM1)
+     if( dotTestMax_fromh0kM1 < 0 ):
+          #print(" dotTestMax_fromh0kM1 failed: ", yk, ", ", zkM1)
+          tMax = lambda lam: t2(lam, x0, xk, B0k, Bk, zkM1)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          lamk = rootMax.root
+          # Update this lambda to test for max from hkM1hk
+          rPass = lambda r: findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, zkM1)
+          rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
+          r_tan = rootTan.root
+          a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+          BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+          N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
+          dotTestMax_fromhkM1hk = np.dot( yk - a_tan, N_tan )
+     # Test if lamk > lamkMax (from hkM1hk)
+     if( dotTestMax_fromhkM1hk < 0 ):
+          #print(" dotTestMax_fromhkM1hk failed", yk, ",  ", a_tan)
+          #print("  ", N_tan)
+          tMax = lambda lam: t1(lam, x0, xk, B0k, Bk, a_tan, BkM1Bk_tan)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          lamk = rootMax.root
+     lamk = project_box(lamk)
+     return lamk
+
+# Project back muk given lamk1 when there is no creeping or shooting through the side edge
+
+def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1):
+     '''
+     Project back muk given lamk1 when there is no creeping or shooting through the side
+     edge xkxk1. In this case we assume that the edge xkxk1 curves towards the inside of the
+     curvy trianlge. We also assume that muk in the previous iteration, mukPrev is such
+     that muk>mukPrev (otherwise we don't need to project back like this, we can just use a box
+     projection)
+     '''
+     muk = project_box(muk)
+     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     # We need to find a_tan = hkhk1(r_tan)
+     rPass = lambda r: findRtan(r, xk, xk1, BkBk1_0, BkBk1_1, yk1)
+     rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
+     r_tan = rootTan.root
+     a_tan = itt.hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+     BkBk1_tan = itt.gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+
+     # Compute the normals
+     N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+     N_tan = np.array([-BkBk1_tan[1], BkBk1_tan[0]])
+
+     # Tests
+     dotTestMin_fromh0hk =  np.dot(N0k1_lamk1, yk1 - zk) # Should be positive
+     dotTestMax_fromh0hk = np.dot(N0k_muk, yk1 - zk) # Should be positive
+     dotTestMax_fromhkhk1 = np.dot(N_tan, zk - a_tan) # Should be positive
+
+     # print("zk: ", zk)
+     # print("yk1: ", yk1)
+     # print("r_tan: ", r_tan)
+     # print("a_tan: ", a_tan)
+     # print("BkBk1_tan: ", BkBk1_tan)
+     # print("dotTestMax_fromhkhk1: ", dotTestMax_fromhkhk1)
+
+     # Test if muk < mukMin
+     if(dotTestMin_fromh0hk < 0 ):
+          # print("  failed dotTestMin project muk given lamk1")
+          # print("  zk: ", zk, "  yk1: ", yk1)
+          # print("  muk: ", muk, " lamk1: ", lamk1)
+          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
+          tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          muk = rootMin.root
+          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+          N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+          dotTestMax = np.dot(N0k_muk, yk1 - zk)
+     # Test if muk > mukMax (from h0hk)
+     if(dotTestMax_fromh0hk < 0 ):
+          # print("  failed dotTestMax project muk given lamk1")
+          # print("  zk: ", zk, "  yk1: ", yk1)
+          # print("  muk: ", muk, " lamk1: ", lamk1)
+          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
+          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
+          tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
+          rootMax = root_scalar(tMax, bracket = [0, 1])
+          muk = rootMax.root
+          # Update this mu to test for max from hkhk1
+          rPass = lambda r: findRtan(r, xk, xk1, BkBk1_0, BkBk1_1, yk1)
+          rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
+          r_tan = rootTan.root
+          a_tan = itt.hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+          BkBk1_tan = itt.gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+          N_tan = np.array([-BkBk1_tan[1], BkBk1_tan[0]])
+          dotTestMax_fromhkhk1 = np.dot(N_tan, zk - a_tan)
+     if(dotTestMax_fromhkhk1 < 0):
+          tMax = lambda mu: t4(mu, x0, xk, B0k, Bk, a_tan, BkBk1_tan)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          #print( tMax(muk) )
+          muk = rootMax.root
+          #print( tMax(muk))
+     muk = project_box(muk)
+     return muk
+
+
+def project_rkGivenmukM1(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
+     '''
+     Project back rk on the side boundary hkhk1 given muk on the bottom
+     boundary h0hk.
+     '''
+     rk = project_box(rk)
+     ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+
+     # Compute the normals
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+     NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
+
+     # Compute the tests
+     dotTestMin = np.dot( N0k_muk, ak - zk)
+     dotTestMax = np.dot( NkNk1_rk, zk - ak)
+
+     print("  zk: ", zk)
+     print("  ak: ", ak)
+     print("  rk: ", rk)
+     print("  muk:", muk)
+     print("  N0k_muk:", N0k_muk)
+     print("  NkNk1_rk: ", NkNk1_rk)
+     print("  dotTestMin: ", dotTestMin)
+     print("  dotTestMax: ", dotTestMax)
+
+     # Test if rk < rMin
+     if( dotTestMin < 0):
+          tMin = lambda r: t1(r, xk, xk1, BkBk1_0, BkBk1_1, zk, B0k_muk)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          rk = rootMin.root
+          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
+          dotTestMax = np.dot( NkNk1_rk, ak - zk)
+     if( dotTestMax < 0):
+          tMax = lambda r: t2(r, xk, xk1, BkBk1_0, BkBk1_1, zk)
+          rootMax = root_scalar(tMax, bracket = [0,1])
+          rk = rootMax.root
+     rk = project_box(rk)
+     return rk
+
 
 
