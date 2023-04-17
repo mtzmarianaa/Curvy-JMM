@@ -9,7 +9,7 @@ from math import sqrt, pi, cos, sin
 import intermediateTests as itt
 from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, findRtan
 from optiPython import gradient_TY, fObj_generalized, project_lamkGivenmuk1_noCr
-from optiPython import project_mukGivenlamk1_noCr, project_rkGivenmukM1
+from optiPython import project_mukGivenlamk1_noCr, project_rkGivenmuk, project_skGivenlamk1
 from analyticSol_circle import trueSolution # So that we can test all of this in an actual "true geometry
 import colorcet as cc
 import matplotlib.colors as clr
@@ -395,13 +395,49 @@ fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndic
 print("    ", fObj_gen)
 
 
-r1_proj = project_rkGivenmukM1(r1, mu1, x0, B01, x1, B1, x2, B2, B1B2_0, B1B2_1)
+r1_proj = project_rkGivenmuk(r1, mu1, x0, B01, x1, B1, x2, B2, B1B2_0, B1B2_1)
 paramsCrTop_proj = [r1_proj, s1]
 
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
              indStTop = None, paramsStTop = None)
 plt.title("Generalized triangle fan, points on side edge, project r1 given mu1")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+
+
+# Project back sk
+
+indCrTop = [1]
+r1 = 0.1
+s1 = 0.15
+paramsCrTop = [r1, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, unfeasible")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+s1_proj = project_skGivenlamk1(s1, lam2, x0, B02, x2, B2, x1, B1B2_0, B1B2_1)
+paramsCrTop_proj = [r1, s1_proj]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, project s1 given lam2")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
