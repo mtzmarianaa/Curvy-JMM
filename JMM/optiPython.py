@@ -1037,3 +1037,84 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
      sk = project_box(sk)
      return sk
 
+
+def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
+     '''
+     Project back muk given rk for an update that includes points on the side
+     boundary hkhk1
+     '''
+     muk = project_box(muk)
+     ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     
+     # Compute the normals
+     NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
+     N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+
+     # Compute the tests
+     dotTestMin =  np.dot(N0k_muk, ak - zk)
+     dotTestMax = np.dot(NkNk1_rk, zk - ak)
+     if(dotTestMin<0 ):
+          print("dotTestMin failed project muk given rk")
+          tMin = lambda mu: t2(mu, x0, xk, B0k, Bk, ak)
+          rootMin = root_scalar(tMin, bracket = [0,1])
+          muk = rootMin.root
+          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+          N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+          dotTestMax = np.dot(NkNk1_rk, zk - ak)
+     if(dotTestMax < 0 ):
+          print("dotTestMax failed project muk given rk")
+          tMax = lambda mu: t1(mu, x0, xk, B0k, Bk, ak, BkBk1_rk)
+          rootMax = root_scalar(tMax, bracket = [0, 1])
+          muk = rootMax.root
+     muk = project_box(muk)
+     return muk
+
+
+def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1):
+     '''
+     Project back lamk given sk for an update that includes points on the side
+     boundary hkM1hk
+     '''
+     lamk = project_box(lamk)
+     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+     BkM1Bk_skM1 = itt.gradientBoundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+
+     # Compute the normals
+     NkM1Nk_skM1 = np.array([-BkM1Bk_skM1[1], BkM1Bk_skM1[0]])
+     N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
+     print("N0k_lamk: ", N0k_lamk)
+
+     # Compute the tests
+     testMin = np.dot(-N0k_lamk, bkM1 - yk)
+     print("testMin: ", testMin)
+     testMax = np.dot(NkM1Nk_skM1, yk - bkM1)
+     print("testMax: ", testMax)
+     # Test if lamk<lamMin
+     if(testMin < 0):
+          print("dotTest min failes project  lamk given skM1")
+          tMin = lambda lam: t2(lam, x0, xk, B0k, Bk, bkM1)
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
+          lamk = rootMin.root
+          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+          B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+          N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk])
+          testMax = np.dot(N0k_lamk, bkM1 - yk)
+     if(testMax < 0):
+          print("dotTestMax failed project lamk given skM1")
+          print("xk: ", xk)
+          print("B0k: ", B0k)
+          print("Bk: ", Bk)
+          print("bkM1: ", bkM1)
+          print("lamk: ", lamk)
+          tMax = lambda lam: t1(lam, x0, xk, B0k, Bk, bkM1, BkM1Bk_skM1)
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
+          lamk = rootMax.root
+     lamk = project_box(lamk)
+     return lamk
+
