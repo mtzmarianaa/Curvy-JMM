@@ -1111,12 +1111,6 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      muk = project_box(muk)
      return muk
 
-################################################################################################
-################################################################################################
-################################################################################################
-################################################################################################
-#### Optimization for the generalized objective function
-
 def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1):
      '''
      Project back lamk given sk for an update that includes points on the side
@@ -1152,6 +1146,18 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
      lamk = project_box(lamk)
      return lamk
 
+
+
+################################################################################################
+################################################################################################
+################################################################################################
+################################################################################################
+#### Optimization for the generalized objective function
+
+
+
+###################################
+# Backtracking for updates close to the identity
 
 
 def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1331,4 +1337,140 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
           return params_test[k], params_test[k+1]
      else:
           return params_test_proj[k], params_test_proj[k+1]
+
+###################################
+# Backtracking for updates far from the identity
+
+
+def backTr_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                   listIndices, listxk, listB0k, listBk, listBkBk1,
+                   indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [lamk, muk] in the generalized objective function (considers points on the sides
+     of the triangle fan)
+     it considers one direction: steepest descent
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([dlamk, dmuk])
+     params_test = np.copy(params)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     # Compare the function value
+     f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) and i < 8 ):
+          alpha = alpha*1.3 # increase the step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          i += 1
+     i = 0
+     # Then if there is no decrease try decreasing alpha, the step size
+     while( (f_test < f_before)  and i < 25 ):
+          alpha = alpha*0.2 # increase the step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test ):
+          return params[k], params[k+1]
+     else:
+          return params_test[k], params_test[k+1]
+
+def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                      listIndices, listxk, listB0k, listBk, listBkBk1,
+                      indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
+     on the sides of the triangle fan)
+     it considers one direction: steepest descent
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([drk, dsk])
+     paramsCrTop_test = np.copy(paramsCrTop)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+     # Compare the function value
+     f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+          alpha = alpha*1.3
+          paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          i += 1
+     i = 0
+     # If there is no decrease in the function value, try decreasing alpha, the step size
+     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+          alpha = alpha*0.2
+          paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test ):
+          return params[k], params[k+1]
+     else:
+          return params_test[k], params_test[k+1]
+
+
+def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                      listIndices, listxk, listB0k, listBk, listBkBk1,
+                      indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
+     on the sides of the triangle fan)
+     it considers one direction: steepest descent
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([drk, dsk])
+     paramsStTop_test = np.copy(paramsStTop)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+     # Compare the function value
+     f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+          alpha = alpha*1.3
+          paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          i += 1
+     i = 0
+     # If there is no decrease in the function value, try decreasing alpha, the step size
+     while( (f_before <= f_test) and i < 25):
+          alpha = alpha*0.2
+          paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test ):
+          return params[k], params[k+1]
+     else:
+          return params_test[k], params_test[k+1]
+
+
 
