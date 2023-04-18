@@ -194,43 +194,84 @@ def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
           return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
 
 
-def partial_fObj_recCr(shFrom, shTo, rec, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak):
+def partial_fObj_recCr(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
-     Partial of the objective function  with respect to a receiver that creeps to a shooter
-     (originally the reciver is lamk, the shooter where it comes from is mukM1 and the
-     shooter to where it creeps is muk)
+     Partial of the objective function with respect to a receiver that creeps to a shooter
+     (originally the receiver is lamk, the shooter where it comes from is mukM1 and the shooter
+     to where it creeps is muk)
      '''
-     zkM1 = itt.hermite_boundary(shFrom, x0, B0kM1, xkM1, BkM1)
-     yk = itt.hermite_boundary(rec, x0, B0k, xk, Bk)
-     B0k_shTo = itt.gradientBoundary(shTo, x0, B0k, xk, Bk)
-     secondDer_B0k_rec = itt.secondDer_Boundary(rec, x0, B0k, xk, Bk)
-     B0k_halves = itt.gradientBoundary( (shTo + rec)/2, x0, B0k, xk, Bk)
-     secondDer_B0khalves_rec = itt.secondDer_Boundary((shTo + rec)/2, x0, B0k, xk, Bk)
-     B0k_rec = itt.gradientBoundary(rec, x0, B0k, xk, Bk)
-     perL_rec = partial_L_lamk(shTo, rec, B0k_shTo, B0k_halves, secondDer_B0khalves_rec, B0k_rec, secondDer_B0k_rec)
-     etaMin = min(etakM1, etak)
+     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     receiver = itt.hermite_boundary(rec, x0To, B0To, x1To, B1To)
+     B_atShooterTo = itt.gradientBoundary(shT0, x0To, B0To, x1To, B1To)
+     B_atReceiver = itt.gradientBoundary(rec, x0To, B0To, x1To, B1To)
+     secondDer_B_atReceiver = itt.secondDer_Boundary(rec, x0To, B0To, x1To, B1To)
+     B_halves = itt.gradientBoundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
+     secondDer_Bhalves_atReceiver = itt.secondDer_Boundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
+     perL_receiver = partial_L_lamk(shTo, rec, B_atShooterTo, B_halves, secondDer_Bhalves_atReceiver, B_atReceiver, secondDer_B_atReceiver)
+     etaMin = min(etaInside, etaOutside)
      if( shFrom == rec ):
           return etaMin*perL_rec
      else:
-          return etakM1*np.dot(B0k_rec, yk - zkM1)/norm(yk - zkM1) + etaMin*perL_rec
+          return etaInside*np.dot(B_atReceiver, receiver - shooterFrom) + etaMin*perL_rec
+     
 
-def partial_fObj_shCr(sh, recFrom, recTo, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1):
+# def partial_fObj_recCr(shFrom, shTo, rec, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak):
+#      '''
+#      Partial of the objective function  with respect to a receiver that creeps to a shooter
+#      (originally the reciver is lamk, the shooter where it comes from is mukM1 and the
+#      shooter to where it creeps is muk)
+#      '''
+#      zkM1 = itt.hermite_boundary(shFrom, x0, B0kM1, xkM1, BkM1)
+#      yk = itt.hermite_boundary(rec, x0, B0k, xk, Bk)
+#      B0k_shTo = itt.gradientBoundary(shTo, x0, B0k, xk, Bk)
+#      secondDer_B0k_rec = itt.secondDer_Boundary(rec, x0, B0k, xk, Bk)
+#      B0k_halves = itt.gradientBoundary( (shTo + rec)/2, x0, B0k, xk, Bk)
+#      secondDer_B0khalves_rec = itt.secondDer_Boundary((shTo + rec)/2, x0, B0k, xk, Bk)
+#      B0k_rec = itt.gradientBoundary(rec, x0, B0k, xk, Bk)
+#      perL_rec = partial_L_lamk(shTo, rec, B0k_shTo, B0k_halves, secondDer_B0khalves_rec, B0k_rec, secondDer_B0k_rec)
+#      etaMin = min(etakM1, etak)
+#      if( shFrom == rec ):
+#           return etaMin*perL_rec
+#      else:
+#           return etakM1*np.dot(B0k_rec, yk - zkM1)/norm(yk - zkM1) + etaMin*perL_rec
+
+
+def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
-     Partial of the objective function with respect to a shooter that creeps from a receiver
+     Partial of the objective function with respect to a shooter that comes from a creeping ray from a receiver
      '''
-     zk = itt.hermite_boundary(sh, x0, B0k, xk, Bk)
-     yk1 = itt.hermite_boundary(recTo, x0, B0k1, xk1, Bk1)
-     B0k_sh = itt.gradientBoundary(sh, x0, B0k, xk, Bk)
-     secondDer_B0k_sh = itt.secondDer_Boundary(sh, x0, B0k, xk, Bk)
-     B0k_halves = itt.gradientBoundary((sh + recFrom)/2, x0, B0k, xk, Bk)
-     secondDer_B0khalves_sh = itt.secondDer_Boundary((sh + recFrom)/2, x0, B0k, xk, Bk)
-     B0k_recFrom = itt.gradientBoundary(recFrom, x0, B0k, xk, Bk)
-     parL_sh = partial_L_muk(sh, recFrom, B0k_sh, secondDer_B0k_sh, B0k_halves, secondDer_B0khalves_sh, B0k_recFrom)
-     etaMin = min(etak, etakM1)
+     shooter = itt.hermite_boundary(sh, x0From, B0From, x1From, B1From)
+     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     B_atShooter = itt.gradientBoundary(sh, x0From, B0From, x1From, B1From)
+     secondDer_B_atShooter = itt.secondDer_Boundary(sh, x0From, B0From, x1From, B1From)
+     B_halves = itt.gradientBoundary( (sh + recFrom)/2, x0From, B0From, x1From, B1From)
+     secondDer_Bhalves_atShooter = itt.secondDer_Boundary( (sh + recFrom)/2, x0From, B0From, x1From, B1From)
+     B_atReceiver = itt.gradientBoundary(recFrom, x0From, B0From, x1From, B1From)
+     parL_shooter = partial_L_muk(sh, recFrom, B_atShooter, secondDer_B_atShooter, B_halves, secondDer_Bhalves_atShooter, B_atReceiver)
+     etaMin = min(etaInside, etaOutside)
      if( sh == recTo ):
-          return etaMin*parL_sh
+          return etaMin*parL_shooter
      else:
-          return etakM1*np.dot(-B0k_sh, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_sh
+          return etaInside*np.dot(-B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter) + etaMin*parL_shooter
+
+
+# def partial_fObj_shCr(sh, recFrom, recTo, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1):
+#      '''
+#      Partial of the objective function with respect to a shooter that creeps from a receiver
+#      '''
+#      zk = itt.hermite_boundary(sh, x0, B0k, xk, Bk)
+#      yk1 = itt.hermite_boundary(recTo, x0, B0k1, xk1, Bk1)
+#      B0k_sh = itt.gradientBoundary(sh, x0, B0k, xk, Bk)
+#      secondDer_B0k_sh = itt.secondDer_Boundary(sh, x0, B0k, xk, Bk)
+#      B0k_halves = itt.gradientBoundary((sh + recFrom)/2, x0, B0k, xk, Bk)
+#      secondDer_B0khalves_sh = itt.secondDer_Boundary((sh + recFrom)/2, x0, B0k, xk, Bk)
+#      B0k_recFrom = itt.gradientBoundary(recFrom, x0, B0k, xk, Bk)
+#      parL_sh = partial_L_muk(sh, recFrom, B0k_sh, secondDer_B0k_sh, B0k_halves, secondDer_B0khalves_sh, B0k_recFrom)
+#      etaMin = min(etak, etakM1)
+#      if( sh == recTo ):
+#           return etaMin*parL_sh
+#      else:
+#           return etakM1*np.dot(-B0k_sh, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_sh
 
 
 def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
@@ -251,6 +292,43 @@ def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak,
      else:
           return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
 
+
+def partial_fObj_recSt(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
+     '''
+     Partial of the objective function (generalized) with respect to a RECEIVER that shoots directly (with
+     a straight line) to a shooter (thinking about ak and bk)
+     '''
+     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     receiver = itt.hermite_boundary(rec, x0To, B0To, x1To, B1To)
+     shooterTo = itt.hermite_boundary(shTo, x0To, B0To, x1To, B1To)
+     B_atReceiver = itt.gradientBoundary(rec, x0To, B0To, x1To, B1To)
+     if( rec == 0 and shTo == 0 and shFrom == 0):
+          return 0
+     elif( rec == shTo and shFrom != 0 ):
+          return etaOutside*np.dot(B_atReceiver, receiver - shooterFrom)/norm( receiver - shooterFrom)
+     elif( rec == 0 and shFrom == 0 and shTo != 0):
+          return etaInside*np.dot(- B_atReceiver, shooterTo - receiver)/norm(shooterTo - receiver)
+     else:
+          return etaOutside*np.dot(B_atReceiver, receiver - shooterFrom)/norm( receiver - shooterFrom) + etaInside*np.dot(- B_atReceiver, shooterTo - receiver)/norm(shooterTo - receiver)
+
+
+def partial_fObj_shSt(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
+     '''
+     Partial of the objective function (generalized) with respect to a SHOOTER that comes from a straight ray
+     from a receiver and shoots in a straight line to another receiver
+     '''
+     receiverFrom = itt.hermite_boundary(recFrom, x0From, B0From, x1From, B1From)
+     shooter = itt.hermite_boundary(sh, x0From, B0From, x1From, B1From)
+     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     B_atShooter = itt.gradientBoundary(sh, x0From, B0From, x1From, B1From)
+     if( sh == 0 and recFrom == 0 and recTo == 0 ):
+          return 0
+     elif( sh == recFrom ):
+          return etaOutside*np.dot( B_atShooter, shooter - receiverFrom)/norm(shooter - receiverFrom)
+     elif( sh == 0 and recTo == 0 ):
+          return etaInside*np.dot( -B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter)
+     else:
+          etaOutside*np.dot( B_atShooter, shooter - receiverFrom)/norm(shooter - receiverFrom) + etaInside*np.dot( -B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter)
 
 
 def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
@@ -476,8 +554,8 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           etak = listIndices[j]
           etak1 = listIndices[j+1]
           # Compute directions
-          dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak)
-          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1)
+          dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakM1, etak)
+          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
           # See if we need to do a close update or not
           r = close_to_identity(lamk, muk)
           if( r <= gamma ):
