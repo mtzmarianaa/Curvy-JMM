@@ -1521,7 +1521,7 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
 
 def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
-                      indCrTop, paramsCrTop, indStTop, paramsStTop_test):
+                      indCrTop, paramsCrTop, indStTop, paramsStTop_test, listCurvingInwards):
      '''
      gammas: radius for the circle centered at [lamk, muk], if such circle intersects the line lamk = muk
      then do a close update.
@@ -1529,11 +1529,47 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                         [ lamk, muk ]
                         [  rk,   sk ]
                         [ lamn1 ]
+     listCurvingInwards is just a list of length n such that if the k-th side edge of the triangle
+     fan is curving inwards (to the triangle fan) then listCurvingInwards[k] = 1, it's 0 if it's not
      '''
      # First parameter to update: mu1
      params = np.copy(params0)
      mu1 = params[0]
      lam2 = params[1]
+     B0k = listB0k[0]
+     xk = listxk[1]
+     Bk = listBk[0]
+     B0k1 = listB0k[1]
+     xk1 = listxk[2]
+     Bk1 = listBk[1]
+     B0k_muk = itt.gradientBoundary(mu1, x0, B0k, xk, Bk)
+     BkBk1_0 = listBkBk1[0]
+     BkBk1_1 = listBkBk1[1]
+     yk1 = itt.hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
+     zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
+     # Compute direction for muk
+     if( indCrTop[0] != 1 and indStTop[0] != 1):
+          dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
+     if( indCrTop[0] == 1):
+          rk = paramsCrTop[0]
+          ak = itt.hermite_boundary( rk, xk, BkBk1_0, xk1, BkBk1_1)
+          dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
+     alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     mu1 = mu1 - alpha*dmuk
+     # Then we need to project it back WE ASSUME THAT PARAMS0 IS A FEASIBLE SET!
+     if( indCrTop[0] != 1 and indStTop[0] != 1 and listCurvingInwards[0] != 1):
+          # Means that we don't have a point on the side edge and we don't have to worry about that edge
+          params[0] = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+     elif( indCrTop[0] != 1 and indStTop[0] != 1 ):
+          # Means that we don't have a point on the side edge but we do need to worry about it
+          params[0] = project_mukGivenlamk1_noCr(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+     else:
+          # Means that we have a point on the side edge, we can project using that point
+          params[0] = project_mukGivenrk(mu1, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+     # Now we start with blocks of size 2
+     n = len(listxk) - 2
+     
+     
      
 
 
