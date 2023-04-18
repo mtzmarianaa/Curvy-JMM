@@ -215,26 +215,6 @@ def partial_fObj_recCr(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, 
           return etaInside*np.dot(B_atReceiver, receiver - shooterFrom) + etaMin*perL_rec
      
 
-# def partial_fObj_recCr(shFrom, shTo, rec, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, etakM1, etak):
-#      '''
-#      Partial of the objective function  with respect to a receiver that creeps to a shooter
-#      (originally the reciver is lamk, the shooter where it comes from is mukM1 and the
-#      shooter to where it creeps is muk)
-#      '''
-#      zkM1 = itt.hermite_boundary(shFrom, x0, B0kM1, xkM1, BkM1)
-#      yk = itt.hermite_boundary(rec, x0, B0k, xk, Bk)
-#      B0k_shTo = itt.gradientBoundary(shTo, x0, B0k, xk, Bk)
-#      secondDer_B0k_rec = itt.secondDer_Boundary(rec, x0, B0k, xk, Bk)
-#      B0k_halves = itt.gradientBoundary( (shTo + rec)/2, x0, B0k, xk, Bk)
-#      secondDer_B0khalves_rec = itt.secondDer_Boundary((shTo + rec)/2, x0, B0k, xk, Bk)
-#      B0k_rec = itt.gradientBoundary(rec, x0, B0k, xk, Bk)
-#      perL_rec = partial_L_lamk(shTo, rec, B0k_shTo, B0k_halves, secondDer_B0khalves_rec, B0k_rec, secondDer_B0k_rec)
-#      etaMin = min(etakM1, etak)
-#      if( shFrom == rec ):
-#           return etaMin*perL_rec
-#      else:
-#           return etakM1*np.dot(B0k_rec, yk - zkM1)/norm(yk - zkM1) + etaMin*perL_rec
-
 
 def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
@@ -254,24 +234,6 @@ def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, 
      else:
           return etaInside*np.dot(-B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter) + etaMin*parL_shooter
 
-
-# def partial_fObj_shCr(sh, recFrom, recTo, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etakM1):
-#      '''
-#      Partial of the objective function with respect to a shooter that creeps from a receiver
-#      '''
-#      zk = itt.hermite_boundary(sh, x0, B0k, xk, Bk)
-#      yk1 = itt.hermite_boundary(recTo, x0, B0k1, xk1, Bk1)
-#      B0k_sh = itt.gradientBoundary(sh, x0, B0k, xk, Bk)
-#      secondDer_B0k_sh = itt.secondDer_Boundary(sh, x0, B0k, xk, Bk)
-#      B0k_halves = itt.gradientBoundary((sh + recFrom)/2, x0, B0k, xk, Bk)
-#      secondDer_B0khalves_sh = itt.secondDer_Boundary((sh + recFrom)/2, x0, B0k, xk, Bk)
-#      B0k_recFrom = itt.gradientBoundary(recFrom, x0, B0k, xk, Bk)
-#      parL_sh = partial_L_muk(sh, recFrom, B0k_sh, secondDer_B0k_sh, B0k_halves, secondDer_B0khalves_sh, B0k_recFrom)
-#      etaMin = min(etak, etakM1)
-#      if( sh == recTo ):
-#           return etaMin*parL_sh
-#      else:
-#           return etakM1*np.dot(-B0k_sh, yk1 - zk)/norm(yk1 - zk) + etaMin*parL_sh
 
 
 def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
@@ -435,7 +397,7 @@ def close_to_identity(lamk, muk):
 
 
 
-def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+def backTrClose_block_noTops(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Backtracking to find the next block [lamk, muk]
      it considers two directions: steepest descent
@@ -474,7 +436,7 @@ def backTrClose_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, gra
      elif( f_test_proj <= f_test ):
           return params_test_proj[k], params_test_proj[k+1]
 
-def backTr_block(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
+def backTr_block_noTops(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Backtracking to find the next block [lamk, muk]
      it considers one direction:  steepest descent
@@ -560,12 +522,12 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           r = close_to_identity(lamk, muk)
           if( r <= gamma ):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+               lamk, muk = backTrClose_block_noTops(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
                gamma = gamma*theta_gamma
                gammas[j - 1] = gamma # Update this gamma
           else:
                # We don't have to consider a close update
-               lamk, muk = backTr_block(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+               lamk, muk = backTr_block_noTops(2, k-1, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
           # Either way we need to project back to the feasible set
           lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
           muk = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
@@ -1149,6 +1111,11 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      muk = project_box(muk)
      return muk
 
+################################################################################################
+################################################################################################
+################################################################################################
+################################################################################################
+#### Optimization for the generalized objective function
 
 def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1):
      '''
@@ -1184,4 +1151,184 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           lamk = rootMax.root
      lamk = project_box(lamk)
      return lamk
+
+
+
+def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [lamk, muk] in the generalized objective function (considers points on the sides
+     of the triangle fan)
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line lamk = muk
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([dlamk, dmuk])
+     params_test = np.copy(params)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     params_test_proj = np.copy(params)
+     params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+     # Compare the function value
+     f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+     f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) or (f_test_proj < f_before) and i < 8 ):
+          alpha = alpha*1.3 # increase the step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          i += 1
+     i = 0
+     # Then if there is no decrease try decreasing alpha, the step size
+     while( (f_test < f_before) or (f_test_proj < f_before) and i < 25 ):
+          alpha = alpha*0.2 # increase the step size
+          params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test and f_before <= f_test_proj):
+          return params[k], params[k+1]
+     elif( f_test < f_test_proj ):
+          return params_test[k], params_test[k+1]
+     else:
+          return params_test_proj[k], params_test_proj[k+1]
+
+def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                           listIndices, listxk, listB0k, listBk, listBkBk1,
+                           indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
+     on the sides of the triangle fan)
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line rk = sk
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([drk, dsk])
+     paramsCrTop_test = np.copy(paramsCrTop)
+     paramsCrTop_test_proj = np.copy(paramsCrTop)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+     paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+     # Compare the function value
+     f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+     f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+          alpha = alpha*1.3
+          paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+          i += 1
+     i = 0
+     # If there is no decrease in the function value, try decreasing alpha, the step size
+     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+          alpha = alpha*0.2
+          paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test and f_before <= f_test_proj):
+          return params[k], params[k+1]
+     elif( f_test < f_test_proj ):
+          return params_test[k], params_test[k+1]
+     else:
+          return params_test_proj[k], params_test_proj[k+1]
+
+
+def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                           listIndices, listxk, listB0k, listBk, listBkBk1,
+                           indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
+     on the sides of the triangle fan)
+     it considers two directions: steepest descent
+                                  steepest descent projected onto the line rk = sk
+     '''
+     f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     i = 0
+     d_middle = np.array([drk, dsk])
+     paramsStTop_test = np.copy(paramsStTop)
+     paramsStTop_test_proj = np.copy(paramsStTop)
+     alpha = alpha0*1/(max(norm(d_middle), 1))
+     paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+     paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+     # Compare the function value
+     f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+     f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+     # If there is a decrease in the function, try increasing alpha, the step size
+     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+          alpha = alpha*1.3
+          paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+          i += 1
+     i = 0
+     # If there is no decrease in the function value, try decreasing alpha, the step size
+     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+          alpha = alpha*0.2
+          paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+          f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+          i += 1
+     # Now we should have a decrease or set alpha to 0
+     if( f_before <= f_test and f_before <= f_test_proj):
+          return params[k], params[k+1]
+     elif( f_test < f_test_proj ):
+          return params_test[k], params_test[k+1]
+     else:
+          return params_test_proj[k], params_test_proj[k+1]
 
