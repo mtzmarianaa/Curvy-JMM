@@ -309,6 +309,10 @@ grad0 = (x0 - xSource)/T0
 T1 = norm(xSource - x1)
 grad1 = (x1 - xSource)/T1
 
+
+#############################################################
+# Project lam2 using mu
+
 mu1 = 0.7
 lam2 = 0.8
 params0 = [mu1, lam2, 1.0]
@@ -325,7 +329,6 @@ fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndic
 
 print("    ", fObj_gen)
 
-# Project lam2 using mu
 
 lam2_proj = project_lamkGivenmuk1_noCr(mu1, lam2, x0, B01, x1, B1, B02, x2, B2, B1B2_0, B1B2_1)
 
@@ -351,6 +354,7 @@ fObj_gen = fObj_generalized(paramsProj, x0, T0, grad0, x1, T1, grad1, x2, listIn
 
 print("    ", fObj_gen)
 
+#############################################################
 # Project mu1 using lam2
 mu1_proj = project_mukGivenlamk1_noCr(mu1, lam2, x0, B01, x1, B1, B02, x2, B2, B1B2_0, B1B2_1)
 paramsProj2 = [mu1_proj, lam2, 1.0]
@@ -376,8 +380,10 @@ fObj_gen = fObj_generalized(paramsProj2, x0, T0, grad0, x1, T1, grad1, x2, listI
 
 print("    ", fObj_gen)
 
+#############################################################
+# Project back rk given muk
 
-# Project back ak
+# Test rMax
 
 indCrTop = [1]
 r1 = 0.94
@@ -402,7 +408,45 @@ paramsCrTop_proj = [r1_proj, s1]
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
              indStTop = None, paramsStTop = None)
-plt.title("Generalized triangle fan, points on side edge, project r1 given mu1")
+plt.title("Generalized triangle fan, points on side edge, project r1 given mu1, rMax")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+# Test rMin
+
+mu1 = 0
+lam2 = 0.8
+params0 = [mu1, lam2, 1.0]
+
+indCrTop = [1]
+r1 = 0
+s1 = 0.8
+paramsCrTop = [r1, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, unfeasible")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+r1_proj = project_rkGivenmuk(r1, mu1, x0, B01, x1, B1, x2, B2, B1B2_0, B1B2_1)
+paramsCrTop_proj = [r1_proj, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, project r1 given mu1, rMin")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -413,7 +457,10 @@ print("    ", fObj_gen)
 
 
 
-# Project back sk
+#############################################################
+# Project back sk given lamk1
+
+# Test sMin
 
 indCrTop = [1]
 r1 = 0.1
@@ -438,7 +485,7 @@ paramsCrTop_proj = [r1, s1_proj]
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
              indStTop = None, paramsStTop = None)
-plt.title("Generalized triangle fan, points on side edge, project s1 given lam2")
+plt.title("Generalized triangle fan, points on side edge, project s1 given lam2, sMin")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -447,8 +494,49 @@ fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndic
 print("    ", fObj_gen)
 
 
+# Test sMax
 
+mu1 = 0.9
+lam2 = 0
+params0 = [mu1, lam2, 1.0]
+
+indCrTop = [1]
+r1 = 0.1
+s1 = 0.95
+paramsCrTop = [r1, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, unfeasible")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+s1_proj = project_skGivenlamk1(s1, lam2, x0, B02, x2, B2, x1, B1B2_0, B1B2_1)
+paramsCrTop_proj = [r1, s1_proj]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, project s1 given lam2, sMax")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+#############################################################
 # Project back muk given rk
+
+
+# Test muMin
 
 mu1 = 0.1
 lam2 = 0.8
@@ -477,7 +565,46 @@ params_proj = [mu1_proj, lam2, 1.0]
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params_proj,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
              indStTop = None, paramsStTop = None)
-plt.title("Generalized triangle fan, points on side edge, project mu1 given r1")
+plt.title("Generalized triangle fan, points on side edge, project mu1 given r1, muMin")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params_proj, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+
+
+# Test muMax
+
+mu1 = 0.9
+lam2 = 0.95
+params0 = [mu1, lam2, 1.0]
+
+indCrTop = [1]
+r1 = 0.7
+s1 = 0.8 
+paramsCrTop = [r1, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, unfeasible")
+
+print("Value of objective function with these parameters: \n")
+fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
+                            indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = None, paramsStTop = None)
+
+print("    ", fObj_gen)
+
+mu1_proj = project_mukGivenrk(mu1, r1, x0, B01, x1, B1, B1B2_0, x2, B1B2_1)
+
+params_proj = [mu1_proj, lam2, 1.0]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params_proj,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+             indStTop = None, paramsStTop = None)
+plt.title("Generalized triangle fan, points on side edge, project mu1 given r1, muMax")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(params_proj, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -518,7 +645,7 @@ paramsProj = [mu1, lam2_proj, 1.0]
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = paramsProj,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
              indStTop = None, paramsStTop = None)
-plt.title("Generalized triangle fan, points on side edge, project lam2 fiven s1")
+plt.title("Generalized triangle fan, points on side edge, project lam2 fiven s1, lamMin")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(paramsProj, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -556,7 +683,7 @@ paramsProj = [mu1, lam2_proj, 1.0]
 itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = paramsProj,
          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
              indStTop = None, paramsStTop = None)
-plt.title("Generalized triangle fan, points on side edge, project lam2 fiven s1")
+plt.title("Generalized triangle fan, points on side edge, project lam2 fiven s1, lamMax")
 
 print("Value of objective function with these parameters: \n")
 fObj_gen = fObj_generalized(paramsProj, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, listBkBk1,
