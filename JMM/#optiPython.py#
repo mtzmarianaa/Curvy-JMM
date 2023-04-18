@@ -1534,6 +1534,25 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      params = np.copy(params0)
      mu1 = params[0]
      lam2 = params[1]
+     B0k = listB0k[0]
+     xk = listxk[1]
+     Bk = listBk[0]
+     B0k1 = listB0k[1]
+     xk1 = listxk[2]
+     Bk1 = listBk[1]
+     B0k_muk = itt.gradientBoundary(mu1, x0, B0k, xk, Bk)
+     yk1 = itt.hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
+     zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
+     # Compute direction for muk
+     if( indCrTop[0] != 1 and indStTop[0] != 1):
+          dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
+     if( indCrTop[0] == 1):
+          BkBk1_0 = listBkBk1[0]
+          BkBk1_1 = listBkBk1[1]
+          ak = itt.hermite_boundary( paramsCrTop[0], xk, BkBk1_0, xk1, BkBk1_1)
+          dmuk = 
+     alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     mu1 = mu1 - alpha*dmuk
      
 
 
