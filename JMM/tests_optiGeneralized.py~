@@ -1,5 +1,3 @@
-# Before going to C with the optimization ruting
-# we test optiPython and intermediateTests here
 
 
 import matplotlib.pyplot as plt
@@ -92,32 +90,3 @@ f0 = fObj_noTops(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk,
 
 itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
 plt.title("Initial parameters")
-
-paramsOpt, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations = blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk, maxIter, tol, saveIterates = True)
-
-plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = T2)
-
-
-# 3d
-
-mus1 , lams2 = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200) )
-fObjMesh = np.empty(mus1.shape)
-
-for i in range(200):
-    for j in range(200):
-        params = [mus1[i,j], lams2[i,j]]
-        fObjMesh[i, j] = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk)
-
-ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
-ax.plot_surface(mus1, lams2, fObjMesh, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
-for i in range(len(listIterates)):
-    pointk = listIterates[i]
-    fk = fObj_noTops(pointk, x0, T0, grad0, x1, T1, grad1, x2, listIndices, listxk, listB0k, listBk)
-    ax.scatter(pointk[0], pointk[1], fk, c = "#565656", marker = "o", s = 2)
-ax.scatter(paramsOpt[0], paramsOpt[1], listObjVals[-1], label = "optimum found", c = "black", marker = "*")
-ax.scatter(params0[0], params0[1], f0, label = "starting point", c = "black")
-ax.legend()
-
-
-
-

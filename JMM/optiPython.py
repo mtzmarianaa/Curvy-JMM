@@ -682,15 +682,26 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
      
 
 
-def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk, listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj, trueSol = None, contours = True):
+def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
+                listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj,
+                trueSol = None, contours = True,
+                listBkBk1 = None, indCrTop = None, paramsCrTop0 = None,
+                indStTop = None, paramsStTop0 = None,
+                paramsCrTop = None, paramsStTop = None):
      '''
      Plots results from blockCoordinateGradient
      '''
      # First plot the original parameters
-     itt.plotFann(x0, listB0k, listxk, listBk, params = params0)
+     itt.plotFann(x0, listB0k, listxk, listBk, params = params0,
+                  listBkBk1 = listBkBk1, indCrTop = indCrTop,
+                  paramsCrTop = paramsCrTop0, indStTop = indStTop,
+                  paramsStTop = paramsStTop0)
      plt.title("Initial parameters")
      # Then plot the parameters found by this method
-     itt.plotFann(x0, listB0k, listxk, listBk, params = paramsOpt)
+     itt.plotFann(x0, listB0k, listxk, listBk, params = paramsOpt,
+                  listBkBk1 = listBkBk1, indCrTop = indCrTop,
+                  paramsCrTop = paramsCrTop, indStTop = indStTop,
+                  paramsStTop = paramsStTop)
      plt.title("Optimal parameters found")
      # Now plot the function value at each iteration
      fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
@@ -1186,7 +1197,7 @@ def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat,
           i += 1
      i = 0
      # If there is no decrease in the function, try decreasing alpha, the step size
-      while( (f_before <= f_test) and i < 25 ):
+     while( (f_before <= f_test) and i < 25 ):
           alpha = alpha*0.2
           params_test[k] = params[k] - alpha*d
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1521,7 +1532,7 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
 
 def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
-                      indCrTop, paramsCrTop, indStTop, paramsStTop_test, listCurvingInwards):
+                      indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards):
      '''
      gammas: radius for the circle centered at [lamk, muk], if such circle intersects the line lamk = muk
      then do a close update.
@@ -1535,14 +1546,24 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                         [  rkM1,  skM1 ]   (if applicable)
                         [  lamk,  muk  ]     
      '''
+     gradParams = np.empty((len(params0), 1))
+     gradParams[-1] = 0 # Because mun1 = 1 always
      # Set indStTop if indCrTop is given
-     if(paramsStTop is None):
+     if(paramsStTop0 is None):
           indStTop = [-1]
           paramsStTop = [0,0]
+          gradStTop = np.empty((0,1))
+     else:
+          paramsStTop = np.copy(paramsStTop0)
+          gradStTop = np.empty((len(paramsStTop0), 1))
      # Set indCrTop if indStTop is given
-     if(paramsCrTop is None):
+     if(paramsCrTop0 is None):
           indCrTop = [-1]
           paramsCrTop = [0,0]
+          gradCrTop = np.empty((0, 1))
+     else:
+          paramsCrTop = np.copy(paramsCrTop0)
+          gradCrTop = np.empty((len(paramsCrTop), 1))
      currentCrTop = 0
      currentStTop = 0
      # First parameter to update: mu1
@@ -1567,37 +1588,43 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           rk = paramsCrTop[0]
           ak = itt.hermite_boundary( rk, xk, BkBk1_0, xk1, BkBk1_1)
           dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
-     alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+     alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop)
      mu1 = mu1 - alpha*dmuk
      # Then we need to project it back WE ASSUME THAT PARAMS0 IS A FEASIBLE SET!
      if( indCrTop[0] != 1 and indStTop[0] != 1 and listCurvingInwards[0] != 1):
           # Means that we don't have a point on the side edge and we don't have to worry about that edge
           params[0] = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      elif( indCrTop[0] != 1 and indStTop[0] != 1 ):
           # Means that we don't have a point on the side edge but we do need to worry about it
           params[0] = project_mukGivenlamk1_noCr(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      else:
           # Means that we have a point on the side edge, we can project using that point
           params[0] = project_mukGivenrk(mu1, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
      # Now we start with blocks of size 2
      n = len(listxk) - 2
-     for j in range(1, n):
-          # j goes from 1 to n-1
-          k = 2*j-1 # From k = 1 all the way to k = 2n-3 (from lam2 to mun in params)
-          nTop = j
+     for j in range(1, n+1):
+          # j goes from 1 to n
+          k = 2*j-1 # From k = 1 all the way to k = 2n-1 (from lam2 to mun1 = 1 in params)
+          nTop = j # from 1 to n
           gamma = gammas[j-1]
           mukM1 = params[k-1]
           lamk = params[k]
           muk = params[k+1]
           B0kM1 = listB0k[j-1]
           B0k = listB0k[j]
-          B0k1 = listB0k[j+1]
           xkM1 = listxk[j]
           xk = listxk[j+1]
-          xk1 = listxk[j+2]
+          if( j < n ):
+               xk1 = listxk[j+2] # Because otherwise this is not defined
+               B0k1 = listB0k[j+1]
+               Bk = listBk[j+1]
           BkM1 = listBk[j-1]
           Bk = listBk[j]
-          Bk1 = listBk[j+1]
           BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
           BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
           etakPrev = etak # index of refraction from previous triangle
@@ -1614,7 +1641,9 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                bkM1 = itt.hermite_boundary(sk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
                # Compute directions
                drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
+               gradCrTop[kCrTop] = drkM1
                dskM1 = partial_fObj_shCr(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
+               gradCrTop[kCrTop + 1] = dskM1
                # Decide if we need close or far backtracking
                r = close_to_identity(rkM1, skM1)
                if( r <= gamma ):
@@ -1637,13 +1666,15 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     currentCrTop += 1
                # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
                dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
+               gradParams[k] = dlamk
                # We need to know if the next receiver is on h0k1 or on hkk1
                if( nTop + 1 == indCrTop[currentCrTop]):
-                    # The next receiver is on hkhk1
+                    # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
                     BkBk1_0 = listBkBk1[k+1]
                     BkBk1_1 = listBkBk1[k+2]
                     rk = paramsCrTop[2*currentCrTop]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+                    gradParams[k+1] = dmuk
                     r = close_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
                     if ( r<= gamma):
@@ -1662,13 +1693,14 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
-               else:
+               elif(j < n):
                     # The next receiver is on h0hk1
                     lamk1 = params[k+2]
                     B0k1 = listB0k[j+1]
                     Bk = listBk[j+1]
                     etak1 = listIndices[j+1]
                     dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
+                    gradParams[k+1] = dmuk
                     r = clost_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
                     if (r <= gamma):
@@ -1695,6 +1727,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
+               else:
+                    # We just have to update lamk because we are on lamn1
+                    lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    params[k] = lamk
           elif( nTop == indStTop[currentStTop]):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from a straight ray)
                etaMinSt = min(etaRegionOutside, etakPrev)
@@ -1705,7 +1741,9 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                bkM1 = itt.hermite_boundary(sk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
                # Compute directions
                drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
+               gradStTop[kStTop] = drkM1
                dskM1 = partial_fObj_shSt(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
+               gradStTop[kStTop + 1] = dskM1
                # Decide if we need close or far backtracking
                r = close_to_identity(rkM1, skM1)
                if( r <= gamma ):
@@ -1728,13 +1766,15 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     currentStTop += 1
                # Now we can update lamk muk - we have to do this here since we have already updated rkM1 and skM1
                dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
+               gradParams[k] = dlamk
                # We need to know if the next receiver is on h0k1 or on hkk1
                if( nTop + 1 == indStTop[currentStTop]):
-                    # The next receiver is on hkhk1
+                    # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
                     BkBk1_0 = listBkBk1[k+1]
                     BkBk1_1 = listBkBk1[k+2]
                     rk = paramsStTop[2*currentStTop]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+                    gradParams[k+1] = dmuk
                     r = close_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
                     if ( r<= gamma):
@@ -1753,13 +1793,14 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
-               else:
+               elif( j < n):
                     # The next receiver is on h0hk1
                     lamk1 = params[k+2]
                     B0k1 = listB0k[j+1]
                     Bk = listBk[j+1]
                     etak1 = listIndices[j+1]
                     dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
+                    gradParams[k+1] = dmuk
                     r = close_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
                     if (r <= gamma):
@@ -1786,12 +1827,17 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
+               else:
+                    # We just have to update lamk because we are on lamn1
+                    lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    params[k] = lamk
           else:
                # Meaning that we dont have [rkM1, skM1] on the side of the edge, in this case we just need to update [lamk, muk]
                dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakPrev, etak)
+               gradParams[k] = dlamk
                # We need to see if the next receiver is on h0k1 or on hkk1
                if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentStTop] ):
-                    # This means that the next receiver is on hkk1
+                    # This means that the next receiver is on hkk1 NOTE THAT THE PROCESS NEVER GOES HERE IF j = n, if we are on lamn1
                     if( nTop + 1 == indStTop[currentStTop]):
                          rk = paramsStTop[2*currentStTop]
                     else:
@@ -1800,6 +1846,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     BkBk1_0 = listBkBk1[k+1]
                     BkBk1_1 = listBkBk1[k+2]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+                    gradParams[k+1] = dmuk
                     # Decide which type of backtracking we have to do: close or far
                     r = close_to_identity(lamk, muk)
                     if( r <= gamma ):
@@ -1826,9 +1873,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     muk = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
                     params[k] = lamk
                     params[k+1] = muk
-               else:
+               elif(j <  n):
                     # This means that the next receiver is on h0k1
                     dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
+                    gradParams[k+1] = dmuk
                     # Decide which type of backtracking we have to do: close or far
                     r = close_to_identity(lamk, muk)
                     if( r<= gamma):
@@ -1862,10 +1910,34 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                          muk = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
                     params[k] = lamk
                     params[k+1] = muk
-                    
-               
-     
-     
-     
+               else:
+                    # This means that j = n, we are on lamn1
+                    if( dlamk > 0 or listCurvingInwards[j-1] != 1):
+                         # There is no problem with hkM1k
+                         lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                    else:
+                         # There is a problem with hkM1k
+                         lamk = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                    params[k] = lamk
+     # THIS IS THE END OF THE FOR LOOP
+     # We are done
+     return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop
 
 
+# def blockCoordinateGradientGeneral(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
+#                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+#                                    indCrTop = None, paramsCrTop0 = None,
+#                                    indStTop = None, paramsStTop0 = None):
+#      '''
+#      Block coordinate subgradient descent (modified) for a generalized triangle fan (includes curved side edges)
+#      '''
+#      params = np.copy(params0)
+#      nRegions = len(listxk) - 2
+#      if( len(params) == 2*nRegions ):
+#           params = np.append(params, [1])
+#      # Initialize the useful things
+#      listObjVals = []
+#      listGrads = []
+#      listChangefObj = []
+#      listIterates = []
+       
