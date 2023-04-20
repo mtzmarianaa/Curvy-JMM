@@ -881,10 +881,17 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      # print("a_tan: ", a_tan)
      # print("BkM1Bk_tan: ", BkM1Bk_tan)
 
-     # The normals
+     # The normals - depends on the position of x0 and xk  with respect to xkM1
      NkM1_mukM1 = np.array([-B0kM1_mukM1[1], B0kM1_mukM1[0]])
      Nk_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
      N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
+     NkM1Nk_0 = np.array([-BkM1Bk_0[1], BkM1Bk_0[0]])
+     if( np.dot(NkM1_mukM1, xk - x0) < 0):
+          NkM1_mukM1 = -NkM1_mukM1
+     if( np.dot(Nk_lamk, x0 - xkM1) < 0):
+          Nk_lamk = -Nk_lamk
+     if( np.dot(NkM1Nk_0, x0 - xk) < 0):
+          N_tan = -N_tan
 
      # Tests
      dotTestMin_fromh0kM1 = np.dot( yk - zkM1, NkM1_mukM1 ) # should be positive
@@ -951,6 +958,14 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
      N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
      N_tan = np.array([-BkBk1_tan[1], BkBk1_tan[0]])
+     NkNk1_0 = np.array([-BkBk1_0[1], BkBk1_1[0]])
+     # Check if this is the correct orientation - check the position of x0, xk, xk1
+     if( np.dot( N0k1_lamk1, x0 - xk) < 0):
+          N0k1_lamk1 = -N0k1_lamk1
+     if( np.dot( N0k_muk, xk1 - x0) < 0):
+          N0k_muk = -N0k_muk
+     if( np.dot(NkNk1_0, x0 - xk) < 0):
+          N_tan = -N_tan
 
      # Tests
      dotTestMin_fromh0hk =  np.dot(N0k1_lamk1, yk1 - zk) # Should be positive
@@ -1020,19 +1035,25 @@ def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
      # Compute the normals
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
      NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
+     NkNk1_0 = np.array([-BkBk1_0[1], BkBk1_1[0]])
+     # See if this orientation is correct - depends on the position of x0 and xk with respect to xk1
+     if( np.dot(N0k_muk, xk1 - x0) < 0):
+          N0k_muk = -N0k_muk
+     if( np.dot(NkNk1_0, x0 - xk) < 0):
+          NkNk1_rk = -NkNk1_rk
 
      # Compute the tests
      dotTestMin = np.dot( N0k_muk, ak - zk)
      dotTestMax = np.dot( NkNk1_rk, zk - ak)
 
-     print("  zk: ", zk)
-     print("  ak: ", ak)
-     print("  rk: ", rk)
-     print("  muk:", muk)
-     print("  N0k_muk:", N0k_muk)
-     print("  NkNk1_rk: ", NkNk1_rk)
-     print("  dotTestMin: ", dotTestMin)
-     print("  dotTestMax: ", dotTestMax)
+     # print("  zk: ", zk)
+     # print("  ak: ", ak)
+     # print("  rk: ", rk)
+     # print("  muk:", muk)
+     # print("  N0k_muk:", N0k_muk)
+     # print("  NkNk1_rk: ", NkNk1_rk)
+     # print("  dotTestMin: ", dotTestMin)
+     # print("  dotTestMax: ", dotTestMax)
 
      # Test if rk < rMin
      if( dotTestMin < 0):
@@ -1064,25 +1085,31 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
      # Compute the normals
      Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
      NkNk1_sk = np.array([-BkBk1_sk[1], BkBk1_sk[0]])
+     NkNk1_0 = np.array([-BkBk1_0[1], BkBk1_1[0]])
+     # See if this orientation is correct
+     if( np.dot( Nk1_lamk1,  x0 - xk) < 0):
+          Nk1_lamk1 = -Nk1_lamk1
+     if( np.dot( NkNk1_0, x0 - xk) < 0  ):
+          NkNk1_sk = -NkNk1_sk
 
      # Compute the tests
-     dotTestMin = np.dot( Nk1_lamk1, bk - yk1 ) # Should be positive
+     dotTestMin = np.dot( Nk1_lamk1, yk1 - bk ) # Should be positive
      dotTestMax = np.dot( NkNk1_sk , yk1 - bk ) #Should be positive
 
      # If  sk < sMin
      if( dotTestMin < 0):
-          print("dotTestMin failed")
-          tMin = lambda s: t3(s, xk, xk1, BkBk1_0, BkBk1_1, yk1)
+          #print("dotTestMin failed")
+          tMin = lambda s: t4(s, xk, xk1, BkBk1_0, BkBk1_1, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           sk = rootMin.root
-          print("sk after rootMin", sk)
+          #print("sk after rootMin", sk)
           bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           BkBk1_sk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_sk = np.array([-BkBk1_sk[1], BkBk1_sk[0]])
           dotTestMax = np.dot( NkNk1_sk , yk1 - bk )
      if( dotTestMax < 0):
-          print("dotTestMax failed")
-          tMax = lambda s: t4(s, xk, xk1, BkBk1_0, BkBk1_1, yk1, B0k1_lamk1)
+          #print("dotTestMax failed")
+          tMax = lambda s: t2(s, xk, xk1, BkBk1_0, BkBk1_1, yk1)
           rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           sk = rootMax.root
      sk = project_box(sk)
@@ -1099,10 +1126,15 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
      BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
      B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
-     
+     NkNk1_0 = np.array([-BkBk1_0[1], BkBk1_1[0]])
      # Compute the normals
      NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+     # See if this orientation is correct
+     if( np.dot( N0k_muk, xk1 - x0 ) < 0):
+          N0k_muk = -N0k_muk
+     if( np.dot( NkNk1_0, x0 - xk) < 0):
+          NkNk1_rk = -NkNk1_rk
 
      # Compute the tests
      dotTestMin =  np.dot(N0k_muk, ak - zk)
@@ -1136,9 +1168,15 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
      # Compute the normals
      NkM1Nk_skM1 = np.array([-BkM1Bk_skM1[1], BkM1Bk_skM1[0]])
      N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
+     NkM1Nk_0 = np.array([-BkM1Bk_0[1], BkM1Bk_0[0]])
+     # See if this orientation is correct
+     if( np.dot( N0k_lamk, x0 - xkM1) < 0):
+          N0k_lamk = -N0k_lamk
+     if( np.dot( NkM1Nk_0, x0 - xkM1) < 0):
+          NkM1Nk_skM1 = - NkM1Nk_skM1
 
      # Compute the tests
-     testMin = np.dot(-N0k_lamk, bkM1 - yk)
+     testMin = np.dot(N0k_lamk, yk - bkM1 )
      testMax = np.dot(NkM1Nk_skM1, yk - bkM1)
      # Test if lamk<lamMin
      if(testMin < 0):
