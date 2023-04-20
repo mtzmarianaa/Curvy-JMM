@@ -6,6 +6,7 @@ from numpy.linalg import norm
 from math import sqrt, pi, cos, sin
 import intermediateTests as itt
 from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY, fObj_generalized, forwardPassUpdate
+import optiPython as oP
 from analyticSol_circle import trueSolution # So that we can test all of this in an actual "true geometry
 import colorcet as cc
 import matplotlib.colors as clr
@@ -101,27 +102,87 @@ f0 = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                       indStTop = indStTop, paramsStTop = paramsStTop0)
 
 itt.plotFann(x0, listB0k, listxk, listBk, params = params0, indCrTop = indCrTop, paramsCrTop = paramsCrTop0, listBkBk1 = listBkBk1)
+ax = plt.gca()
+ax.set_aspect("auto")
 plt.title("Initial parameters")
 
-# Compute one step of the pass forward method
 
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
+# TEST ALL THE PROJECTIONS THAT COULD BE DONE IN THIS SET UP
 
-params1, paramsCrTop1, paramsStTop1, gradParams1, gradCrTop1, gradStTop1 = forwardPassUpdate(params0, gammas, theta_gamma,
-                                                                                             x0, T0, grad0, x1, T1, grad1, xHat,
-                                                                                             listIndices, listxk, listB0k,
-                                                                                             listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop0, indStTop, paramsStTop0,
-                                                                                             listCurvingInwards)
-# Plot to see what happened
 
-f1 = fObj_generalized(params1, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop1,
-                      indStTop = indStTop, paramsStTop = paramsStTop1)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params1, indCrTop = indCrTop, paramsCrTop = paramsCrTop1, listBkBk1 = listBkBk1)
-plt.title("After one step of projected coordinate subgradient descent")
+# Test project r1 given mu1
+
+r1_proj = oP.project_rkGivenmuk(r1, mu1, x0, B01, x1, B1, x2, B2, B1B2_0, B1B2_1)
+paramsCrTop_proj = [r1_proj, s1]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
+             indStTop = None, paramsStTop = None)
+ax = plt.gca()
+ax.set_aspect("auto")
+plt.title("Generalized triangle fan, points on side edge, project r1 given mu1, no projection necessary")
+
+
+# Test project lam2 given s1
+
+lam2_proj = oP.project_lamkGivenskM1(lam2, s1, x0, B02, x2, B2, B1B2_0, x1, B1B2_1)
+paramsProj = [mu1, lam2_proj, 1.0]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = paramsProj,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop0,
+             indStTop = None, paramsStTop = None)
+ax = plt.gca()
+ax.set_aspect("auto")
+plt.title("Generalized triangle fan, points on side edge, project lam2 fiven s1, no projection needed")
+
+
+# Test project s1 given lam2
+
+s1_proj = oP.project_skGivenlamk1(s1, lam2, x0, B02, x2, B2, x1, B1B2_0, B1B2_1)
+paramsCrTop_proj = [r1, s1_proj]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop_proj,
+             indStTop = None, paramsStTop = None)
+ax = plt.gca()
+ax.set_aspect("auto")
+plt.title("Generalized triangle fan, points on side edge, project s1 given lam2, no projection needed")
+
+
+# Test project mu1 given r1
+
+mu1_proj = oP.project_mukGivenrk(mu1, r1, x0, B01, x1, B1, B1B2_0, x2, B1B2_1)
+params_proj = [mu1_proj, lam2, 1.0]
+
+itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params_proj,
+         indCrTop = indCrTop, paramsCrTop = paramsCrTop0,
+             indStTop = None, paramsStTop = None)
+ax = plt.gca()
+ax.set_aspect("auto")
+plt.title("Generalized triangle fan, points on side edge, project mu1 given r1, no projection needed")
+
+
+
+
+# # Compute one step of the pass forward method
+
+# listCurvingInwards = [1]
+# gammas = [0.1]
+# theta_gamma = 1
+
+# params1, paramsCrTop1, paramsStTop1, gradParams1, gradCrTop1, gradStTop1 = forwardPassUpdate(params0, gammas, theta_gamma,
+#                                                                                              x0, T0, grad0, x1, T1, grad1, xHat,
+#                                                                                              listIndices, listxk, listB0k,
+#                                                                                              listBk, listBkBk1, indCrTop,
+#                                                                                              paramsCrTop0, indStTop, paramsStTop0,
+#                                                                                              listCurvingInwards)
+# # Plot to see what happened
+
+# f1 = fObj_generalized(params1, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+#                       listxk, listB0k, listBk, listBkBk1,
+#                       indCrTop = indCrTop, paramsCrTop = paramsCrTop1,
+#                       indStTop = indStTop, paramsStTop = paramsStTop1)
+# itt.plotFann(x0, listB0k, listxk, listBk, params = params1, indCrTop = indCrTop, paramsCrTop = paramsCrTop1, listBkBk1 = listBkBk1)
+# plt.title("After one step of projected coordinate subgradient descent")
 
 
