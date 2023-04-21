@@ -1507,7 +1507,7 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+     while( (f_before <= f_test) and i < 25):
           alpha = alpha*0.2
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1516,9 +1516,9 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test ):
-          return params[k], params[k+1]
+          return params[kCrTop], params[kCrTop+1]
      else:
-          return params_test[k], params_test[k+1]
+          return params_test[kCrTio], params_test[kCrTop+1]
 
 
 def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1560,9 +1560,9 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test ):
-          return params[k], params[k+1]
+          return params[kStTop], params[kStTop+1]
      else:
-          return params_test[k], params_test[k+1]
+          return params_test[kStTop], params_test[kStTop+1]
 
 ###################################
 # Function to do one update
@@ -1609,6 +1609,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      mu1 = params[0]
      lam2 = params[1]
      B0k = listB0k[0]
+     etak = listIndices[0]
      xk = listxk[1]
      Bk = listBk[0]
      B0k1 = listB0k[1]
@@ -1675,8 +1676,8 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                kCrTop = 2*currentCrTop
                rkM1 = paramsCrTop[kCrTop]
                skM1 = paramsCrTop[kCrTop + 1]
-               akM1 = itt.hermite_boundary(rk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-               bkM1 = itt.hermite_boundary(sk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+               akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+               bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
                # Compute directions
                drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
                gradCrTop[kCrTop] = drkM1
@@ -1775,8 +1776,8 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                kStTop = 2*currentStTop
                rkM1 = paramsStTop[kStTop]
                skM1 = paramsStTop[kStTop + 1]
-               akM1 = itt.hermite_boundary(rk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-               bkM1 = itt.hermite_boundary(sk, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+               akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+               bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
                # Compute directions
                drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
                gradStTop[kStTop] = drkM1
