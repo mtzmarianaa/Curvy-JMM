@@ -541,7 +541,7 @@ B2 = B2/norm(B2)
 # For the triangle top
 B1B2_0 = np.array([-1, 0.6])
 B1B2_0 = (B1B2_0/norm(B1B2_0))*4
-B1B2_1 = np.array([2, -0.2])
+B1B2_1 = np.array([1.2, 1])
 B1B2_1 = (B1B2_1/norm(B1B2_1))*0.5
 
 

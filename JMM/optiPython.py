@@ -5,10 +5,16 @@
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
 
+
+
+
+import pdb
+
+
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
-from math import sqrt, pi
+from math import sqrt, pi, cos, sin
 import intermediateTests as itt
 from scipy.optimize import root_scalar # to project back blocks [mu_k, lambda_k+1]
 import colorcet as cc
@@ -815,8 +821,8 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
                # which then shoots to yk and then creeps to zk
                etaRegionOutside = listIndices[n + j]
                etaMinCr = min(etaRegionOutside, etakPrev)
-               rk = paramsStTop[2*currentStTop]
-               sk = paramsStTop[2*currentStTop + 1]
+               rk = paramsCrTop[2*currentCrTop]
+               sk = paramsCrTop[2*currentCrTop + 1]
                ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
                bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
                sum += etakPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
@@ -1173,7 +1179,7 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
      if( np.dot( N0k_lamk, x0 - xkM1) < 0):
           N0k_lamk = -N0k_lamk
      if( np.dot( NkM1Nk_0, x0 - xkM1) < 0):
-          NkM1Nk_skM1 = - NkM1Nk_skM1
+          NkM1Nk_skM1 = -NkM1Nk_skM1
 
      # Compute the tests
      testMin = np.dot(N0k_lamk, yk - bkM1 )
@@ -1366,9 +1372,9 @@ def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, 
      if( f_before <= f_test and f_before <= f_test_proj):
           return params[kCrTop], params[kCrTop+1]
      elif( f_test < f_test_proj ):
-          return params_test[kCrTop], params_test[kCrTop+1]
+          return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
      else:
-          return params_test_proj[kCrTop], params_test_proj[kCrTop+1]
+          return paramsCrTop_test[kCrTop], paramsCrTop_test[kCrTop+1]
 
 
 def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1424,11 +1430,11 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test and f_before <= f_test_proj):
-          return params[kStTop], params[kStTop+1]
+          return paramsStTop[kStTop], paramsStTop[kStTop+1]
      elif( f_test < f_test_proj ):
-          return params_test[kStTop], params_test[kStTop+1]
+          return paramsStTop_test[kStTop], paramsStTop_test[kStTop+1]
      else:
-          return params_test_proj[kStTop], params_test_proj[kStTop+1]
+          return paramsStTop_test_proj[kStTop], paramsStTop_test_proj[kStTop+1]
 
 ###################################
 # Backtracking for updates far from the identity
@@ -1498,7 +1504,7 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
                         listIndices, listxk, listB0k, listBk, listBkBk1,
                         indCrTop, paramsCrTop_test, indStTop, paramsStTop)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+     while( (f_test < f_before) and i < 8 ):
           alpha = alpha*1.3
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1516,9 +1522,9 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test ):
-          return params[kCrTop], params[kCrTop+1]
+          return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
      else:
-          return params_test[kCrTio], params_test[kCrTop+1]
+          return paramsCrTop_test[kCrTop], paramsCrTop_test[kCrTop+1]
 
 
 def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1560,9 +1566,9 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test ):
-          return params[kStTop], params[kStTop+1]
+          return paramsStTop[kStTop], paramsStTop[kStTop+1]
      else:
-          return params_test[kStTop], params_test[kStTop+1]
+          return paramsStTop_test[kStTop], paramsStTop_test[kStTop+1]
 
 ###################################
 # Function to do one update
@@ -1626,11 +1632,13 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      if( indCrTop[0] == 1):
           rk = paramsCrTop[0]
           ak = itt.hermite_boundary( rk, xk, BkBk1_0, xk1, BkBk1_1)
+          #breakpoint()      ##############################################################################
           dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
      alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                           listIndices, listxk, listB0k, listBk, listBkBk1,
                           indCrTop, paramsCrTop, indStTop, paramsStTop)
      mu1 = mu1 - alpha*dmuk
+     #breakpoint() ##############################################################################
      # Then we need to project it back WE ASSUME THAT PARAMS0 IS A FEASIBLE SET!
      if( indCrTop[0] != 1 and indStTop[0] != 1 and listCurvingInwards[0] != 1):
           # Means that we don't have a point on the side edge and we don't have to worry about that edge
@@ -1644,6 +1652,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           # Means that we have a point on the side edge, we can project using that point
           params[0] = project_mukGivenrk(mu1, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
           gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
+     #breakpoint() ##############################################################################
      # Now we start with blocks of size 2
      n = len(listxk) - 2
      for j in range(1, n+1):
@@ -1669,6 +1678,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           etakPrev = etak # index of refraction from previous triangle
           etak = listIndices[j] # index of refraction in current triangle
           etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
+          #breakpoint() ##############################################################################
           ###### Compute the directions - first we want to update [  rkM1,  skM1 ] if applicable
           if( nTop == indCrTop[currentCrTop] ):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from creeping)
@@ -1681,8 +1691,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                # Compute directions
                drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
                gradCrTop[kCrTop] = drkM1
+               #breakpoint() ##############################################################################
                dskM1 = partial_fObj_shCr(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
                gradCrTop[kCrTop + 1] = dskM1
+               #breakpoint() ##############################################################################
                # Decide if we need close or far backtracking
                r = close_to_identity(rkM1, skM1)
                if( r <= gamma ):
@@ -1690,14 +1702,17 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     rkM1, skM1 = backTrClose_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    #breakpoint() ##############################################################################
                else:
                     # Meaning we dont have to do a close update
                     rkM1, skM1 = backTr_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    #breakpoint() ##############################################################################
                # Project back
                rkM1 = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
                skM1 = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+               #breakpoint() ##############################################################################
                # Update
                paramsCrTop[kCrTop] = rkM1
                paramsCrTop[kCrTop + 1] = skM1
@@ -1706,6 +1721,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
                dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
                gradParams[k] = dlamk
+               #breakpoint() ##############################################################################
                # We need to know if the next receiver is on h0k1 or on hkk1
                if( nTop + 1 == indCrTop[currentCrTop]):
                     # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
@@ -1713,6 +1729,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     BkBk1_1 = listBkBk1[k+2]
                     rk = paramsCrTop[2*currentCrTop]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+                    #breakpoint() ##############################################################################
                     gradParams[k+1] = dmuk
                     r = close_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
@@ -1721,14 +1738,17 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                          lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+                         #breakpoint() ##############################################################################
                     else:
                          # We have a far update
                          lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
+                         #breakpoint() ##############################################################################
                     # Now we project, we use rk to project back muk and skM1 to project back lamk
                     lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
                     muk = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+                    #breakpoint() ##############################################################################
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
@@ -1739,8 +1759,9 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     Bk = listBk[j+1]
                     etak1 = listIndices[j+1]
                     dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
+                    #breakpoint() ##############################################################################
                     gradParams[k+1] = dmuk
-                    r = clost_to_identity(lamk, muk)
+                    r = close_to_identity(lamk, muk)
                     # Decide which type of backtracking we have to do: close or far
                     if (r <= gamma):
                          # Meaning we have to do a close update
@@ -1749,13 +1770,16 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
                          gamma = gamma*theta_gamma
                          gammas[j-1] = gamma
+                         #breakpoint() ##############################################################################
                     else:
                          # Meaning we have to do a far update
                          lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
+                         #breakpoint() ##############################################################################
                     # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
                     lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    #breakpoint() ##############################################################################
                     # Depending on dmuk and the curvature of hkhk1 we project back muk differently
                     if( dmuk >= 0 or listCurvingInwards[j] != 1):
                          # Means that we don't have a point on the side edge and we don't have to worry about that edge
@@ -1766,10 +1790,16 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
+                    #breakpoint() ##############################################################################
                else:
                     # We just have to update lamk because we are on lamn1
+                    alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    lamk = lamk - alpha*dlamk
                     lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
                     params[k] = lamk
+                    #breakpoint() ##############################################################################
           elif( nTop == indStTop[currentStTop]):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from a straight ray)
                etaMinSt = min(etaRegionOutside, etakPrev)
@@ -1868,6 +1898,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     params[k+1] = muk
                else:
                     # We just have to update lamk because we are on lamn1
+                    alpha = brackTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    lamk = lamk - alpha*dlamk
                     lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
                     params[k] = lamk
           else:
@@ -1951,6 +1985,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     params[k+1] = muk
                else:
                     # This means that j = n, we are on lamn1
+                    alpha = brackTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    lamk = lamk - alpha*dlamk
                     if( dlamk > 0 or listCurvingInwards[j-1] != 1):
                          # There is no problem with hkM1k
                          lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
@@ -1963,20 +2001,3 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop
 
 
-# def blockCoordinateGradientGeneral(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
-#                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-#                                    indCrTop = None, paramsCrTop0 = None,
-#                                    indStTop = None, paramsStTop0 = None):
-#      '''
-#      Block coordinate subgradient descent (modified) for a generalized triangle fan (includes curved side edges)
-#      '''
-#      params = np.copy(params0)
-#      nRegions = len(listxk) - 2
-#      if( len(params) == 2*nRegions ):
-#           params = np.append(params, [1])
-#      # Initialize the useful things
-#      listObjVals = []
-#      listGrads = []
-#      listChangefObj = []
-#      listIterates = []
-       

@@ -12,7 +12,7 @@ from optiPython import gradient_TY, fObj_genera
          indStTop = indStTop, paramsStTop = paramsStTop)
 plt.title("Generalized triangle fan, creeping and going through tops")
 
-print("Value of objective function with these parameters: \n")
+print("Value of objective function with these parameters: \tesn")
 fObj_gen = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1,
                             indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = indStTop, paramsStTop = paramsStTop)
 

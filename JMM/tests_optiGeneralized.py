@@ -87,8 +87,8 @@ T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
 # Use blockCoordinateGradient
 
-mu1 = 0.4
-lam2 = 0.6
+mu1 = 0.01
+lam2 = 0.95
 params0 = [mu1, lam2, 1.0]
 r1 = 0.1
 s1 = 0.4
@@ -190,141 +190,100 @@ plt.title("After one step of projected coordinate subgradient descent")
 
 
 
-# Compute another step of the pass forward method
+# Compute nS steps
 
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
+nS = 9
 
-params2, paramsCrTop2, paramsStTop2, gradParams2, gradCrTop2, gradStTop2 = forwardPassUpdate(params1, gammas, theta_gamma,
+f_vals = np.empty((nS))
+subGradNorms = np.empty((nS))
+normChangeParams = np.empty((nS))
+
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = params1, paramsCrTop1, paramsStTop1, gradParams1, gradCrTop1, gradStTop1
+
+for i in range(nS):
+    paramskM1, paramsCrTopkM1, paramsStTopkM1, gradParamskM1, gradCrTopkM1, gradStTopkM1 = paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk
+    paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = forwardPassUpdate(paramskM1, gammas, theta_gamma,
                                                                                              x0, T0, grad0, x1, T1, grad1, xHat,
                                                                                              listIndices, listxk, listB0k,
                                                                                              listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop1, indStTop, paramsStTop1,
+                                                                                             paramsCrTopkM1, indStTop, paramsStTopkM1,
                                                                                              listCurvingInwards)
-# Plot to see what happened
+    fk = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop = indCrTop, paramsCrTop = paramsCrTopk,
+                          indStTop = indStTop, paramsStTop = paramsStTopk)
+    itt.plotFann(x0, listB0k, listxk, listBk, params = paramsk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk, listBkBk1 = listBkBk1)
+    ax = plt.gca()
+    ax.set_aspect("auto")
+    plt.title("After " + str(i + 1) +" steps of projected coordinate subgradient descent")
+    f_vals[i] = fk
+    subGradNorms[i] = sqrt( norm(gradParamsk)**2 + norm(gradCrTopk)**2 + norm(gradStTopk)**2)
+    normChangeParams[i] = sqrt( norm( paramskM1 - paramsk)**2 + norm( paramsCrTopkM1 - paramsCrTopk)**2 + norm(paramsStTopkM1 - paramsStTopk)**2 )
 
-f2 = fObj_generalized(params2, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop2,
-                      indStTop = indStTop, paramsStTop = paramsStTop2)
-print("f2: ", f2)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params2, indCrTop = indCrTop, paramsCrTop = paramsCrTop2, listBkBk1 = listBkBk1)
-ax = plt.gca()
-ax.set_aspect("auto")
-plt.title("After two steps of projected coordinate subgradient descent")
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, nS), f_vals, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Function value")
+plt.title("Function value at each iteration")
 
 
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, nS), subGradNorms, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Norm of subgradients")
+plt.title("Norm of subgradients at each iteration")
 
 
-
-
-# Compute another step of the pass forward method
-
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
-
-params3, paramsCrTop3, paramsStTop3, gradParams3, gradCrTop3, gradStTop3 = forwardPassUpdate(params2, gammas, theta_gamma,
-                                                                                             x0, T0, grad0, x1, T1, grad1, xHat,
-                                                                                             listIndices, listxk, listB0k,
-                                                                                             listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop2, indStTop, paramsStTop2,
-                                                                                             listCurvingInwards)
-# Plot to see what happened
-
-f3 = fObj_generalized(params3, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop3,
-                      indStTop = indStTop, paramsStTop = paramsStTop3)
-print("f3: ", f3)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params3, indCrTop = indCrTop, paramsCrTop = paramsCrTop3, listBkBk1 = listBkBk1)
-ax = plt.gca()
-ax.set_aspect("auto")
-plt.title("After three steps of projected coordinate subgradient descent")
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, nS), normChangeParams, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Norm of change in parameters")
+plt.title("Norm of change in parameters at each iteration")
 
 
 
+rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+fk_grid = np.empty((200,200))
 
-# Compute another step of the pass forward method
+for i in range(200):
+    for j in range(200):
+        r1 = rs[i,j]
+        s1 = ss[i,j]
+        paramsCrTop = np.array([r1, s1])
+        fk_grid[i,j] = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+                          indStTop = indStTop, paramsStTop = paramsStTopk)
 
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
-
-params4, paramsCrTop4, paramsStTop4, gradParams4, gradCrTop4, gradStTop4 = forwardPassUpdate(params3, gammas, theta_gamma,
-                                                                                             x0, T0, grad0, x1, T1, grad1, xHat,
-                                                                                             listIndices, listxk, listB0k,
-                                                                                             listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop3, indStTop, paramsStTop3,
-                                                                                             listCurvingInwards)
-# Plot to see what happened
-
-f4 = fObj_generalized(params4, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop4,
-                      indStTop = indStTop, paramsStTop = paramsStTop4)
-print("f4: ", f4)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params4, indCrTop = indCrTop, paramsCrTop = paramsCrTop4, listBkBk1 = listBkBk1)
-ax = plt.gca()
-ax.set_aspect("auto")
-plt.title("After 4 steps of projected coordinate subgradient descent")
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+im = plt.imshow(fk_grid, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
+plt.scatter( paramsCrTop[0], paramsCrTop[1], c = "white", marker = "*", label = "optimum found")
+#plt.contour(rs[0, :], ss[0, :], fk_grid, cmap = colormap2, extend = [0,1,0,1], origin = "lower", lower = 15)
+plt.title("Level set of objective function")
+plt.legend()
 
 
 
 
+rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+fk_grid = np.empty((200,200))
 
+for i in range(200):
+    for j in range(200):
+        r1 = rs[i,j]
+        s1 = ss[i,j]
+        paramsCrTop = np.array([r1, s1])
+        fk_grid[i,j] = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                        listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+                                        indStTop = indStTop, paramsStTop = paramsStTop0)
 
-# Compute another step of the pass forward method
-
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
-
-params5, paramsCrTop5, paramsStTop5, gradParams5, gradCrTop5, gradStTop5 = forwardPassUpdate(params4, gammas, theta_gamma,
-                                                                                             x0, T0, grad0, x1, T1, grad1, xHat,
-                                                                                             listIndices, listxk, listB0k,
-                                                                                             listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop4, indStTop, paramsStTop4,
-                                                                                             listCurvingInwards)
-# Plot to see what happened
-
-f5 = fObj_generalized(params5, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop5,
-                      indStTop = indStTop, paramsStTop = paramsStTop5)
-print("f5: ", f5)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params5, indCrTop = indCrTop, paramsCrTop = paramsCrTop5, listBkBk1 = listBkBk1)
-ax = plt.gca()
-ax.set_aspect("auto")
-plt.title("After 5 steps of projected coordinate subgradient descent")
-
-
-
-
-# Compute another step of the pass forward method
-
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
-
-params6, paramsCrTop6, paramsStTop6, gradParams6, gradCrTop6, gradStTop6 = forwardPassUpdate(params5, gammas, theta_gamma,
-                                                                                             x0, T0, grad0, x1, T1, grad1, xHat,
-                                                                                             listIndices, listxk, listB0k,
-                                                                                             listBk, listBkBk1, indCrTop,
-                                                                                             paramsCrTop5, indStTop, paramsStTop5,
-                                                                                             listCurvingInwards)
-# Plot to see what happened
-
-f6 = fObj_generalized(params6, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                      listxk, listB0k, listBk, listBkBk1,
-                      indCrTop = indCrTop, paramsCrTop = paramsCrTop6,
-                      indStTop = indStTop, paramsStTop = paramsStTop6)
-print("f6: ", f6)
-itt.plotFann(x0, listB0k, listxk, listBk, params = params6, indCrTop = indCrTop, paramsCrTop = paramsCrTop6, listBkBk1 = listBkBk1)
-ax = plt.gca()
-ax.set_aspect("auto")
-plt.title("After 6 steps of projected coordinate subgradient descent")
-
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+im = plt.imshow(fk_grid, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
+plt.scatter( paramsCrTop[0], paramsCrTop[1], c = "white", marker = "*", label = "optimum found")
+plt.contour(rs[0, :], ss[:, 0], fk_grid, colors = ["white"], extend = [0,1,0,1], origin = "lower", levels = 15, linewidths = 0.7)
+plt.title("Level set of objective function")
+plt.colorbar(im)
+plt.legend()
 
 
