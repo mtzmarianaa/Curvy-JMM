@@ -1935,11 +1935,14 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                gradParams[k] = dlamk
                #breakpoint() ##############################################################################
                # We need to know if the next receiver is on h0k1 or on hkk1
-               if( nTop + 1 == indCrTop[currentCrTop]):
+               if( nTop + 1 == indCrTop[currentCrTop] or nTop + 1 == indStTop[currentStTop] ):
                     # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
                     BkBk1_0 = listBkBk1[k+1]
                     BkBk1_1 = listBkBk1[k+2]
-                    rk = paramsCrTop[2*currentCrTop]
+                    if( nTop + 1 == indCrTop[currentCrTop]):
+                         rk = paramsCrTop[2*currentCrTop]
+                    else:
+                         rk = paramsStTop[2*currentStTop]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
                     #breakpoint() ##############################################################################
                     gradParams[k+1] = dmuk
@@ -2229,17 +2232,18 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
           else:
                # Meaning that we dont have [rkM1, skM1] on the side of the edge, in this case we just need to update [lamk, muk]
                dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakPrev, etak)
+               #breakpoint()
                gradParams[k] = dlamk
                # We need to see if the next receiver is on h0k1 or on hkk1
                if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentStTop] ):
                     # This means that the next receiver is on hkk1 NOTE THAT THE PROCESS NEVER GOES HERE IF j = n, if we are on lamn1
+                    BkBk1_0 = listBkBk1[k+1]
+                    BkBk1_1 = listBkBk1[k+2]
                     if( nTop + 1 == indStTop[currentStTop]):
                          rk = paramsStTop[2*currentStTop]
                     else:
                          rk = paramsCrTop[2*currentCrTop]
                     xk1 = listxk[j+2]
-                    BkBk1_0 = listBkBk1[k+1]
-                    BkBk1_1 = listBkBk1[k+2]
                     dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
                     gradParams[k+1] = dmuk
                     # Decide which type of backtracking we have to do: close or far
@@ -2260,12 +2264,35 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # See if we need to use hkM1k to project back lamk
                     if( dlamk > 0 or listCurvingInwards[j-1] != 1):
                          # There is no problem with hkM1k
-                         lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
                     else:
                          # There is a problem with hkM1k
-                         lamk = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                    lamk_free = project_box(lamk)
+                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                        listxk, listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
                     # Project back muk using rk
-                    muk = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+                    muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+                    muk_free = project_box(muk)
+                    rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+                    if( nTop + 1 == indStTop[currentStTop]):
+                         muk, rk = projections_muk_rkSt(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentStTop,
+                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                        listxk, listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                         paramsStTop[2*currentStTop] = rk
+                    else:
+                         muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentCrTop,
+                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                        listxk, listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                         paramsCrTop[2*currentCrTop] = rk
+                    # Update
+                    params[k-1] = mukM1
                     params[k] = lamk
                     params[k+1] = muk
                elif(j <  n):
@@ -2290,33 +2317,56 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                     # See if we need to use hkM1k to project back lamk
                     if( dlamk > 0 or listCurvingInwards[j-1] != 1):
                          # There is no problem with hkM1k
-                         lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
                     else:
                          # There is a problem with hkM1k
-                         lamk = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                    lamk_free = project_box(lamk)
+                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                        listxk, listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
                     # Project back muk using lamk1
                     if( dmuk > 0 or listCurvingInwards[j] != 1):
                          # There is no problem with hkk1
-                         muk = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+                         muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+                         lamk1_projected = project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, B, B0k1, xk1, Bk1)
                     else:
                          # There is a problem with hkk1
                          BkBk1_0 = listBkBk1[k+1]
                          BkBk1_1 = listBkBk1[k+2]
-                         muk = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                         muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                         lamk1_projected = project_lamkGivenmuk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                    muk_free = project_box(muk)
+                    muk, lamk1 = projections_muk_lamk1(muk_projected, lamk1_projected, muk_free, lamk1, k+1,
+                                                       params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                       listxk, listB0k, listBk, listBkBk1,
+                                                       indCrTop, paramsCrTop, indStTop, paramsStTop)
                     params[k] = lamk
                     params[k+1] = muk
+                    params[k+2] = lamk1
                else:
                     # This means that j = n, we are on lamn1
-                    alpha = brackTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                    alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
                     lamk = lamk - alpha*dlamk
+                    lamk_free = project_box(lamk)
                     if( dlamk > 0 or listCurvingInwards[j-1] != 1):
                          # There is no problem with hkM1k
-                         lamk = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
                     else:
                          # There is a problem with hkM1k
-                         lamk = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                        listxk, listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    params[k-1] = mukM1
                     params[k] = lamk
      # THIS IS THE END OF THE FOR LOOP
      # We are done
