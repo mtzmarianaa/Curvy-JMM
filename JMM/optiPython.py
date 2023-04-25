@@ -1227,6 +1227,8 @@ def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, 
      Two options depending on which one is better:     - project muk given lamk1
                                                        - project lamk1 given muk
      '''
+     if( muk_candidate == muk_free and lamk1_candidate == lamk1_free):
+          return muk_candidate, lamk1_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
      params_muk_projected[k+1] = lamk1_free
@@ -1239,8 +1241,6 @@ def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, 
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
-     print("f_muk_projected: ", f_muk_projected)
-     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
      if( f_muk_projected < f_lamk1_projected):
           return muk_candidate, lamk1_free
      else:
@@ -1256,6 +1256,8 @@ def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrT
      Two options depending on which one is better:     - project muk given rk
                                                        - project rk given muk
      '''
+     if( muk_candidate == muk_free and rk_candidate == rk_free):
+          return muk_candidate, rk_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
      paramsCrTop[kCrTop] = rk_free
@@ -1268,10 +1270,8 @@ def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrT
      f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop_rk_projected, indStTop, paramsStTop)
-     print("f_muk_projected: ", f_muk_projected)
-     print("f_rk_projected: ", f_rk_projected, "\n")
      if( f_muk_projected < f_rk_projected ):
-          return params_muk_projected[k], rk_free
+          return muk_candidate, rk_free
      else:
           return muk_free, rk_candidate
 
@@ -1285,6 +1285,8 @@ def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStT
      Two options depending on which one is better:     - project muk given rk
                                                        - project rk given muk
      '''
+     if( muk_candidate == muk_free and rk_candidate == rk_free):
+          return muk_candidate, rk_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
      paramsSt[kStTop] = rk_free
@@ -1297,8 +1299,6 @@ def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStT
      f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop_rk_projected)
-     print("f_muk_projected: ", f_muk_projected)
-     print("f_rk_projected: ", f_rk_projected, "\n")
      if( f_muk_projected < f_rk_projected ):
           return muk_candidate, rk_free
      else:
@@ -1314,6 +1314,8 @@ def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
      Two options depending on which is better:   - project sk given lamk1
                                                  - project lamk1 given sk
      '''
+     if( sk_candidate == sk_free and lamk1_candidate == lamk1_free):
+          return sk_candidate, lamk1_free
      paramsCrTop_sk_projected = np.copy(paramsCrTop)
      paramsCrTop_sk_projected[kCrTop + 1] = sk_candidate
      params[k] = lamk1_free
@@ -1326,8 +1328,6 @@ def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-     print("f_sk_projected: ", f_sk_projected)
-     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
      if( f_sk_projected < f_lamk1_projected):
           return sk_candidate, lamk1_free
      else:
@@ -1343,6 +1343,8 @@ def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
      Two options depending on which is better:   - project sk given lamk1
                                                  - project lamk1 given sk
      '''
+     if( sk_candidate == sk_free and lamk1_candidate == lamk1_free):
+          return sk_candidate, lamk1_free
      paramsStTop_sk_projected = np.copy(paramsStTop)
      paramsStTop_sk_projected[kStTop + 1] = sk_candidate
      params[k] = lamk1_free
@@ -1355,8 +1357,6 @@ def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-     print("f_sk_projected: ", f_sk_projected)
-     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
      if( f_sk_projected < f_lamk1_projected):
           return sk_candidate, lamk1_free
      else:
@@ -1530,11 +1530,11 @@ def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, 
           i += 1
      # Now we should have a decrease or set alpha to 0
      if( f_before <= f_test and f_before <= f_test_proj):
-          return params[kCrTop], params[kCrTop+1]
+          return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
      elif( f_test < f_test_proj ):
           return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
      else:
-          return paramsCrTop_test[kCrTop], paramsCrTop_test[kCrTop+1]
+          return paramsCrTop_test_proj[kCrTop], paramsCrTop_test_proj[kCrTop+1]
 
 
 def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
