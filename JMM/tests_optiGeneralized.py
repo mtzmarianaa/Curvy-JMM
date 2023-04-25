@@ -87,11 +87,11 @@ T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
 # Use blockCoordinateGradient
 
-mu1 = 0.01
-lam2 = 0.95
+mu1 = 0.5
+lam2 = 0.5
 params0 = [mu1, lam2, 1.0]
-r1 = 0.1
-s1 = 0.4
+r1 = 0.54432577
+s1 = 0.63893313
 indCrTop = [1]
 paramsCrTop0 = [r1, s1]
 indStTop = None
@@ -190,9 +190,9 @@ plt.title("After one step of projected coordinate subgradient descent")
 
 
 
-# Compute nS steps
+# # Compute nS steps
 
-nS = 9
+nS = 25
 
 f_vals = np.empty((nS))
 subGradNorms = np.empty((nS))
@@ -212,6 +212,15 @@ for i in range(nS):
                           listxk, listB0k, listBk, listBkBk1,
                           indCrTop = indCrTop, paramsCrTop = paramsCrTopk,
                           indStTop = indStTop, paramsStTop = paramsStTopk)
+    print(fk)
+    if( fk > f_vals[i-1] ):
+        print("fk greater than fkM1", fk, "  , ", f_vals[i-1])
+        print("params: ", paramsk)
+        print("paramsCrTop: ", paramsCrTopk)
+        print("paramsStTopk: ", paramsStTopk)
+        print("paramsM1: ", paramskM1)
+        print("paramsCrTopM1: ", paramsCrTopkM1)
+        print("paramsStTopM1: ", paramsStTopkM1)
     itt.plotFann(x0, listB0k, listxk, listBk, params = paramsk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk, listBkBk1 = listBkBk1)
     ax = plt.gca()
     ax.set_aspect("auto")
@@ -257,9 +266,11 @@ for i in range(200):
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
 im = plt.imshow(fk_grid, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
-plt.scatter( paramsCrTop[0], paramsCrTop[1], c = "white", marker = "*", label = "optimum found")
-#plt.contour(rs[0, :], ss[0, :], fk_grid, cmap = colormap2, extend = [0,1,0,1], origin = "lower", lower = 15)
-plt.title("Level set of objective function")
+plt.scatter( paramsCrTopk[0], paramsCrTopk[1], c = "white", marker = "*", label = "optimum found")
+plt.contour(rs[0, :], ss[:, 0], fk_grid, colors = ["white"], extend = [0,1,0,1], origin = "lower", levels = 25, linewidths = 0.7)
+plt.title("Level set of objective function, last iteration")
+plt.xlabel("r1")
+plt.ylabel("s1")
 plt.legend()
 
 
@@ -280,9 +291,9 @@ for i in range(200):
 
 fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
 im = plt.imshow(fk_grid, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
-plt.scatter( paramsCrTop[0], paramsCrTop[1], c = "white", marker = "*", label = "optimum found")
-plt.contour(rs[0, :], ss[:, 0], fk_grid, colors = ["white"], extend = [0,1,0,1], origin = "lower", levels = 15, linewidths = 0.7)
-plt.title("Level set of objective function")
+plt.title("Level set of objective function, initial params")
+plt.xlabel("r1")
+plt.ylabel("s1")
 plt.colorbar(im)
 plt.legend()
 

@@ -908,17 +908,19 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      if( dotTestMin_fromh0kM1 < 0 ):
           #print(" dotTestMin_fromh0kM1 failed", yk, ",   ", zkM1)
           tMin = lambda lam: t1(lam, x0, xk, B0k, Bk, zkM1, B0kM1_mukM1)
-          rootMin = root_scalar(tMin, bracket=[0, 1])
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMin.root
           yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
           B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
           Nk_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
+          if( np.dot(Nk_lamk, x0 - xkM1) < 0):
+               Nk_lamk = -Nk_lamk
           dotTestMax_fromh0kM1 = np.dot( yk - zkM1, Nk_lamk )
      # Test if lamk > lamkMax (from h0hkM1)
      if( dotTestMax_fromh0kM1 < 0 ):
           #print(" dotTestMax_fromh0kM1 failed: ", yk, ", ", zkM1)
           tMax = lambda lam: t2(lam, x0, xk, B0k, Bk, zkM1)
-          rootMax = root_scalar(tMax, bracket = [0,1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMax.root
           # Update this lambda to test for max from hkM1hk
           rPass = lambda r: findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, zkM1)
@@ -927,13 +929,15 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
           a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
           BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
           N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
+          if( np.dot(NkM1Nk_0, x0 - xk) < 0):
+               N_tan = -N_tan
           dotTestMax_fromhkM1hk = np.dot( yk - a_tan, N_tan )
      # Test if lamk > lamkMax (from hkM1hk)
      if( dotTestMax_fromhkM1hk < 0 ):
           #print(" dotTestMax_fromhkM1hk failed", yk, ",  ", a_tan)
           #print("  ", N_tan)
           tMax = lambda lam: t1(lam, x0, xk, B0k, Bk, a_tan, BkM1Bk_tan)
-          rootMax = root_scalar(tMax, bracket = [0,1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMax.root
      lamk = project_box(lamk)
      return lamk
@@ -998,6 +1002,8 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
           B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+          if( np.dot( N0k_muk, xk1 - x0) < 0):
+               N0k_muk = -N0k_muk
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
      # Test if muk > mukMax (from h0hk)
      if(dotTestMax_fromh0hk < 0 ):
@@ -1007,7 +1013,7 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
           # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
-          rootMax = root_scalar(tMax, bracket = [0, 1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMax.root
           # Update this mu to test for max from hkhk1
           rPass = lambda r: findRtan(r, xk, xk1, BkBk1_0, BkBk1_1, yk1)
@@ -1016,10 +1022,12 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           a_tan = itt.hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
           BkBk1_tan = itt.gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
           N_tan = np.array([-BkBk1_tan[1], BkBk1_tan[0]])
+          if( np.dot(NkNk1_0, x0 - xk) < 0):
+               N_tan = -N_tan
           dotTestMax_fromhkhk1 = np.dot(N_tan, zk - a_tan)
      if(dotTestMax_fromhkhk1 < 0):
           tMax = lambda mu: t4(mu, x0, xk, B0k, Bk, a_tan, BkBk1_tan)
-          rootMax = root_scalar(tMax, bracket = [0,1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           #print( tMax(muk) )
           muk = rootMax.root
           #print( tMax(muk))
@@ -1064,15 +1072,17 @@ def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
      # Test if rk < rMin
      if( dotTestMin < 0):
           tMin = lambda r: t1(r, xk, xk1, BkBk1_0, BkBk1_1, zk, B0k_muk)
-          rootMin = root_scalar(tMin, bracket = [0,1])
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           rk = rootMin.root
           ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
+          if( np.dot(NkNk1_0, x0 - xk) < 0):
+               NkNk1_rk = -NkNk1_rk
           dotTestMax = np.dot( NkNk1_rk, ak - zk)
      if( dotTestMax < 0):
           tMax = lambda r: t2(r, xk, xk1, BkBk1_0, BkBk1_1, zk)
-          rootMax = root_scalar(tMax, bracket = [0,1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           rk = rootMax.root
      rk = project_box(rk)
      return rk
@@ -1112,6 +1122,8 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
           bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           BkBk1_sk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_sk = np.array([-BkBk1_sk[1], BkBk1_sk[0]])
+          if( np.dot( NkNk1_0, x0 - xk) < 0  ):
+               NkNk1_sk = -NkNk1_sk
           dotTestMax = np.dot( NkNk1_sk , yk1 - bk )
      if( dotTestMax < 0):
           #print("dotTestMax failed")
@@ -1147,15 +1159,13 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      dotTestMax = np.dot(NkNk1_rk, zk - ak)
      if(dotTestMin<0 ):
           tMin = lambda mu: t2(mu, x0, xk, B0k, Bk, ak)
-          rootMin = root_scalar(tMin, bracket = [0,1])
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMin.root
           zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
-          N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           dotTestMax = np.dot(NkNk1_rk, zk - ak)
      if(dotTestMax < 0 ):
           tMax = lambda mu: t1(mu, x0, xk, B0k, Bk, ak, BkBk1_rk)
-          rootMax = root_scalar(tMax, bracket = [0, 1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMax.root
      muk = project_box(muk)
      return muk
@@ -1192,7 +1202,9 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           lamk = rootMin.root
           yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
           B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
-          N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk])
+          N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
+          if( np.dot( N0k_lamk, x0 - xkM1) < 0):
+               N0k_lamk = -N0k_lamk
           testMax = np.dot(N0k_lamk, bkM1 - yk)
      if(testMax < 0):
           tMax = lambda lam: t1(lam, x0, xk, B0k, Bk, bkM1, BkM1Bk_skM1)
@@ -1201,6 +1213,154 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
      lamk = project_box(lamk)
      return lamk
 
+
+
+
+############ TWO BY TWO PROJECTIONS
+
+
+def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, k, params, x0,
+                          T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Two options depending on which one is better:     - project muk given lamk1
+                                                       - project lamk1 given muk
+     '''
+     params_muk_projected = np.copy(params)
+     params_muk_projected[k] = muk_candidate
+     params_muk_projected[k+1] = lamk1_free
+     f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     params_lamk1_projected = np.copy(params)
+     params_lamk1_projected[k] = muk_free
+     params_lamk1_projected[k+1] = lamk1_candidate
+     f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+     print("f_muk_projected: ", f_muk_projected)
+     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
+     if( f_muk_projected < f_lamk1_projected):
+          return muk_candidate, lamk1_free
+     else:
+          return muk_free, lamk1_candidate
+
+
+def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrTop, params, x0,
+                          T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     FOR CREEPING ALONG THE k-th side
+     Two options depending on which one is better:     - project muk given rk
+                                                       - project rk given muk
+     '''
+     params_muk_projected = np.copy(params)
+     params_muk_projected[k] = muk_candidate
+     paramsCrTop[kCrTop] = rk_free
+     f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     params[k] = muk_free
+     paramsCrTop_rk_projected = np.copy(paramsCrTop)
+     paramsCrTop_rk_projected[kCrTop] = rk_candidate
+     f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop_rk_projected, indStTop, paramsStTop)
+     print("f_muk_projected: ", f_muk_projected)
+     print("f_rk_projected: ", f_rk_projected, "\n")
+     if( f_muk_projected < f_rk_projected ):
+          return params_muk_projected[k], rk_free
+     else:
+          return muk_free, rk_candidate
+
+
+def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStTop, params, x0,
+                          T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     FOR STRAIGHT LINE THROUGH THE k-th side
+     Two options depending on which one is better:     - project muk given rk
+                                                       - project rk given muk
+     '''
+     params_muk_projected = np.copy(params)
+     params_muk_projected[k] = muk_candidate
+     paramsSt[kStTop] = rk_free
+     f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     params[k] = muk_free
+     paramsStTop_rk_projected = np.copy(paramsStTop)
+     paramsStTop_rk_projected[kStTop] = rk_candidate
+     f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop_rk_projected)
+     print("f_muk_projected: ", f_muk_projected)
+     print("f_rk_projected: ", f_rk_projected, "\n")
+     if( f_muk_projected < f_rk_projected ):
+          return muk_candidate, rk_free
+     else:
+          return muk_free, rk_candidate
+
+
+def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kCrTop, params, x0,
+                          T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     FOR CREEPING ALONG THE k-th side
+     Two options depending on which is better:   - project sk given lamk1
+                                                 - project lamk1 given sk
+     '''
+     paramsCrTop_sk_projected = np.copy(paramsCrTop)
+     paramsCrTop_sk_projected[kCrTop + 1] = sk_candidate
+     params[k] = lamk1_free
+     f_sk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop_sk_projected, indStTop, paramsStTop)
+     paramsCrTop[kCrTop + 1] = sk_free
+     params_lamk1_projected = np.copy(params)
+     params_lamk1_projected[k] = lamk1_candidate
+     f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     print("f_sk_projected: ", f_sk_projected)
+     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
+     if( f_sk_projected < f_lamk1_projected):
+          return sk_candidate, lamk1_free
+     else:
+          return sk_free, lamk1_candidate
+
+
+def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kStTop, params, x0,
+                          T0, grad0, x1, T1, grad1, xHat, listIndices,
+                          listxk, listB0k, listBk, listBkBk1,
+                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     FOR STRAIGHT LINE THROUGH THE k-th side
+     Two options depending on which is better:   - project sk given lamk1
+                                                 - project lamk1 given sk
+     '''
+     paramsStTop_sk_projected = np.copy(paramsStTop)
+     paramsStTop_sk_projected[kStTop + 1] = sk_candidate
+     params[k] = lamk1_free
+     f_sk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop_sk_projected)
+     paramsStTop[kStTop + 1] = sk_free
+     params_lamk1_projected = np.copy(params)
+     params_lamk1_projected[k] = lamk1_candidate
+     f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     print("f_sk_projected: ", f_sk_projected)
+     print("f_lamk1_projected: ", f_lamk1_projected, "\n")
+     if( f_sk_projected < f_lamk1_projected):
+          return sk_candidate, lamk1_free
+     else:
+          return sk_free, lamk1_candidate
 
 
 ################################################################################################
@@ -1573,7 +1733,6 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
 ###################################
 # Function to do one update
 
-
 def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
                       indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards):
@@ -1642,15 +1801,50 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # Then we need to project it back WE ASSUME THAT PARAMS0 IS A FEASIBLE SET!
      if( indCrTop[0] != 1 and indStTop[0] != 1 and listCurvingInwards[0] != 1):
           # Means that we don't have a point on the side edge and we don't have to worry about that edge
-          params[0] = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          # Consider moving mu1, consider moving lam2
+          mu1_projected = project_mukGivenlamk1(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          mu1_free = project_box(mu1)
+          lam2_projected = project_lamk1Givenmuk(mu1_free, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          mu1, lam2 = projections_muk_lamk1(mu1_projected, lam2_projected, mu1_free, lam2, 0, params, x0,
+                                            T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                            listxk, listB0k, listBk, listBkBk1,
+                                            indCrTop, paramsCrTop, indStTop, paramsStTop)
+          params[0] = mu1
+          params[1] = lam2
           gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      elif( indCrTop[0] != 1 and indStTop[0] != 1 ):
           # Means that we don't have a point on the side edge but we do need to worry about it
-          params[0] = project_mukGivenlamk1_noCr(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          mu1_projected = project_mukGivenlamk1_noCr(mu1, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          mu1_free = project_box(mu1)
+          lam2_projected = project_lamkGivenmuk1_noCr(mu1_free, lam2, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          mu1, lam2 = projections_muk_lamk1(mu1_projected, lam2_projected, mu1_free, lam2, 0, params, x0,
+                                            T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                            listxk, listB0k, listBk, listBkBk1,
+                                            indCrTop, paramsCrTop, indStTop, paramsStTop)
+          params[0] = mu1
+          params[1] = lam2
           gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      else:
           # Means that we have a point on the side edge, we can project using that point
-          params[0] = project_mukGivenrk(mu1, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          mu1_projected = project_mukGivenrk(mu1, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          mu1_free = project_box(mu1)
+          if( indCrTop[0] == 1):
+               r1 = paramsCrTop[0]
+               r1_projected = project_rkGivenmuk(r1, mu1_free, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+               mu1, r1 = projections_muk_rkCr(mu1_projected, r1_projected, mu1_free, r1, 0, 0, params, x0,
+                                            T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                            listxk, listB0k, listBk, listBkBk1,
+                                            indCrTop, paramsCrTop, indStTop, paramsStTop)
+               paramsCrTop[0] = r1
+          else:
+               r1 = paramsStTop[0]
+               r1_projected = project_rkGivenmuk(r1, mu1_free, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+               mu1, r1 = projections_muk_rkSt(mu1_projected, r1_projected, mu1_free, r1, 0, 0, params, x0,
+                                            T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                            listxk, listB0k, listBk, listBkBk1,
+                                            indCrTop, paramsCrTop, indStTop, paramsStTop)
+               paramsStTop[0] = r1
+          params[0] = mu1
           gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
      #breakpoint() ##############################################################################
      # Now we start with blocks of size 2
@@ -1710,14 +1904,32 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
                     #breakpoint() ##############################################################################
                # Project back
-               rkM1 = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-               skM1 = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+               rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+               mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk1, BkM1Bk_1)
+               rkM1_free = project_box(rkM1)
+               mukM1_free = mukM1
+               mukM1, rkM1 = projections_muk_rkCr(mukM1_projected, rkM1_projected, mukM1_free, rkM1_free, k-1,
+                                                  kCrTop, params, x0, T0, grad0,
+                                                  x1, T1, grad1, xHat, listIndices, listxk,
+                                                  listB0k, listBk, listBkBk1,
+                                                  indCrTop, paramsCrTop, indStTop, paramsStTop)
+               skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+               lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+               skM1_free = project_box(skM1)
+               skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1_free, lamk,
+                                                   k, kCrTop, params, x0, T0, grad0,
+                                                   x1, T1, grad1, xHat, listIndices, listxk,
+                                                   listB0k, listBk, listBkBk1,
+                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
                #breakpoint() ##############################################################################
                # Update
+               params[k-1] = mukM1
                paramsCrTop[kCrTop] = rkM1
                paramsCrTop[kCrTop + 1] = skM1
+               params[k] = lamk
                if( currentCrTop < len(indCrTop) - 1):
                     currentCrTop += 1
+               ### UPDATE LAMK, MUK
                # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
                dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
                gradParams[k] = dlamk
@@ -1746,12 +1958,28 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
                          #breakpoint() ##############################################################################
                     # Now we project, we use rk to project back muk and skM1 to project back lamk
-                    lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    muk = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+                    lamk_free = project_box(lamk)
+                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                                        k, kCrTop, params, x0, T0, grad0,
+                                                        x1, T1, grad1, xHat, listIndices, listxk,
+                                                        listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+                    rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+                    muk_free = project_box(muk)
+                    muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk_free,
+                                                   k, 2*currentCrTop,  params, x0,
+                                                   T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                   listxk, listB0k, listBk, listBkBk1,
+                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
                     #breakpoint() ##############################################################################
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
+                    paramsCrTop[kCrTop + 1] = skM1
+                    params[2*currentCrTop] = rk
                elif(j < n):
                     # The next receiver is on h0hk1
                     lamk1 = params[k+2]
@@ -1778,18 +2006,34 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
                          #breakpoint() ##############################################################################
                     # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
-                    lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    lamk_free = project_box(lamk)
+                    skM1_projected = project_skGivenlamk1(skM1, lamk_free, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                                        k, kCrTop, params, x0, T0, grad0,
+                                                        x1, T1, grad1, xHat, listIndices, listxk,
+                                                        listB0k, listBk, listBkBk1,
+                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    paramsCrTop[kCrTop + 1] = skM1
                     #breakpoint() ##############################################################################
                     # Depending on dmuk and the curvature of hkhk1 we project back muk differently
+                    muk_free = project_box(muk)
                     if( dmuk >= 0 or listCurvingInwards[j] != 1):
                          # Means that we don't have a point on the side edge and we don't have to worry about that edge
-                         muk = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+                         muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+                         lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
                     else:
                          # We have to worry about the side edge
-                         muk = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                         muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                         lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                    muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
+                                                       k+1, params, x0, T0, grad0, x1, T1,
+                                                       grad1, xHat, listIndices, listxk, listB0k, listBk,
+                                                       listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop)
                     # Update
                     params[k] = lamk
                     params[k+1] = muk
+                    params[k+2] = lamk1
                     #breakpoint() ##############################################################################
                else:
                     # We just have to update lamk because we are on lamn1
@@ -1797,8 +2041,16 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
                     lamk = lamk - alpha*dlamk
-                    lamk = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    lamk_free = project_box(lamk)
+                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                                        k, kCrTop, params, x0, T0, grad0,
+                                                        x1, T1, grad1, xHat, listIndices, listxk,
+                                                        listB0k, listBk, listBkBk1, indCrTop,
+                                                        paramsCrTop, indStTop, paramsStTop)
                     params[k] = lamk
+                    paramsCrTop[kCrTop +1] = skM1
                     #breakpoint() ##############################################################################
           elif( nTop == indStTop[currentStTop]):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from a straight ray)
