@@ -313,6 +313,13 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
     dotTestMin = np.dot( yk1 - zk, Nk_muk )
     dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
+
+    # See if this orientation is correct
+    if( np.dot( Nk_muk, xk1 - x0) < 0):
+         Nk_muk = -Nk_muk
+    if( np.dot( Nk1_lamk1, x0 - xk) < 0):
+         Nk1_lamk1 = -Nk1_lamk1
+    
     #print("       dotTestMin: ", dotTestMin, "  dotTestMax: ", dotTestMax)
     # Test if lamk < lamMin
     if( dotTestMin < 0):
@@ -324,11 +331,13 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
         # Means that we need to find lambdaMin
         tMin = lambda lam: t1(lam, x0, xk1, B0k1, Bk1, zk, B0k_muk)
         # Find the root of tMin
-        rootMin = root_scalar(tMin, bracket=[0, 1])
+        rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
         lamk1 = rootMin.root
         yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
         B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
         Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
+        if( np.dot( Nk1_lamk1, x0 - xk) < 0):
+             Nk1_lamk1 = -Nk1_lamk1
         dotTestMax = np.dot( yk1 - zk, Nk1_lamk1 )
         #print("       lambda < lambdaMin")
     if( dotTestMax < 0):
@@ -339,7 +348,7 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
         # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
         # Means that we need to find lambdaMax
         tMax = lambda lam: t2(lam, x0, xk1, B0k1, Bk1, zk)
-        rootMax = root_scalar(tMax, bracket=[0, 1])
+        rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
         lamk1 = rootMax.root
         #print("       lambda > lambdaMax")
     lamk1 = project_box(lamk1) # Such that 0<=lamk1 <=1
@@ -354,9 +363,18 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
      zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
      B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     
      # Compute the normals
      N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+
+     # See if this orientation is correct
+     if( np.dot( N0k_muk, xk1 - x0) < 0):
+          N0k_muk = -N0k_muk
+     if( np.dot( N0k1_lamk1, x0 - xk) < 0):
+          N0k1_lamk1 = -N0k1_lamk1
+     
+     # Compute the tests
      dotTestMin =  np.dot(N0k1_lamk1, yk1 - zk)
      dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMin<0 ):
@@ -366,11 +384,13 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
           # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
-          rootMin = root_scalar(tMin, bracket = [0,1])
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMin.root
           zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
           B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
+          if( np.dot( N0k_muk, xk1 - x0) < 0):
+               N0k_muk = -N0k_muk
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
      if(dotTestMax<0 ):
           # print("  failed dotTestMax project muk given lamk1")
@@ -379,7 +399,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
           # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
-          rootMax = root_scalar(tMax, bracket = [0, 1])
+          rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMax.root
      muk = project_box(muk)
      return muk
@@ -1731,7 +1751,605 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           return paramsStTop_test[kStTop], paramsStTop_test[kStTop+1]
 
 ###################################
-# Function to do one update
+# Auxiliary functions for the forward pass update
+
+
+
+def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
+                    grad0, x1, T1, grad1, xHat, listIndices, listxk,
+                    listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
+                    indStTop, paramsStTop, listCurvingInwards, gradParams, gradCrTop):
+     '''
+     Update [rkM1, skM1] and [lamk, muk] where [rkM1, skM1] define
+     a creeping ray from the top of the triangle fan (or side edge,
+     however you want to look at it)
+     '''
+     k = 2*j - 1
+     nTop = j
+     gamma = gammas[j-1]
+     mukM1 = params[k-1]
+     lamk = params[k]
+     muk = params[k-1]
+     B0kM1 = listB0k[j-1]
+     B0k = listB0k[j]
+     xkM1 = listxk[j]
+     xk = listxk[j+1]
+     if( j < n ):
+          xk1 = listxk[j+2] # Because otherwise this is not defined
+          B0k1 = listB0k[j+1]
+          Bk = listBk[j+1]
+     BkM1 = listBk[j-1]
+     Bk = listBk[j]
+     BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+     BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
+     etakPrev = listIndices[j-1] # index of refraction from previous triangle
+     etak = listIndices[j] # index of refraction in current triangle
+     etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
+     # This is where the update begins
+     etaMinCr = min(etaRegionOutside, etakPrev)
+     kCrTop = 2*currentCrTop
+     rkM1 = paramsCrTop[kCrTop]
+     skM1 = paramsCrTop[kCrTop + 1]
+     akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+     # Compute directions
+     drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
+     gradCrTop[kCrTop] = drkM1
+     #breakpoint() ##############################################################################
+     dskM1 = partial_fObj_shCr(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
+     gradCrTop[kCrTop + 1] = dskM1
+     #breakpoint() ##############################################################################
+     # Decide if we need close or far backtracking
+     r = close_to_identity(rkM1, skM1)
+     if( r <= gamma ):
+          # Meaning we have to do a close update
+          rkM1, skM1 = backTrClose_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+     else:
+          # Meaning we dont have to do a close update
+          rkM1, skM1 = backTr_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+     # Project back
+     rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+     mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     rkM1_free = project_box(rkM1)
+     mukM1_free = mukM1
+     mukM1, rkM1 = projections_muk_rkCr(mukM1_projected, rkM1_projected, mukM1_free, rkM1_free, k-1,
+                                        kCrTop, params, x0, T0, grad0,
+                                        x1, T1, grad1, xHat, listIndices, listxk,
+                                        listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+     lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+     skM1_free = project_box(skM1)
+     skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1_free, lamk,
+                                         k, kCrTop, params, x0, T0, grad0,
+                                         x1, T1, grad1, xHat, listIndices, listxk,
+                                         listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+     #breakpoint() ##############################################################################
+     # Update
+     params[k-1] = mukM1
+     paramsCrTop[kCrTop] = rkM1
+     paramsCrTop[kCrTop + 1] = skM1
+     params[k] = lamk
+     if( currentCrTop < len(indCrTop) - 1):
+          currentCrTop += 1
+          ### UPDATE LAMK, MUK
+          # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
+     dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
+     gradParams[k] = dlamk
+     #breakpoint() ##############################################################################
+     # We need to know if the next receiver is on h0k1 or on hkk1
+     if( nTop + 1 == indCrTop[currentCrTop] or nTop + 1 == indStTop[currentStTop] ):
+          # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
+          BkBk1_0 = listBkBk1[k+1]
+          BkBk1_1 = listBkBk1[k+2]
+          if( nTop + 1 == indCrTop[currentCrTop]):
+               rk = paramsCrTop[2*currentCrTop]
+          else:
+               rk = paramsStTop[2*currentStTop]
+          dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+          #breakpoint() ##############################################################################
+          gradParams[k+1] = dmuk
+          r = close_to_identity(lamk, muk)
+          # Decide which type of backtracking we have to do: close or far
+          if ( r<= gamma):
+               # Meaning we have to do a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+               #breakpoint() ##############################################################################
+          else:
+               # We have a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+               #breakpoint() ##############################################################################
+          # Now we project, we use rk to project back muk and skM1 to project back lamk
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kCrTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+          muk_free = project_box(muk)
+          muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk_free,
+                                         k, 2*currentCrTop,  params, x0,
+                                         T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                         listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+          # Update
+          params[k] = lamk
+          params[k+1] = muk
+          paramsCrTop[kCrTop + 1] = skM1
+          params[2*currentCrTop] = rk
+     elif(j < n):
+          # The next receiver is on h0hk1
+          lamk1 = params[k+2]
+          B0k1 = listB0k[j+1]
+          Bk = listBk[j+1]
+          etak1 = listIndices[j+1]
+          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
+          #breakpoint() ##############################################################################
+          gradParams[k+1] = dmuk
+          r = close_to_identity(lamk, muk)
+          # Decide which type of backtracking we have to do: close or far
+          if (r <= gamma):
+               # Meaning we have to do a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+               gamma = gamma*theta_gamma
+               gammas[j-1] = gamma
+               #breakpoint() ##############################################################################
+          else:
+               # Meaning we have to do a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+               #breakpoint() ##############################################################################
+          # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          skM1_projected = project_skGivenlamk1(skM1, lamk_free, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kCrTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          paramsCrTop[kCrTop + 1] = skM1
+          #breakpoint() ##############################################################################
+          # Depending on dmuk and the curvature of hkhk1 we project back muk differently
+          muk_free = project_box(muk)
+          if( dmuk >= 0 or listCurvingInwards[j] != 1):
+               # Means that we don't have a point on the side edge and we don't have to worry about that edge
+               muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+               lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          else:
+               # We have to worry about the side edge
+               muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+               lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
+                                             k+1, params, x0, T0, grad0, x1, T1,
+                                             grad1, xHat, listIndices, listxk, listB0k, listBk,
+                                             listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop)
+          # Update
+          params[k] = lamk
+          params[k+1] = muk
+          params[k+2] = lamk1
+          #breakpoint() ##############################################################################
+     else:
+          # We just have to update lamk because we are on lamn1
+          alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+          lamk = lamk - alpha*dlamk
+          lamk_free = project_box(lamk)
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kCrTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1, indCrTop,
+                                              paramsCrTop, indStTop, paramsStTop)
+          params[k] = lamk
+          paramsCrTop[kCrTop +1] = skM1
+          #breakpoint() ##############################################################################
+     #Now we just return whatever we did
+     return currentCrTop, params, paramsCrTop, gradParams, gradCrTop
+
+
+def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
+                    grad0, x1, T1, grad1, xHat, listIndices, listxk,
+                    listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
+                    indStTop, paramsStTop, listCurvingInwards, gradParams, gradStTop):
+     '''
+     Update [rkM1, skM1] and [lamk, muk] where [rkM1, skM1] define
+     a straight ray which peeks into the outter side region
+     from the top of the triangle fan (or side edge,
+     however you want to look at it)
+     '''
+     k = 2*j - 1
+     nTop = j
+     gamma = gammas[j-1]
+     mukM1 = params[k-1]
+     lamk = params[k]
+     muk = params[k-1]
+     B0kM1 = listB0k[j-1]
+     B0k = listB0k[j]
+     xkM1 = listxk[j]
+     xk = listxk[j+1]
+     if( j < n ):
+          xk1 = listxk[j+2] # Because otherwise this is not defined
+          B0k1 = listB0k[j+1]
+          Bk = listBk[j+1]
+     BkM1 = listBk[j-1]
+     Bk = listBk[j]
+     BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+     BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
+     etakPrev = listIndices[j-1] # index of refraction from previous triangle
+     etak = listIndices[j] # index of refraction in current triangle
+     etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
+     # The update starts here
+     etaMinSt = min(etaRegionOutside, etakPrev)
+     kStTop = 2*currentStTop
+     rkM1 = paramsStTop[kStTop]
+     skM1 = paramsStTop[kStTop + 1]
+     akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+     # Compute directions
+     drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
+     gradStTop[kStTop] = drkM1
+     #breakpoint() ##############################################################################
+     dskM1 = partial_fObj_shSt(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
+     gradStTop[kStTop + 1] = dskM1
+     #breakpoint() ##############################################################################
+     # Decide if we need close or far backtracking
+     r = close_to_identity(rkM1, skM1)
+     if( r <= gamma ):
+          # Meaning we have to do a close update
+          rkM1, skM1 = backTrClose_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+     else:
+          # Meaning we dont have to do a close update
+          rkM1, skM1 = backTr_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+     # Project back
+     rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+     mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     rkM1_free = project_box(rkM1)
+     mukM1_free = mukM1
+     mukM1, rkM1 = projections_muk_rkSt(mukM1_projected, rkM1_projected, mukM1_free, rkM1_free, k-1,
+                                        kStTop, params, x0, T0, grad0,
+                                        x1, T1, grad1, xHat, listIndices, listxk,
+                                        listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+     skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+     lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+     skM1_free = project_box(skM1)
+     skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1_free, lamk,
+                                         k, kStTop, params, x0, T0, grad0,
+                                         x1, T1, grad1, xHat, listIndices, listxk,
+                                         listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+     #breakpoint() ##############################################################################
+     # Update
+     params[k-1] = mukM1
+     paramsStTop[kStTop] = rkM1
+     paramsStTop[kStTop + 1] = skM1
+     params[k] = lamk
+     if( currentStTop < len(indStTop) - 1):
+          currentStTop += 1
+     # Now we can update lamk muk - we have to do this here since we have already updated rkM1 and skM1
+     dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
+     gradParams[k] = dlamk
+     #breakpoint() ##############################################################################
+     # We need to know if the next receiver is on h0k1 or on hkk1
+     if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentCrTop] ):
+          # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
+          BkBk1_0 = listBkBk1[k+1]
+          BkBk1_1 = listBkBk1[k+2]
+          if( nTop + 1 == indStTop[currentStTop]):
+               rk = paramsStTop[2*currentStTop]
+          else:
+               rk = paramsCrTop[2*currentCrTop]
+          dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+          #breakpoint() ##############################################################################
+          gradParams[k+1] = dmuk
+          r = close_to_identity(lamk, muk)
+          # Decide which type of backtracking we have to do: close or far
+          if ( r<= gamma):
+               # Meaning we have to do a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+          else:
+               # We have a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+          # Now we project, we use rk to project back muk and skM1 to project back lamk
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kStTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+          muk_free = project_box(muk)
+          muk, rk = projections_muk_rkSt(muk_projected, rk_projected, muk_free, rk_free,
+                                         k, 2*currentStTop,  params, x0,
+                                         T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                         listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
+          #breakpoint() ##############################################################################
+          # Update
+          params[k] = lamk
+          params[k+1] = muk
+          paramsStTop[kStTop + 1] = skM1
+          params[2*currentStTop] = rk
+     elif( j < n):
+          # The next receiver is on h0hk1
+          lamk1 = params[k+2]
+          B0k1 = listB0k[j+1]
+          Bk = listBk[j+1]
+          etak1 = listIndices[j+1]
+          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
+          #breakpoint() ##############################################################################
+          gradParams[k+1] = dmuk
+          r = close_to_identity(lamk, muk)
+          # Decide which type of backtracking we have to do: close or far
+          if (r <= gamma):
+               # Meaning we have to do a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+               gamma = gamma*theta_gamma
+               gammas[j-1] = gamma
+               #breakpoint() ##############################################################################
+          else:
+               # Meaning we have to do a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+               #breakpoint() ##############################################################################
+          # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          skM1_projected = project_skGivenlamk1(skM1, lamk_free, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kStTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          paramsStTop[kStTop + 1] = skM1
+          #breakpoint() ##############################################################################
+          # Depending on dmuk and the curvature of hkhk1 we project back muk differently
+          muk_free = project_box(muk)
+          if( dmuk >= 0 or listCurvingInwards[j] != 1):
+               # Means that we don't have a point on the side edge and we don't have to worry about that edge
+               muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+               lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          else:
+               # We have to worry about the side edge
+               muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+               lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
+                                             k+1, params, x0, T0, grad0, x1, T1,
+                                             grad1, xHat, listIndices, listxk, listB0k, listBk,
+                                             listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop)
+          # Update
+          params[k] = lamk
+          params[k+1] = muk
+          params[k+2] = lamk1
+          #breakpoint() ##############################################################################
+     else:
+          # We just have to update lamk because we are on lamn1
+          alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+          lamk = lamk - alpha*dlamk
+          lamk_free = project_box(lamk)
+          lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
+          skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
+          skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
+                                              k, kStTop, params, x0, T0, grad0,
+                                              x1, T1, grad1, xHat, listIndices, listxk,
+                                              listB0k, listBk, listBkBk1, indCrTop,
+                                              paramsCrTop, indStTop, paramsStTop)
+          params[k] = lamk
+          paramsStTop[kStTop +1] = skM1
+     #Now we just return whatever we did
+     return currentStTop, params, paramsStTop, gradParams, gradStTop
+
+
+def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
+                    grad0, x1, T1, grad1, xHat, listIndices, listxk,
+                    listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
+                    indStTop, paramsStTop, listCurvingInwards, gradParams):
+     '''
+     Update just [lamk, muk]. In this case the previous shooter comes from h0kM1
+     (i.e. the previous shooter from lamk is mukM1)
+     '''
+     k = 2*j - 1
+     nTop = j
+     gamma = gammas[j-1]
+     mukM1 = params[k-1]
+     lamk = params[k]
+     muk = params[k-1]
+     B0kM1 = listB0k[j-1]
+     B0k = listB0k[j]
+     xkM1 = listxk[j]
+     xk = listxk[j+1]
+     if( j < n ):
+          xk1 = listxk[j+2] # Because otherwise this is not defined
+          B0k1 = listB0k[j+1]
+          Bk = listBk[j+1]
+     BkM1 = listBk[j-1]
+     Bk = listBk[j]
+     BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+     BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
+     etakPrev = listIndices[j-1] # index of refraction from previous triangle
+     etak = listIndices[j] # index of refraction in current triangle
+     etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
+     # The update starts here
+     dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakPrev, etak)
+     #breakpoint()
+     gradParams[k] = dlamk
+     # We need to see if the next receiver is on h0k1 or on hkk1
+     if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentStTop] ):
+          # This means that the next receiver is on hkk1 NOTE THAT THE PROCESS NEVER GOES HERE IF j = n, if we are on lamn1
+          BkBk1_0 = listBkBk1[k+1]
+          BkBk1_1 = listBkBk1[k+2]
+          if( nTop + 1 == indStTop[currentStTop]):
+               rk = paramsStTop[2*currentStTop]
+          else:
+               rk = paramsCrTop[2*currentCrTop]
+          xk1 = listxk[j+2]
+          dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
+          gradParams[k+1] = dmuk
+          # Decide which type of backtracking we have to do: close or far
+          r = close_to_identity(lamk, muk)
+          if( r <= gamma ):
+               # Meaning we have a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+               gamma = gamma*theta_gamma
+               gammas[j-1] = gamma
+          else:
+               # Meaning we have to do a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+          # Now we project back, we use rk to project back muk and mukM1 to project back lamk
+          # See if we need to use hkM1k to project back lamk
+          if( dlamk > 0 or listCurvingInwards[j-1] != 1):
+               # There is no problem with hkM1k
+               lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+               mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+          else:
+               # There is a problem with hkM1k
+               lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+               mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                              listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          # Project back muk using rk
+          muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
+          muk_free = project_box(muk)
+          rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
+          if( nTop + 1 == indStTop[currentStTop]):
+               muk, rk = projections_muk_rkSt(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentStTop,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                              listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+               paramsStTop[2*currentStTop] = rk
+          else:
+               muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentCrTop,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                              listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+               paramsCrTop[2*currentCrTop] = rk
+          # Update
+          params[k-1] = mukM1
+          params[k] = lamk
+          params[k+1] = muk
+     elif(j <  n):
+          # This means that the next receiver is on h0k1
+          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
+          gradParams[k+1] = dmuk
+          # Decide which type of backtracking we have to do: close or far
+          r = close_to_identity(lamk, muk)
+          if( r<= gamma):
+               # Meaning we have a close update
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+               gamma = gamma*theta_gamma
+               gammas[j-1] = gamma
+          else:
+               # Meaning we have to do a far update
+               lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+               # Now we project back, we use rk to project back muk and mukM1 to project back lamk
+               # See if we need to use hkM1k to project back lamk
+               if( dlamk > 0 or listCurvingInwards[j-1] != 1):
+                    # There is no problem with hkM1k
+                    lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+                    mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+               else:
+                    # There is a problem with hkM1k
+                    lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+                    mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+               lamk_free = project_box(lamk)
+               mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                                   params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                   listxk, listB0k, listBk, listBkBk1,
+                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
+               # Project back muk using lamk1
+               if( dmuk > 0 or listCurvingInwards[j] != 1):
+                    # There is no problem with hkk1
+                    muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+                    lamk1_projected = project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, B, B0k1, xk1, Bk1)
+               else:
+                    # There is a problem with hkk1
+                    BkBk1_0 = listBkBk1[k+1]
+                    BkBk1_1 = listBkBk1[k+2]
+                    muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+                    lamk1_projected = project_lamkGivenmuk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+               muk_free = project_box(muk)
+               muk, lamk1 = projections_muk_lamk1(muk_projected, lamk1_projected, muk_free, lamk1, k+1,
+                                                  params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                  listxk, listB0k, listBk, listBkBk1,
+                                                  indCrTop, paramsCrTop, indStTop, paramsStTop)
+               params[k] = lamk
+               params[k+1] = muk
+               params[k+2] = lamk1
+     else:
+          # This means that j = n, we are on lamn1
+          alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+          lamk = lamk - alpha*dlamk
+          lamk_free = project_box(lamk)
+          if( dlamk > 0 or listCurvingInwards[j-1] != 1):
+               # There is no problem with hkM1k
+               lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+               mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+          else:
+               # There is a problem with hkM1k
+               lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+               mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+          mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                              listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
+          params[k-1] = mukM1
+          params[k] = lamk
+     return params, paramsCrTop, paramsStTop, gradParams
+     
+
 
 def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1851,523 +2469,33 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      n = len(listxk) - 2
      for j in range(1, n+1):
           # j goes from 1 to n
-          k = 2*j-1 # From k = 1 all the way to k = 2n-1 (from lam2 to mun1 = 1 in params)
-          nTop = j # from 1 to n
-          gamma = gammas[j-1]
-          mukM1 = params[k-1]
-          lamk = params[k]
-          muk = params[k+1]
-          B0kM1 = listB0k[j-1]
-          B0k = listB0k[j]
-          xkM1 = listxk[j]
-          xk = listxk[j+1]
-          if( j < n ):
-               xk1 = listxk[j+2] # Because otherwise this is not defined
-               B0k1 = listB0k[j+1]
-               Bk = listBk[j+1]
-          BkM1 = listBk[j-1]
-          Bk = listBk[j]
-          BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
-          BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
-          etakPrev = etak # index of refraction from previous triangle
-          etak = listIndices[j] # index of refraction in current triangle
-          etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
           #breakpoint() ##############################################################################
           ###### Compute the directions - first we want to update [  rkM1,  skM1 ] if applicable
-          if( nTop == indCrTop[currentCrTop] ):
+          if( j == indCrTop[currentCrTop] ):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from creeping)
-               etaMinCr = min(etaRegionOutside, etakPrev)
-               kCrTop = 2*currentCrTop
-               rkM1 = paramsCrTop[kCrTop]
-               skM1 = paramsCrTop[kCrTop + 1]
-               akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-               bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
-               # Compute directions
-               drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
-               gradCrTop[kCrTop] = drkM1
-               #breakpoint() ##############################################################################
-               dskM1 = partial_fObj_shCr(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
-               gradCrTop[kCrTop + 1] = dskM1
-               #breakpoint() ##############################################################################
-               # Decide if we need close or far backtracking
-               r = close_to_identity(rkM1, skM1)
-               if( r <= gamma ):
-                    # Meaning we have to do a close update
-                    rkM1, skM1 = backTrClose_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                        listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-               else:
-                    # Meaning we dont have to do a close update
-                    rkM1, skM1 = backTr_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                        listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-               # Project back
-               rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-               mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk1, BkM1Bk_1)
-               rkM1_free = project_box(rkM1)
-               mukM1_free = mukM1
-               mukM1, rkM1 = projections_muk_rkCr(mukM1_projected, rkM1_projected, mukM1_free, rkM1_free, k-1,
-                                                  kCrTop, params, x0, T0, grad0,
-                                                  x1, T1, grad1, xHat, listIndices, listxk,
-                                                  listB0k, listBk, listBkBk1,
-                                                  indCrTop, paramsCrTop, indStTop, paramsStTop)
-               skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-               lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-               skM1_free = project_box(skM1)
-               skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1_free, lamk,
-                                                   k, kCrTop, params, x0, T0, grad0,
-                                                   x1, T1, grad1, xHat, listIndices, listxk,
-                                                   listB0k, listBk, listBkBk1,
-                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
-               # Update
-               params[k-1] = mukM1
-               paramsCrTop[kCrTop] = rkM1
-               paramsCrTop[kCrTop + 1] = skM1
-               params[k] = lamk
-               if( currentCrTop < len(indCrTop) - 1):
-                    currentCrTop += 1
-               ### UPDATE LAMK, MUK
-               # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
-               dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
-               gradParams[k] = dlamk
-               #breakpoint() ##############################################################################
-               # We need to know if the next receiver is on h0k1 or on hkk1
-               if( nTop + 1 == indCrTop[currentCrTop] or nTop + 1 == indStTop[currentStTop] ):
-                    # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
-                    BkBk1_0 = listBkBk1[k+1]
-                    BkBk1_1 = listBkBk1[k+2]
-                    if( nTop + 1 == indCrTop[currentCrTop]):
-                         rk = paramsCrTop[2*currentCrTop]
-                    else:
-                         rk = paramsStTop[2*currentStTop]
-                    dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
-                    #breakpoint() ##############################################################################
-                    gradParams[k+1] = dmuk
-                    r = close_to_identity(lamk, muk)
-                    # Decide which type of backtracking we have to do: close or far
-                    if ( r<= gamma):
-                         # Meaning we have to do a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         #breakpoint() ##############################################################################
-                    else:
-                         # We have a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         #breakpoint() ##############################################################################
-                    # Now we project, we use rk to project back muk and skM1 to project back lamk
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kCrTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
-                    rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    muk_free = project_box(muk)
-                    muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk_free,
-                                                   k, 2*currentCrTop,  params, x0,
-                                                   T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                   listxk, listB0k, listBk, listBkBk1,
-                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-                    # Update
-                    params[k] = lamk
-                    params[k+1] = muk
-                    paramsCrTop[kCrTop + 1] = skM1
-                    params[2*currentCrTop] = rk
-               elif(j < n):
-                    # The next receiver is on h0hk1
-                    lamk1 = params[k+2]
-                    B0k1 = listB0k[j+1]
-                    Bk = listBk[j+1]
-                    etak1 = listIndices[j+1]
-                    dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
-                    #breakpoint() ##############################################################################
-                    gradParams[k+1] = dmuk
-                    r = close_to_identity(lamk, muk)
-                    # Decide which type of backtracking we have to do: close or far
-                    if (r <= gamma):
-                         # Meaning we have to do a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         gamma = gamma*theta_gamma
-                         gammas[j-1] = gamma
-                         #breakpoint() ##############################################################################
-                    else:
-                         # Meaning we have to do a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         #breakpoint() ##############################################################################
-                    # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk_free, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kCrTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    paramsCrTop[kCrTop + 1] = skM1
-                    #breakpoint() ##############################################################################
-                    # Depending on dmuk and the curvature of hkhk1 we project back muk differently
-                    muk_free = project_box(muk)
-                    if( dmuk >= 0 or listCurvingInwards[j] != 1):
-                         # Means that we don't have a point on the side edge and we don't have to worry about that edge
-                         muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                         lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                    else:
-                         # We have to worry about the side edge
-                         muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                         lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
-                                                       k+1, params, x0, T0, grad0, x1, T1,
-                                                       grad1, xHat, listIndices, listxk, listB0k, listBk,
-                                                       listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Update
-                    params[k] = lamk
-                    params[k+1] = muk
-                    params[k+2] = lamk1
-                    #breakpoint() ##############################################################################
-               else:
-                    # We just have to update lamk because we are on lamn1
-                    alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                          listIndices, listxk, listB0k, listBk, listBkBk1,
-                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    lamk = lamk - alpha*dlamk
-                    lamk_free = project_box(lamk)
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    skM1, lamk = projections_skCr_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kCrTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1, indCrTop,
-                                                        paramsCrTop, indStTop, paramsStTop)
-                    params[k] = lamk
-                    paramsCrTop[kCrTop +1] = skM1
-                    #breakpoint() ##############################################################################
-          elif( nTop == indStTop[currentStTop]):
+               currentCrTop, params, paramsCrTop, gradParams, gradCrTop = updateFromCrTop(n, j, currentCrTop, currentStTop,
+                                                                                          params, gammas, theta_gamma,
+                                                                                          x0, T0, grad0, x1, T1, grad1, xHat,
+                                                                                          listIndices, listxk, listB0k, listBk,
+                                                                                          listBkBk1, indCrTop, paramsCrTop, indStTop,
+                                                                                          paramsStTop, listCurvingInwards,
+                                                                                          gradParams, gradCrTop)
+          elif( j == indStTop[currentStTop]):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from a straight ray)
-               etaMinSt = min(etaRegionOutside, etakPrev)
-               kStTop = 2*currentStTop
-               rkM1 = paramsStTop[kStTop]
-               skM1 = paramsStTop[kStTop + 1]
-               akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-               bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
-               # Compute directions
-               drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
-               gradStTop[kStTop] = drkM1
-               #breakpoint() ##############################################################################
-               dskM1 = partial_fObj_shSt(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
-               gradStTop[kStTop + 1] = dskM1
-               #breakpoint() ##############################################################################
-               # Decide if we need close or far backtracking
-               r = close_to_identity(rkM1, skM1)
-               if( r <= gamma ):
-                    # Meaning we have to do a close update
-                    rkM1, skM1 = backTrClose_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                        listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-               else:
-                    # Meaning we dont have to do a close update
-                    rkM1, skM1 = backTr_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                        listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-               # Project back
-               rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-               mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk1, BkM1Bk_1)
-               rkM1_free = project_box(rkM1)
-               mukM1_free = mukM1
-               mukM1, rkM1 = projections_muk_rkSt(mukM1_projected, rkM1_projected, mukM1_free, rkM1_free, k-1,
-                                                  kStTop, params, x0, T0, grad0,
-                                                  x1, T1, grad1, xHat, listIndices, listxk,
-                                                  listB0k, listBk, listBkBk1,
-                                                  indCrTop, paramsCrTop, indStTop, paramsStTop)
-               skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-               lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-               skM1_free = project_box(skM1)
-               skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1_free, lamk,
-                                                   k, kStTop, params, x0, T0, grad0,
-                                                   x1, T1, grad1, xHat, listIndices, listxk,
-                                                   listB0k, listBk, listBkBk1,
-                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
-               # Update
-               params[k-1] = mukM1
-               paramsStTop[kStTop] = rkM1
-               paramsStTop[kStTop + 1] = skM1
-               params[k] = lamk
-               if( currentStTop < len(indStTop) - 1):
-                    currentStTop += 1
-               # Now we can update lamk muk - we have to do this here since we have already updated rkM1 and skM1
-               dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
-               gradParams[k] = dlamk
-               #breakpoint() ##############################################################################
-               # We need to know if the next receiver is on h0k1 or on hkk1
-               if( nTop + 1 == indStTop[currentStTop]):
-                    # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
-                    BkBk1_0 = listBkBk1[k+1]
-                    BkBk1_1 = listBkBk1[k+2]
-                    rk = paramsStTop[2*currentStTop]
-                    dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
-                    #breakpoint() ##############################################################################
-                    gradParams[k+1] = dmuk
-                    r = close_to_identity(lamk, muk)
-                    # Decide which type of backtracking we have to do: close or far
-                    if ( r<= gamma):
-                         # Meaning we have to do a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    else:
-                         # We have a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Now we project, we use rk to project back muk and skM1 to project back lamk
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kStTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
-                    rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    muk_free = project_box(muk)
-                    muk, rk = projections_muk_rkSt(muk_projected, rk_projected, muk_free, rk_free,
-                                                   k, 2*currentStTop,  params, x0,
-                                                   T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                   listxk, listB0k, listBk, listBkBk1,
-                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    #breakpoint() ##############################################################################
-                    # Update
-                    params[k] = lamk
-                    params[k+1] = muk
-                    paramsStTop[kStTop + 1] = skM1
-                    params[2*currentStTop] = rk
-               elif( j < n):
-                    # The next receiver is on h0hk1
-                    lamk1 = params[k+2]
-                    B0k1 = listB0k[j+1]
-                    Bk = listBk[j+1]
-                    etak1 = listIndices[j+1]
-                    dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
-                    #breakpoint() ##############################################################################
-                    gradParams[k+1] = dmuk
-                    r = close_to_identity(lamk, muk)
-                    # Decide which type of backtracking we have to do: close or far
-                    if (r <= gamma):
-                         # Meaning we have to do a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         gamma = gamma*theta_gamma
-                         gammas[j-1] = gamma
-                         #breakpoint() ##############################################################################
-                    else:
-                         # Meaning we have to do a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         #breakpoint() ##############################################################################
-                    # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk_free, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kStTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    paramsStTop[kStTop + 1] = skM1
-                    #breakpoint() ##############################################################################
-                    # Depending on dmuk and the curvature of hkhk1 we project back muk differently
-                    muk_free = project_box(muk)
-                    if( dmuk >= 0 or listCurvingInwards[j] != 1):
-                         # Means that we don't have a point on the side edge and we don't have to worry about that edge
-                         muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                         lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                    else:
-                         # We have to worry about the side edge
-                         muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                         lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
-                                                       k+1, params, x0, T0, grad0, x1, T1,
-                                                       grad1, xHat, listIndices, listxk, listB0k, listBk,
-                                                       listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Update
-                    params[k] = lamk
-                    params[k+1] = muk
-                    params[k+2] = lamk1
-                    #breakpoint() ##############################################################################
-               else:
-                    # We just have to update lamk because we are on lamn1
-                    alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                          listIndices, listxk, listB0k, listBk, listBkBk1,
-                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    lamk = lamk - alpha*dlamk
-                    lamk_free = project_box(lamk)
-                    lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
-                    skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
-                    skM1, lamk = projections_skSt_lamk1(skM1_projected, lamk_projected, skM1, lamk_free,
-                                                        k, kStTop, params, x0, T0, grad0,
-                                                        x1, T1, grad1, xHat, listIndices, listxk,
-                                                        listB0k, listBk, listBkBk1, indCrTop,
-                                                        paramsCrTop, indStTop, paramsStTop)
-                    params[k] = lamk
-                    paramsStTop[kStTop +1] = skM1
+               currentStTop, params, paramsStTop, gradParams, gradStTop = updateFromStTop(n, j, currentCrTop, currentStTop,
+                                                                                          params, gammas, theta_gamma,
+                                                                                          x0, T0, grad0, x1, T1, grad1, xHat,
+                                                                                          listIndices, listxk, listB0k, listBk,
+                                                                                          listBkBk1, indCrTop, paramsCrTop, indStTop,
+                                                                                          paramsStTop, listCurvingInwards,
+                                                                                          gradParams, gradStTop)
           else:
                # Meaning that we dont have [rkM1, skM1] on the side of the edge, in this case we just need to update [lamk, muk]
-               dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakPrev, etak)
-               #breakpoint()
-               gradParams[k] = dlamk
-               # We need to see if the next receiver is on h0k1 or on hkk1
-               if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentStTop] ):
-                    # This means that the next receiver is on hkk1 NOTE THAT THE PROCESS NEVER GOES HERE IF j = n, if we are on lamn1
-                    BkBk1_0 = listBkBk1[k+1]
-                    BkBk1_1 = listBkBk1[k+2]
-                    if( nTop + 1 == indStTop[currentStTop]):
-                         rk = paramsStTop[2*currentStTop]
-                    else:
-                         rk = paramsCrTop[2*currentCrTop]
-                    xk1 = listxk[j+2]
-                    dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
-                    gradParams[k+1] = dmuk
-                    # Decide which type of backtracking we have to do: close or far
-                    r = close_to_identity(lamk, muk)
-                    if( r <= gamma ):
-                         # Meaning we have a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         gamma = gamma*theta_gamma
-                         gammas[j-1] = gamma
-                    else:
-                         # Meaning we have to do a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Now we project back, we use rk to project back muk and mukM1 to project back lamk
-                    # See if we need to use hkM1k to project back lamk
-                    if( dlamk > 0 or listCurvingInwards[j-1] != 1):
-                         # There is no problem with hkM1k
-                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                    else:
-                         # There is a problem with hkM1k
-                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
-                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                        listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Project back muk using rk
-                    muk_projected = project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1)
-                    muk_free = project_box(muk)
-                    rk_projected = project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    if( nTop + 1 == indStTop[currentStTop]):
-                         muk, rk = projections_muk_rkSt(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentStTop,
-                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                        listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         paramsStTop[2*currentStTop] = rk
-                    else:
-                         muk, rk = projections_muk_rkCr(muk_projected, rk_projected, muk_free, rk, k-1, 2*currentCrTop,
-                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                        listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         paramsCrTop[2*currentCrTop] = rk
-                    # Update
-                    params[k-1] = mukM1
-                    params[k] = lamk
-                    params[k+1] = muk
-               elif(j <  n):
-                    # This means that the next receiver is on h0k1
-                    dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
-                    gradParams[k+1] = dmuk
-                    # Decide which type of backtracking we have to do: close or far
-                    r = close_to_identity(lamk, muk)
-                    if( r<= gamma):
-                         # Meaning we have a close update
-                         lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
-                         gamma = gamma*theta_gamma
-                         gammas[j-1] = gamma
-                    else:
-                         # Meaning we have to do a far update
-                         lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                                    listIndices, listxk, listB0k, listBk, listBkBk1,
-                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Now we project back, we use rk to project back muk and mukM1 to project back lamk
-                    # See if we need to use hkM1k to project back lamk
-                    if( dlamk > 0 or listCurvingInwards[j-1] != 1):
-                         # There is no problem with hkM1k
-                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                    else:
-                         # There is a problem with hkM1k
-                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                    lamk_free = project_box(lamk)
-                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
-                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                        listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    # Project back muk using lamk1
-                    if( dmuk > 0 or listCurvingInwards[j] != 1):
-                         # There is no problem with hkk1
-                         muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                         lamk1_projected = project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, B, B0k1, xk1, Bk1)
-                    else:
-                         # There is a problem with hkk1
-                         BkBk1_0 = listBkBk1[k+1]
-                         BkBk1_1 = listBkBk1[k+2]
-                         muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                         lamk1_projected = project_lamkGivenmuk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    muk_free = project_box(muk)
-                    muk, lamk1 = projections_muk_lamk1(muk_projected, lamk1_projected, muk_free, lamk1, k+1,
-                                                       params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                       listxk, listB0k, listBk, listBkBk1,
-                                                       indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    params[k] = lamk
-                    params[k+1] = muk
-                    params[k+2] = lamk1
-               else:
-                    # This means that j = n, we are on lamn1
-                    alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
-                                          listIndices, listxk, listB0k, listBk, listBkBk1,
-                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    lamk = lamk - alpha*dlamk
-                    lamk_free = project_box(lamk)
-                    if( dlamk > 0 or listCurvingInwards[j-1] != 1):
-                         # There is no problem with hkM1k
-                         lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                         mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                    else:
-                         # There is a problem with hkM1k
-                         lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                         mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                    mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
-                                                        params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                                        listxk, listB0k, listBk, listBkBk1,
-                                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    params[k-1] = mukM1
-                    params[k] = lamk
+                params, paramsCrTop, paramsStTop, gradParams = udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas,
+                                                                               theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
+                                                                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                                                                               indCrTop, paramsCrTop, indStTop, paramsStTop,
+                                                                               listCurvingInwards, gradParams)
      # THIS IS THE END OF THE FOR LOOP
      # We are done
      return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop

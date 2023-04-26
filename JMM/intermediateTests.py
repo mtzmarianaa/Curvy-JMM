@@ -283,8 +283,8 @@ def plotFann(x0, listB0k, listxk, listBk, listBkBk1 = None, params = None, indCr
                          crRay = evaluateCreepingRay(min(params[k-1], params[k]), max(params[k-1], params[k]), x0, B0k, xk, Bk)
                          plt.plot(crRay[:,0], crRay[:,1], linewidth = 1.2, c = "#0024ff")
           # Plot the creeping that happens between xnRegions and xHat
-          crRay = evaluateCreepingRay(params[2*nRegions - 1], 1, x0, B0k1, xk1, Bk1)
-          plt.plot(crRay[:,0], crRay[:,1], linewidth = 1.2, c = "#0024ff")
+     crRay = evaluateCreepingRay(params[-2], 1, x0, listB0k[-1], listxk[-1], listBk[-1])
+     plt.plot(crRay[:,0], crRay[:,1], linewidth = 1.2, c = "#0024ff")
      plt.legend()
      #plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
      #plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
