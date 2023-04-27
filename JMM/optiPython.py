@@ -709,10 +709,10 @@ def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listInd
 
 
 def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
-                listBk, params0, paramsOpt, listObjVals, listGrads, listChangefObj,
-                trueSol = None, contours = True,
-                listBkBk1 = None, indCrTop = None, paramsCrTop0 = None,
-                indStTop = None, paramsStTop0 = None,
+                listBk, params0, paramsOpt, listObjVals, listGradNorms, listChangefObj,
+                listChangeParams = None, trueSol = None, contours = True,
+                listBkBk1 = None, indCrTop = None, paramsCrTop0 = None, 
+                indStTop = None, paramsStTop0 = None, 
                 paramsCrTop = None, paramsStTop = None):
      '''
      Plots results from blockCoordinateGradient
@@ -743,11 +743,17 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
      plt.title("Function value at each iteration")
      # Now plot the norm of the gradient at each iteration
      fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
-     plt.semilogy( range(0, len(listGrads)), listGrads, c = "#4d3964", linewidth = 0.8)
+     plt.semilogy( range(0, len(listGradNorms)), listGradNorms, c = "#4d3964", linewidth = 0.8)
      plt.xlabel("Iteration")
      plt.ylabel("Norm of (sub)gradient")
      plt.title("Norm of (sub)gradient at each iteration")
-     # For pairs of parameters we plot level sets
+     # Plot the change in the parameters
+     fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+     plt.semilogy( range(0, len(listChangeParams)), listChangeParams, c = "#394664", linewidth = 0.8)
+     plt.xlabel("Iteration")
+     plt.ylabel("Norm of change in parameters")
+     plt.title("Norm of change in parameters at each iteration")
+     # For pairs of parameters MU AND LAMBDA
      nRegions = len(listxk) - 2
      fObjMesh = np.empty((200,200))
      for k in range(2*nRegions - 1):
@@ -761,18 +767,81 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
                     paramsMesh = np.copy(paramsOpt)
                     paramsMesh[k] = p1
                     paramsMesh[k+1] = p2
-                    fObjMesh[i,j] = fObj_noTops(paramsMesh, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
+                    fObjMesh[i,j] = fObj_generalized(paramsMesh, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                     listxk, listB0k, listBk, listBkBk1,
+                                                     indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+                                                     indStTop = indStTop, paramsStTop = paramsStTop)
           # Plot it
           fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
           im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
           plt.scatter(paramsOpt[k], paramsOpt[k+1], c = "white", marker = "*", label = "optimum found")
           if(contours):
-               plt.contour(param1[0, :], param1[0, :], fObjMesh, cmap = colormap2_r, extent = [0,1,0,1], origin = "lower", levels = 15)
+               plt.contour(param1[0, :], param1[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
           plt.title("Level set of objective function")
           plt.xlabel("Parameter " + str(k))
           plt.ylabel("Parameter " + str(k+1))
           plt.legend()
           plt.colorbar(im)
+     # For pairs of parameters R AND S for a creeping ray update
+     if( indCrTop is not None):
+          fObjMesh = np.empty((200,200))
+          for j in range(len(indCrTop)):
+               k = 2*j
+               # We plot level sets by changins sequential parameters (2 at a time)
+               rr, ss = np.meshgrid( np.linspace(0,1,200), np.linspace(0,1,200) )
+               # Compute the solution, compute this level set
+               for i in range(200):
+                    for j in range(200):
+                         rk = rr[i,j]
+                         sk = ss[i,j]
+                         paramsMesh = np.copy(paramsCrTop)
+                         paramsMesh[k] = p1
+                         paramsMesh[k+1] = p2
+                         fObjMesh[i,j] = fObj_generalized(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                          listxk, listB0k, listBk, listBkBk1,
+                                                          indCrTop = indCrTop, paramsCrTop = paramsMesh,
+                                                          indStTop = indStTop, paramsStTop = paramsStTop)
+               # Plot it
+               fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+               im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
+               plt.scatter(paramsCrTop[k], paramsCrTop[k+1], c = "white", marker = "*", label = "optimum found")
+               if(contours):
+                    plt.contour(rr[0, :], ss[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
+               plt.title("Level set of objective function, parameters for creeping rays on side edges changed, r" + str(j) + " s" + str(j))
+               plt.xlabel("r" + str(k))
+               plt.ylabel("s" + str(k+1))
+               plt.legend()
+               plt.colorbar(im)
+     # For pairs of parameters R AND S for a creeping ray update
+     if( indStTop is not None):
+          fObjMesh = np.empty((200,200))
+          for j in range(len(indStTop)):
+               k = 2*j
+               # We plot level sets by changins sequential parameters (2 at a time)
+               rr, ss = np.meshgrid( np.linspace(0,1,200), np.linspace(0,1,200) )
+               # Compute the solution, compute this level set
+               for i in range(200):
+                    for j in range(200):
+                         rk = rr[i,j]
+                         sk = ss[i,j]
+                         paramsMesh = np.copy(paramsStTop)
+                         paramsMesh[k] = p1
+                         paramsMesh[k+1] = p2
+                         fObjMesh[i,j] = fObj_generalized(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                                          listxk, listB0k, listBk, listBkBk1,
+                                                          indCrTop = indCrTop, paramsCrTop = paramsCrTp,
+                                                          indStTop = indStTop, paramsStTop = paramsMesh)
+               # Plot it
+               fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
+               im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
+               plt.scatter(paramsStTop[k], paramsStTop[k+1], c = "white", marker = "*", label = "optimum found")
+               if(contours):
+                    plt.contour(rr[0, :], ss[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
+               plt.title("Level set of objective function, parameters for straight rays on side edges changed, r" + str(j) + " s" + str(j))
+               plt.xlabel("r" + str(k))
+               plt.ylabel("s" + str(k+1))
+               plt.legend()
+               plt.colorbar(im)
      # If we know the true solution for this triangle fan, plot the decrease in the error
      if trueSol is not None:
           errRel = np.array(listObjVals)
@@ -1242,7 +1311,7 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
 def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, k, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
-                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+                          indCrTop, paramsCrTop, indStTop, paramsStTop, cl = 1e-12):
      '''
      Two options depending on which one is better:     - project muk given lamk1
                                                        - project lamk1 given muk
@@ -1251,13 +1320,21 @@ def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, 
           return muk_candidate, lamk1_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
+     if( abs( params[k-1] - params[k-2] ) < cl):
+          params_muk_projected[k-1] = muk_candidate
      params_muk_projected[k+1] = lamk1_free
+     if( abs( params[k+1] - params[k]) < cl and k < len(params) - 1):
+          params_muk_projected[k+2] = lamk1_free
      f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
      params_lamk1_projected = np.copy(params)
      params_lamk1_projected[k] = muk_free
+     if( abs( params[k-1] - params[k-2]) < cl):
+          params_lamk1_projected[k-1] = muk_free
      params_lamk1_projected[k+1] = lamk1_candidate
+     if( abs(params[k+1] - params[k]) < cl and k < len(params) -1):
+          params_lamk1_projected[k] = lamk1_candidate
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
@@ -1270,7 +1347,7 @@ def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, 
 def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
-                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+                          indCrTop, paramsCrTop, indStTop, paramsStTop, cl = 1e-12):
      '''
      FOR CREEPING ALONG THE k-th side
      Two options depending on which one is better:     - project muk given rk
@@ -1280,14 +1357,24 @@ def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrT
           return muk_candidate, rk_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
-     paramsCrTop[kCrTop] = rk_free
+     if( abs( params[k-1] - params[k]) < cl ):
+          params_muk_projected[k-1] = muk_candidate
+     paramsCrTop_muk_projected = np.copy(paramsCrTop)
+     paramsCrTop_muk_projected[kCrTop] = rk_free
+     if( abs( paramsCrTop[kCrTop + 1] -  paramsCrTop[kCrTop ]) < cl):
+          paramsCrTop_muk_projected[kCrTop + 1] = rk_free
      f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-     params[k] = muk_free
+                                        indCrTop, paramsCrTop_muk_projected, indStTop, paramsStTop)
+     params_rk_projected = np.copy(params)
+     params_rk_projected[k] = muk_free
+     if( abs( params[k-1] - params[k]) < cl):
+          params_rk_projected[k-1] = muk_free
      paramsCrTop_rk_projected = np.copy(paramsCrTop)
      paramsCrTop_rk_projected[kCrTop] = rk_candidate
-     f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+     if( abs( paramsCrTop[kCrTop + 1] - paramsCrTop[kCrTop] ) < cl ):
+          paramsCrTop_rk_projected[kCrTop + 1] = rk_candidate
+     f_rk_projected = fObj_generalized(params_rk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop_rk_projected, indStTop, paramsStTop)
      if( f_muk_projected < f_rk_projected ):
@@ -1299,7 +1386,7 @@ def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrT
 def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
-                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+                          indCrTop, paramsCrTop, indStTop, paramsStTop, cl = 1e-12):
      '''
      FOR STRAIGHT LINE THROUGH THE k-th side
      Two options depending on which one is better:     - project muk given rk
@@ -1309,14 +1396,24 @@ def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStT
           return muk_candidate, rk_free
      params_muk_projected = np.copy(params)
      params_muk_projected[k] = muk_candidate
-     paramsStTop[kStTop] = rk_free
+     if( abs( params[k-1] - params[k]) < cl ):
+          params_muk_projected[k-1] = muk_candidate
+     paramsStTop_muk_projected = np.copy(paramsStTop)
+     paramsStTop_muk_projected[kStTop] = rk_free
+     if( abs( paramsStTop[kStTop + 1] - paramsStTop[kStTop]) < cl):
+          paramsStTop[kStTop + 1] = rk_free
      f_muk_projected = fObj_generalized(params_muk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
-     params[k] = muk_free
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop_muk_projected)
+     params_rk_projected = np.copy(params)
+     params_rk_projected[k] = muk_free
+     if( abs( params[k-1] - params[k]) < cl):
+          params_rk_projected[k-1] = muk_free
      paramsStTop_rk_projected = np.copy(paramsStTop)
      paramsStTop_rk_projected[kStTop] = rk_candidate
-     f_rk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+     if( abs( paramsStTop[kStTop + 1] - paramsStTop[kStTop]) < cl ):
+          paramsStTop_rk_projected[kStTop + 1] = rk_candidate
+     f_rk_projected = fObj_generalized(params_rk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop_rk_projected)
      if( f_muk_projected < f_rk_projected ):
@@ -1328,7 +1425,7 @@ def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStT
 def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kCrTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
-                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+                           indCrTop, paramsCrTop, indStTop, paramsStTop, ccl = 1e-12):
      '''
      FOR CREEPING ALONG THE k-th side
      Two options depending on which is better:   - project sk given lamk1
@@ -1338,16 +1435,30 @@ def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
           return sk_candidate, lamk1_free
      paramsCrTop_sk_projected = np.copy(paramsCrTop)
      paramsCrTop_sk_projected[kCrTop + 1] = sk_candidate
-     params[k] = lamk1_free
-     f_sk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+     if( abs( paramsCrTop[kCrTop + 1] - paramsCrTop[kCrTop] ) < cl):
+          # If rk = sk numerically
+          paramsCrTop_sk_projected[kCrTop] = sk_candidate
+     params_sk_projected = np.copy(params)
+     params_sk_projected[k] = lamk1_free
+     if( abs( params[k] - params[k+1]) < cl and k < len(params) - 1):
+          # If lamk1 == muk1 numerically
+          params_sk_projected[k+1] = lamk1_free
+     f_sk_projected = fObj_generalized(params_sk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop_sk_projected, indStTop, paramsStTop)
-     paramsCrTop[kCrTop + 1] = sk_free
+     paramsCrTop_lamk1_projected = np.copy(paramsCrTop)
+     paramsCrTop_lamk1_projected[kCrTop + 1] = sk_free
+     if( abs(paramsCrTop[kStTop] - paramsCrTop[kStTop + 1]) < cl):
+          # If rk = sk numerically
+          paramsCrTop_lamk1_projected[kCrTop] = sk_free
      params_lamk1_projected = np.copy(params)
      params_lamk1_projected[k] = lamk1_candidate
+     if( abs(params[k+1] - params[k] ) < cl and k < len(params) - 1):
+          # Then lamk1 == muk1 numerically
+          params_lamk1_projected[k+1] = lamk1_candidate
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                                        indCrTop, paramsCrTop_lamk1_projected, indStTop, paramsStTop)
      if( f_sk_projected < f_lamk1_projected):
           return sk_candidate, lamk1_free
      else:
@@ -1357,7 +1468,7 @@ def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
 def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kStTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
-                          indCrTop, paramsCrTop, indStTop, paramsStTop):
+                           indCrTop, paramsCrTop, indStTop, paramsStTop, cl = 1e-12):
      '''
      FOR STRAIGHT LINE THROUGH THE k-th side
      Two options depending on which is better:   - project sk given lamk1
@@ -1367,16 +1478,30 @@ def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
           return sk_candidate, lamk1_free
      paramsStTop_sk_projected = np.copy(paramsStTop)
      paramsStTop_sk_projected[kStTop + 1] = sk_candidate
-     params[k] = lamk1_free
-     f_sk_projected = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+     if( abs(paramsStTop[kStTop + 1] - paramsStTop[kStTop] ) < cl):
+          # If rk = sk numerically
+          paramsStTop_sk_projected[kStTop] = sk_candidate
+     params_sk_projected = np.copy(params)
+     params_sk_projected[k] = lamk1_free
+     if( abs( params[k] - params[k+1]) < cl and k < len(params) - 1):
+          # If lamk1 == muk1 numerically
+          params_sk_projected[k+1] = lamk1_free
+     f_sk_projected = fObj_generalized(params_sk_projected, x0, T0, grad0, x1, T1, grad1, xHat,
                                         listIndices, listxk, listB0k, listBk, listBkBk1,
                                         indCrTop, paramsCrTop, indStTop, paramsStTop_sk_projected)
-     paramsStTop[kStTop + 1] = sk_free
+     paramsStTop_lamk1_projected = np.copy(params)
+     paramsStTop_lamk1_projected[kStTop + 1] = sk_free
+     if( abs(paramsStTop[kStTop] - paramsStTop[kStTop + 1]) < cl):
+          # If rk = sk numerically
+          paramsStTop[kStTop] = sk_free
      params_lamk1_projected = np.copy(params)
      params_lamk1_projected[k] = lamk1_candidate
+     if( abs(params[k+1] - params[k] ) < cl and k < len(params) - 1):
+          # Then lamk1 == muk1 numerically
+          params_lamk1_projected[k+1] = lamk1_candidate
      f_lamk1_projected = fObj_generalized(params_lamk1_projected, x0, T0, grad0, x1, T1, grad1, xHat,
-                                        listIndices, listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop, paramsCrTop, indStTop, paramsStTop)
+                                          listIndices, listxk, listB0k, listBk, listBkBk1,
+                                          indCrTop, paramsCrTop, indStTop, paramsStTop_lamk1_projected)
      if( f_sk_projected < f_lamk1_projected):
           return sk_candidate, lamk1_free
      else:
@@ -1478,10 +1603,11 @@ def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, g
           i += 1
      i = 0
      # Then if there is no decrease try decreasing alpha, the step size
-     while( (f_test < f_before) or (f_test_proj < f_before) and i < 25 ):
+     while( (f_before < f_test) and (f_before < f_test_proj) and i < 25 ):
           alpha = alpha*0.2 # increase the step size
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          #breakpoint()
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
@@ -1650,7 +1776,7 @@ def backTr_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1,
           i += 1
      i = 0
      # Then if there is no decrease try decreasing alpha, the step size
-     while( (f_test < f_before)  and i < 25 ):
+     while( (f_before < f_test)  and i < 25 ):
           alpha = alpha*0.2 # increase the step size
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -1696,6 +1822,7 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
      while( (f_before <= f_test) and i < 25):
           alpha = alpha*0.2
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          #breakpoint()
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test, indStTop, paramsStTop)
@@ -1769,7 +1896,7 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      gamma = gammas[j-1]
      mukM1 = params[k-1]
      lamk = params[k]
-     muk = params[k-1]
+     muk = params[k+1]
      B0kM1 = listB0k[j-1]
      B0k = listB0k[j]
      xkM1 = listxk[j]
@@ -1897,7 +2024,7 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           # The next receiver is on h0hk1
           lamk1 = params[k+2]
           B0k1 = listB0k[j+1]
-          Bk = listBk[j+1]
+          Bk1 = listBk[j+1]
           etak1 = listIndices[j+1]
           dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
           #breakpoint() ##############################################################################
@@ -1906,7 +2033,7 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           # Decide which type of backtracking we have to do: close or far
           if (r <= gamma):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
                gamma = gamma*theta_gamma
@@ -1984,7 +2111,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      gamma = gammas[j-1]
      mukM1 = params[k-1]
      lamk = params[k]
-     muk = params[k-1]
+     muk = params[k+1]
      B0kM1 = listB0k[j-1]
      B0k = listB0k[j]
      xkM1 = listxk[j]
@@ -1992,7 +2119,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      if( j < n ):
           xk1 = listxk[j+2] # Because otherwise this is not defined
           B0k1 = listB0k[j+1]
-          Bk = listBk[j+1]
+          Bk1 = listBk[j+1]
      BkM1 = listBk[j-1]
      Bk = listBk[j]
      BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
@@ -2109,7 +2236,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           # The next receiver is on h0hk1
           lamk1 = params[k+2]
           B0k1 = listB0k[j+1]
-          Bk = listBk[j+1]
+          Bk1 = listBk[j+1]
           etak1 = listIndices[j+1]
           dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
           #breakpoint() ##############################################################################
@@ -2193,7 +2320,7 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      gamma = gammas[j-1]
      mukM1 = params[k-1]
      lamk = params[k]
-     muk = params[k-1]
+     muk = params[k+1]
      B0kM1 = listB0k[j-1]
      B0k = listB0k[j]
      xkM1 = listxk[j]
@@ -2499,5 +2626,68 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      # THIS IS THE END OF THE FOR LOOP
      # We are done
      return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop
+
+
+
+def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                        listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0,
+                                        indStTop, paramsStTop0, listCurvingInwards, theta_gamma = 1,
+                                        tol = 1e-12, maxIter = 30, plotSteps = False):
+     '''
+     Block coordiante subgradient descent (modified) for a generalized triangle fan.
+     '''
+     paramsk = np.copy(params0)
+     n = len(listxk) - 2
+     # Add artificial mun1 if necessary
+     if( len(paramsk) < 2*n + 1):
+          paramsk = np.append(paramsk, [1])
+     if( paramsCrTop0 == None):
+          paramsCrTopk = np.array([0,0])
+     else:
+          paramsCrTopk = np.copy(paramsCrTop0)
+     if( paramsStTop0 == None):
+          paramsStTopk = np.array([0,0])
+     else:
+          paramsStTopk = np.copy(paramsStTop0)
+     # Initialize useful things
+     listObjVals = []
+     listGradNorms = []
+     listChangefObj = []
+     listChangeParams = []
+     gammas = 0.25*np.ones((n + 1))
+     iter = 0
+     change_fVal = 1
+     while( abs(change_fVal) > tol and iter < maxIter):
+          paramskM1, paramsCrTopkM1, paramsStTopkM1 = paramsk, paramsCrTopk, paramsStTopk
+          # Forward pass
+          paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = forwardPassUpdate(paramsk, gammas,
+                                                                                                 theta_gamma, x0,
+                                                                                                 T0, grad0, x1,
+                                                                                                 T1, grad1, xHat,
+                                                                                                 listIndices, listxk,
+                                                                                                 listB0k, listBk, listBkBk1,
+                                                                                                 indCrTop, paramsCrTopk,
+                                                                                                 indStTop, paramsStTopk,
+                                                                                                 listCurvingInwards)
+          # Update lists
+          fk = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                listxk, listB0k, listBk, listBkBk1,
+                                indCrTop = indCrTop, paramsCrTop = paramsCrTopk,
+                                indStTop = indStTop, paramsStTop = paramsStTopk)
+          gradk = sqrt( norm(gradParamsk)**2 + norm(gradCrTopk)**2 + norm(gradStTopk)**2)
+          normChangeP = sqrt( norm( paramskM1 - paramsk)**2 + norm( paramsCrTopkM1 - paramsCrTopk)**2 + norm(paramsStTopkM1 - paramsStTopk)**2 )
+          listChangeParams.append(normChangeP)
+          listObjVals.append(fk)
+          listGradNorms.append(gradk)
+          if( iter > 0):
+               change_fVal = listObjVals[-2] - fk
+               listChangefObj.append(change_fVal)
+          if( plotSteps):
+               itt.plotFann(x0, listB0k, listxk, listBk, params = paramsk, listBkBk1 = listBkBk1, indStTop = indStTop, paramsStTop = paramsStTopk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk)
+               plt.title("Triangle fan after " + str(iter) + " iterations")
+          iter += 1
+     return paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals, listGradNorms, listChangefObj, listChangeParams
+          
+          
 
 

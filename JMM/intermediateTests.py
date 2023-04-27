@@ -145,10 +145,10 @@ def plotFann(x0, listB0k, listxk, listBk, listBkBk1 = None, params = None, indCr
      Plots a triangle fan with n regions (i.e. n triangles)
      '''
      # Set indStTop if indCrTop is given
-     if(paramsCrTop is not None and paramsStTop is None):
+     if(indStTop is None or paramsStTop is None):
           indStTop = [0]
           paramsStTop = [0,0]
-     if(paramsStTop is not None and paramsCrTop is None):
+     if(indCrTop is None or paramsCrTop is None):
           indCrTop = [0]
           paramsCrTop = [0,0]
      axMin = np.min(listxk) # To set the ax limits
@@ -167,8 +167,10 @@ def plotFann(x0, listB0k, listxk, listBk, listBkBk1 = None, params = None, indCr
           x0x1[i, :] = hermite_boundary(params_inter[i], x0, listB0k[0], x1, listBk[0])
      plt.plot(x0x1[:, 0], x0x1[:, 1], linewidth = 0.8, alpha = 0.8, c = "#616276")
      # Plot x0
-     plt.scatter(x0[0], x0[1], s = 15, c = "#0027ff", label = "x0")
-     plt.scatter(x1[0], x1[1], s = 7, c = "#001871", label = "x1")
+     plt.scatter(x0[0], x0[1], s = 15, c = "#0027ff")
+     plt.text(x0[0],x0[1],'  x0')
+     plt.scatter(x1[0], x1[1], s = 7, c = "#001871")
+     plt.text(x1[0],x1[1],'  x1')
      # Plot the rest of the edges of the triangles
      for j in range (nRegions):
           # j from 0 to nRegions - 1
@@ -184,7 +186,8 @@ def plotFann(x0, listB0k, listxk, listBk, listBkBk1 = None, params = None, indCr
           for i in range(100):
                x0xk[i, :] = hermite_boundary(params_inter[i], x0, listB0k[j+1], xk, listBk[j+1])
           plt.plot(x0xk[:, 0], x0xk[:, 1], linewidth = 0.8, alpha = 0.8, c = "#616276")
-          plt.scatter(xk[0], xk[1], s = 7, c = "#001871", label = "x" + str(j+2))
+          plt.scatter(xk[0], xk[1], s = 7, c = "#001871")
+          plt.text(xk[0],xk[1],"  x" + str(j+2))
      # If given tangents for the triangle tops then plot those curve edges as well
      if( listBkBk1 is not None ):
           # Meaning that we have a general triangle fan
@@ -285,7 +288,7 @@ def plotFann(x0, listB0k, listxk, listBk, listBkBk1 = None, params = None, indCr
           # Plot the creeping that happens between xnRegions and xHat
      crRay = evaluateCreepingRay(params[-2], 1, x0, listB0k[-1], listxk[-1], listBk[-1])
      plt.plot(crRay[:,0], crRay[:,1], linewidth = 1.2, c = "#0024ff")
-     plt.legend()
+     #plt.legend()
      #plt.xlim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
      #plt.ylim(axMin - abs(0.2*axMax), axMax + abs(0.2*axMax))
      ax = plt.gca()

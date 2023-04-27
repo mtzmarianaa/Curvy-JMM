@@ -6,7 +6,7 @@ import numpy as np
 from numpy.linalg import norm
 from math import sqrt, pi, cos, sin
 import intermediateTests as itt
-from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY, fObj_generalized, forwardPassUpdate
+from optiPython import blockCoordinateGradient, plotResults, fObj_noTops, gradient_TY, fObj_generalized, forwardPassUpdate, blockCoordinateGradient_generalized
 import optiPython as oP
 from analyticSol_circle import trueSolution # So that we can test all of this in an actual "true geometry
 import colorcet as cc
@@ -1286,4 +1286,43 @@ plt.title("Objective function with optimum $\mu_1$, $\lambda_2$, difference betw
 plt.xlabel("$\mu_1$")
 plt.ylabel("$\lambda_2$")
 ax.set_zlabel("$g_{C,D}$")
+
+
+
+
+
+# Test the block function
+
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards)
+# Plot the final triangle
+itt.plotFann(x0, listB0k, listxk, listBk, params = paramsk, listBkBk1 = listBkBk1)
+plt.title("After " + str(len(listObjVals)) +" steps of projected coordinate subgradient descent")
+
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, len(listObjVals)), listObjVals, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Function value")
+plt.title("Function value at each iteration")
+
+
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, len(listGradNorms)), listGradNorms, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Norm of subgradients")
+plt.title("Norm of subgradients at each iteration")
+
+
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, len(listChangeParams)), listChangeParams, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Norm of change in parameters")
+plt.title("Norm of change in parameters at each iteration")
+
+
+fig = plt.figure(figsize=(800/96, 800/96), dpi=96) 
+plt.semilogy( range(0, len(listChangefObj)), listChangefObj, c = "#394664", linewidth = 0.8)
+plt.xlabel("Iteration")
+plt.ylabel("Norm of change in function value")
+plt.title("Norm of change in function value")
+
 
