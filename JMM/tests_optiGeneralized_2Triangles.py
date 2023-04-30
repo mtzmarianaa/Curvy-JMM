@@ -108,7 +108,7 @@ plt.title("Initial parameters")
 
 # Run opti
 
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = True)
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = True, maxIter = 50)
 
 
 
@@ -122,7 +122,7 @@ oP.plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
                 paramsCrTop = paramsCrTopk, paramsStTop = paramsStTopk)
 
 paramsCrTopT = np.array([0,0])
-paramsT = np.array([1, 0.45, 0.45, 1, 1])
+paramsT = np.array([1, 0.41, 0.41, 1, 1])
 fT = fObj_generalized(paramsT, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                       listxk, listB0k, listBk, listBkBk1,
                       indCrTop = indCrTop, paramsCrTop = paramsCrTopT,

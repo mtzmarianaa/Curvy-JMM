@@ -1711,7 +1711,7 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+     while( ( (f_test < f_before) or (f_test_proj < f_before) ) and i < 8 ):
           alpha = alpha*1.3
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
           paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
@@ -1724,7 +1724,7 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+     while( ( (f_before <= f_test) or (f_before <= f_test_proj) ) and i < 25):
           alpha = alpha*0.2
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
           paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
