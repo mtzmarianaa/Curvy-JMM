@@ -846,11 +846,11 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
                          rk = rr[i,j]
                          sk = ss[i,j]
                          paramsMesh = np.copy(paramsStTop)
-                         paramsMesh[k] = p1
-                         paramsMesh[k+1] = p2
+                         paramsMesh[k] = rk
+                         paramsMesh[k+1] = sk
                          fObjMesh[i,j] = fObj_generalized(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                                           listxk, listB0k, listBk, listBkBk1,
-                                                          indCrTop = indCrTop, paramsCrTop = paramsCrTp,
+                                                          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
                                                           indStTop = indStTop, paramsStTop = paramsMesh)
                # Plot it
                fig = plt.figure(figsize=(800/96, 800/96), dpi=96)
@@ -991,11 +991,6 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      r_tan = rootTan.root
      a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
      BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     # print("zkM1: ", zkM1)
-     # print("yk: ", yk)
-     # print("r_tan: ", r_tan)
-     # print("a_tan: ", a_tan)
-     # print("BkM1Bk_tan: ", BkM1Bk_tan)
 
      # The normals - depends on the position of x0 and xk  with respect to xkM1
      NkM1_mukM1 = np.array([-B0kM1_mukM1[1], B0kM1_mukM1[0]])
@@ -1028,7 +1023,6 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
           dotTestMax_fromh0kM1 = np.dot( yk - zkM1, Nk_lamk )
      # Test if lamk > lamkMax (from h0hkM1)
      if( dotTestMax_fromh0kM1 < 0 ):
-          #print(" dotTestMax_fromh0kM1 failed: ", yk, ", ", zkM1)
           tMax = lambda lam: t2(lam, x0, xk, B0k, Bk, zkM1)
           rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMax.root
@@ -1044,8 +1038,6 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
           dotTestMax_fromhkM1hk = np.dot( yk - a_tan, N_tan )
      # Test if lamk > lamkMax (from hkM1hk)
      if( dotTestMax_fromhkM1hk < 0 ):
-          #print(" dotTestMax_fromhkM1hk failed", yk, ",  ", a_tan)
-          #print("  ", N_tan)
           tMax = lambda lam: t1(lam, x0, xk, B0k, Bk, a_tan, BkM1Bk_tan)
           rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMax.root
@@ -1091,21 +1083,9 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
      dotTestMin_fromh0hk =  np.dot(N0k1_lamk1, yk1 - zk) # Should be positive
      dotTestMax_fromh0hk = np.dot(N0k_muk, yk1 - zk) # Should be positive
      dotTestMax_fromhkhk1 = np.dot(N_tan, zk - a_tan) # Should be positive
-
-     # print("zk: ", zk)
-     # print("yk1: ", yk1)
-     # print("r_tan: ", r_tan)
-     # print("a_tan: ", a_tan)
-     # print("BkBk1_tan: ", BkBk1_tan)
-     # print("dotTestMax_fromhkhk1: ", dotTestMax_fromhkhk1)
-
+     
      # Test if muk < mukMin
      if(dotTestMin_fromh0hk < 0 ):
-          # print("  failed dotTestMin project muk given lamk1")
-          # print("  zk: ", zk, "  yk1: ", yk1)
-          # print("  muk: ", muk, " lamk1: ", lamk1)
-          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
-          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, bracket = [0,1])
           muk = rootMin.root
@@ -1117,11 +1097,6 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           dotTestMax = np.dot(N0k_muk, yk1 - zk)
      # Test if muk > mukMax (from h0hk)
      if(dotTestMax_fromh0hk < 0 ):
-          # print("  failed dotTestMax project muk given lamk1")
-          # print("  zk: ", zk, "  yk1: ", yk1)
-          # print("  muk: ", muk, " lamk1: ", lamk1)
-          # print("  B0k: ", B0k, "  xk: ", xk, "  Bk: ", Bk)
-          # print("  B0k1: ", B0k1, "  xk1: ", xk1, "  Bk1: ", Bk1)
           tMax = lambda mu: t3(mu, x0, xk, B0k, Bk, yk1)
           rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMax.root
@@ -1170,15 +1145,6 @@ def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
      dotTestMin = np.dot( N0k_muk, ak - zk)
      dotTestMax = np.dot( NkNk1_rk, zk - ak)
 
-     # print("  zk: ", zk)
-     # print("  ak: ", ak)
-     # print("  rk: ", rk)
-     # print("  muk:", muk)
-     # print("  N0k_muk:", N0k_muk)
-     # print("  NkNk1_rk: ", NkNk1_rk)
-     # print("  dotTestMin: ", dotTestMin)
-     # print("  dotTestMax: ", dotTestMax)
-
      # Test if rk < rMin
      if( dotTestMin < 0):
           tMin = lambda r: t1(r, xk, xk1, BkBk1_0, BkBk1_1, zk, B0k_muk)
@@ -1224,11 +1190,9 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
 
      # If  sk < sMin
      if( dotTestMin < 0):
-          #print("dotTestMin failed")
           tMin = lambda s: t4(s, xk, xk1, BkBk1_0, BkBk1_1, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           sk = rootMin.root
-          #print("sk after rootMin", sk)
           bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           BkBk1_sk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_sk = np.array([-BkBk1_sk[1], BkBk1_sk[0]])
@@ -1236,7 +1200,6 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
                NkNk1_sk = -NkNk1_sk
           dotTestMax = np.dot( NkNk1_sk , yk1 - bk )
      if( dotTestMax < 0):
-          #print("dotTestMax failed")
           tMax = lambda s: t2(s, xk, xk1, BkBk1_0, BkBk1_1, yk1)
           rootMax = root_scalar(tMax, method = "secant", x0 = 0.4, x1 = 0.5)
           sk = rootMax.root
@@ -1306,7 +1269,6 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
      testMax = np.dot(NkM1Nk_skM1, yk - bkM1)
      # Test if lamk<lamMin
      if(testMin < 0):
-          #print("dotTest min failes project  lamk given skM1")
           tMin = lambda lam: t2(lam, x0, xk, B0k, Bk, bkM1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMin.root
@@ -1833,31 +1795,67 @@ def backTr_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1,
      i = 0
      d_middle = np.array([dlamk, dmuk])
      params_test = np.copy(params)
+     params_lamk = np.copy(params)
+     params_muk = np.copy(params)
      alpha = alpha0*1/(max(norm(d_middle), 1))
+     alpha_lamk = 1
+     alpha_muk = 1
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+     params_lamk[k] = params[k] - alpha*dlamk
+     params_muk[k+1] = params[k+1] - alpha*dmuk
      # Compare the function value
      f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                indCrTop, paramsCrTop, indStTop, paramsStTop)
+     f_lamk = fObj_generalized(params_lamk, x0, T0, grad0, x1, T1, grad1, xHat,
+                               listIndices, listxk, listB0k, listBk, listBkBk1,
+                               indCrTop, paramsCrTop, indStTop, paramsStTop)
+     f_muk = fObj_generalized(params_muk, x0, T0, grad0, x1, T1, grad1, xHat,
+                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                              indCrTop, paramsCrTop, indStTop, paramsStTop)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and i < 8 ):
+     while( (f_test < f_before or f_lamk < f_before or f_muk < f_before) and i < 8 ):
           alpha = alpha*1.3 # increase the step size
+          alpha_lamk = alpha_lamk*1.3
+          alpha_muk = alpha_muk*1.3
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_lamk[k] = params[k] - alpha*dlamk
+          params_muk[k+1] = params[k+1] - alpha*dmuk
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_lamk = fObj_generalized(params_lamk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_muk = fObj_generalized(params_muk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                   listIndices, listxk, listB0k, listBk, listBkBk1,
+                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
           i += 1
      i = 0
      # Then if there is no decrease try decreasing alpha, the step size
-     while( (f_before < f_test)  and i < 25 ):
-          alpha = alpha*0.2 # increase the step size
+     while( (f_before < f_test and f_before < f_lamk and f_before < f_muk)  and i < 25 ):
+          alpha = alpha*0.2 # decrease the step size
+          alpha_lamk = alpha_lamk*0.2
+          alpha_muk = alpha_muk*0.2
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
+          params_lamk[k] = params[k] - alpha*dlamk
+          params_muk[k+1] = params[k+1] - alpha*dmuk
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_lamk = fObj_generalized(params_lamk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                    listIndices, listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_muk = fObj_generalized(params_muk, x0, T0, grad0, x1, T1, grad1, xHat,
+                                   listIndices, listxk, listB0k, listBk, listBkBk1,
+                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test ):
+     if( f_lamk < f_before and f_lamk < f_test and f_lamk < f_muk):
+          return params_lamk[k], params_lamk[k+1]
+     elif( f_muk < f_before and f_muk < f_test ):
+          return params_muk[k], params_muk[k+1]
+     elif( f_before <= f_test ):
           return params[k], params[k+1]
      else:
           return params_test[k], params_test[k+1]
@@ -1876,33 +1874,69 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
      i = 0
      d_middle = np.array([drk, dsk])
      paramsCrTop_test = np.copy(paramsCrTop)
+     paramsCrTop_rk = np.copy(paramsCrTop)
+     paramsCrTop_sk = np.copy(paramsCrTop)
      alpha = alpha0*1/(max(norm(d_middle), 1))
+     alpha_rk = 1
+     alpha_sk = 1
      paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+     paramsCrTop_rk[kCrTop] = paramsCrTop[kCrTop] - alpha*drk
+     paramsCrTop_sk[kCrTop + 1] = paramsCrTop[kCrTop + 1] - alpha*dsk
      # Compare the function value
      f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
                         indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+     f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                             indCrTop, paramsCrTop_rk, indStTop, paramsStTop)
+     f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                             indCrTop, paramsCrTop_sk, indStTop, paramsStTop)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and i < 8 ):
+     while( (f_test < f_before or f_rk < f_before or f_sk < f_before) and i < 8 ):
           alpha = alpha*1.3
+          alpha_rk = alpha_rk*1.3
+          alpha_sk = alpha_sk*1.3
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          paramsCrTop_rk[kCrTop] = paramsCrTop[kCrTop] - alpha*drk
+          paramsCrTop_sk[kCrTop + 1] = paramsCrTop[kCrTop + 1] - alpha*dsk
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop_rk, indStTop, paramsStTop)
+          f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop_sk, indStTop, paramsStTop)
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( (f_before <= f_test) and i < 25):
+     while( (f_before <= f_test and f_before <= f_rk and f_before <= f_sk) and i < 25):
           alpha = alpha*0.2
+          alpha_rk = alpha_rk*0.2
+          alpha_sk = alpha_sk*0.2
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
+          paramsCrTop_rk[kCrTop] = paramsCrTop[kCrTop] - alpha*drk
+          paramsCrTop_sk[kCrTop + 1] = paramsCrTop[kCrTop + 1] - alpha*dsk
           #breakpoint()
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test, indStTop, paramsStTop)
+          f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop_rk, indStTop, paramsStTop)
+          f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop_sk, indStTop, paramsStTop)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test ):
+     if( f_before <= f_test and f_before <= f_rk and f_before <= f_sk):
           return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
+     elif( f_rk < f_before and f_rk < f_test and f_rk < f_sk):
+          return paramsCrTop_rk[kCrTop], paramsCrTop_rk[kCrTop + 1]
+     elif( f_sk < f_before and f_sk < f_test):
+          return paramsCrTop_sk[kCrTop], paramsCrTop_sk[kCrTop + 1]
      else:
           return paramsCrTop_test[kCrTop], paramsCrTop_test[kCrTop+1]
 
@@ -1921,32 +1955,68 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
      i = 0
      d_middle = np.array([drk, dsk])
      paramsStTop_test = np.copy(paramsStTop)
+     paramsStTop_rk = np.copy(paramsStTop)
+     paramsStTop_sk = np.copy(paramsStTop)
      alpha = alpha0*1/(max(norm(d_middle), 1))
+     alpha_rk = 1
+     alpha_sk = 1
      paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+     paramsStTop_rk[kStTop] = paramsStTop[kStTop] - alpha*drk
+     paramsStTop_sk[kStTop + 1] = paramsStTop[kStTop + 1] - alpha*dsk
      # Compare the function value
      f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+     f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                             indCrTop, paramsCrTop, indStTop, paramsStTop_rk)
+     f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                             indCrTop, paramsCrTop, indStTop, paramsStTop_sk)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and i < 8 ):
+     while( (f_test < f_before or f_rk < f_before or f_sk < f_before) and i < 8 ):
           alpha = alpha*1.3
+          alpha_rk = alpha_rk*1.3
+          alpha_sk = alpha_sk*1.3
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          paramsStTop_rk[kStTop] = paramsStTop[kStTop] - alpha*drk
+          paramsStTop_sk[kStTop + 1] = paramsStTop[kStTop + 1] - alpha*dsk
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop, indStTop, paramsStTop_rk)
+          f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop, indStTop, paramsStTop_sk)
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( (f_before <= f_test) and i < 25):
+     while( (f_before <= f_test and f_before <= f_rk and f_before <= f_sk) and i < 25):
           alpha = alpha*0.2
+          alpha_rk = alpha_rk*0.2
+          alpha_sk = alpha_sk*0.2
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
+          paramsStTop_rk[kStTop] = paramsStTop[kStTop] - alpha*drk
+          paramsStTop_sk[kStTop + 1] = paramsStTop[kStTop + 1] - alpha*dsk
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test)
+          f_rk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop, indStTop, paramsStTop_rk)
+          f_sk = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                  listIndices, listxk, listB0k, listBk, listBkBk1,
+                                  indCrTop, paramsCrTop, indStTop, paramsStTop_sk)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test ):
+     if( f_before <= f_test and f_before <= f_rk and f_before <= f_sk):
           return paramsStTop[kStTop], paramsStTop[kStTop+1]
+     elif( f_rk < f_before and f_rk < f_test and f_rk < f_sk):
+          return paramsStTop_rk[kStTop], paramsStTop_rk[kStTop + 1]
+     elif( f_sk < f_before and f_sk < f_test):
+          return paramsStTop_sk[kStTop], paramsStTop_sk[kStTop + 1]
      else:
           return paramsStTop_test[kStTop], paramsStTop_test[kStTop+1]
 
@@ -2391,6 +2461,8 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      lamk = params[k]
      muk = params[k+1]
      B0kM1 = listB0k[j-1]
+     BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+     BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
      B0k = listB0k[j]
      xkM1 = listxk[j]
      xk = listxk[j+1]
@@ -2730,7 +2802,7 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      listGradNorms = []
      listChangefObj = []
      listChangeParams = []
-     gammas = 0.25*np.ones((n + 1))
+     gammas = 0.1*np.ones((n + 1))
      iter = 0
      change_fVal = 1
      normChangeP = 1

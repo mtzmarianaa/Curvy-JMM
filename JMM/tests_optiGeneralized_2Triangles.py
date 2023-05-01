@@ -115,7 +115,7 @@ plt.title("Initial parameters")
 
 # Run opti
 
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = True, maxIter = 10)
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 10)
 
 
 
@@ -188,10 +188,6 @@ grad0 = np.array(grad0)
 T1, type1, grad1 = trueSolution(x1[0], x1[1], xSource, center, R, eta1, eta2)
 grad1 = np.array(grad1)
 
-# Compute the true solution for x3
-
-T3, type3, grad3 = trueSolution(x3[0], x3[1], xSource, center, R, eta1, eta2)
-
 # Use blockCoordinateGradient
 
 mu1 = 0.4
@@ -218,7 +214,7 @@ plt.title("Initial parameters")
 
 # Run opti
 
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = True, maxIter = 25)
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 25)
 
 
 
