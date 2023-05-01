@@ -299,6 +299,27 @@ def partial_fObj_shSt(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, 
           return etaOutside*np.dot( B_atShooter, shooter - receiverFrom)/norm(shooter - receiverFrom) + etaInside*np.dot( -B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter)
 
 
+def partial_fObj_collapsedShooter(shFrom, sh, recTo, x0From, B0From, x1From, B1From, x0This, B0This, x1This, B1This, x0To, B0To, x1To, B1To, etaPrev, etaNext):
+     '''
+     Partial of the objective function (generalized) with respect to a "COLLAPSED SHOOTER" (one where both
+     the shooter and a receiver on an edge have collapsed to the same point). This points comes from a
+     straight ray from a shooter on another edge and shoots in a straight line to another receiver
+     in another edge (we are dealing with 3 edges here)
+     '''
+     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     collapsedShooter = itt.hermite_boundary(sh, x0This, B0This, x1This, B1This)
+     B_collapsedShooter = itt.gradientBoundary(sh, x0This, B0This, x1This, B1This)
+     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     if( np.all(shooterFrom == collapsedShooter) and  np.all( receiverTo == collapsedShooter) ):
+          return 0
+     elif( np.all(shooterFrom == collapsedShooter) and np.any(receiverTo != collapsedShooter) ):
+          return etaNext*np.dot( -B_collapsedShooter, receiverTo - collapsedShooter)/norm( receiverTo - collapsedShooter)
+     elif( np.all( receiverTo == collapsedShooter) and np.any( shooterFrom != collapsedShooter) ):
+          return etaPrev*np.dot( B_collapsedShooter, collapsedShooter - shooterFrom)/norm(collapsedShooter - shooterFrom)
+     else:
+          return etaPrev*np.dot( B_collapsedShooter, collapsedShooter - shooterFrom)/norm(collapsedShooter - shooterFrom) + etaNext*np.dot( -B_collapsedShooter, receiverTo - collapsedShooter)/norm( receiverTo - collapsedShooter)
+
+
 def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     '''
     Project back lamk1 given muk
@@ -785,8 +806,8 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
      # For pairs of parameters R AND S for a creeping ray update
      if( indCrTop is not None):
           fObjMesh = np.empty((200,200))
-          for j in range(len(indCrTop)):
-               k = 2*j
+          for kCrTop in range(len(indCrTop)):
+               k = 2*kCrTop
                # We plot level sets by changins sequential parameters (2 at a time)
                rr, ss = np.meshgrid( np.linspace(0,1,200), np.linspace(0,1,200) )
                # Compute the solution, compute this level set
@@ -795,8 +816,8 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
                          rk = rr[i,j]
                          sk = ss[i,j]
                          paramsMesh = np.copy(paramsCrTop)
-                         paramsMesh[k] = p1
-                         paramsMesh[k+1] = p2
+                         paramsMesh[k] = rk
+                         paramsMesh[k+1] = sk
                          fObjMesh[i,j] = fObj_generalized(paramsOpt, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                                           listxk, listB0k, listBk, listBkBk1,
                                                           indCrTop = indCrTop, paramsCrTop = paramsMesh,
@@ -806,17 +827,17 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
                im = plt.imshow(fObjMesh, cmap = colormap2, extent = [0,1,0,1], origin = "lower")
                plt.scatter(paramsCrTop[k], paramsCrTop[k+1], c = "white", marker = "*", label = "optimum found")
                if(contours):
-                    plt.contour(rr[0, :], ss[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
-               plt.title("Level set of objective function, parameters for creeping rays on side edges changed, r" + str(j) + " s" + str(j))
-               plt.xlabel("r" + str(k))
-               plt.ylabel("s" + str(k+1))
+                    plt.contour(rr[0, :], rr[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
+               plt.title("Level set of objective function, parameters for creeping rays on side edges changed, r" + str(kCrTop+1) + " s" + str(kCrTop+1))
+               plt.xlabel("r" + str(kCrTop+1))
+               plt.ylabel("s" + str(kCrTop+1))
                plt.legend()
                plt.colorbar(im)
      # For pairs of parameters R AND S for a creeping ray update
      if( indStTop is not None):
           fObjMesh = np.empty((200,200))
-          for j in range(len(indStTop)):
-               k = 2*j
+          for kStTop in range(len(indStTop)):
+               k = 2*kStTop
                # We plot level sets by changins sequential parameters (2 at a time)
                rr, ss = np.meshgrid( np.linspace(0,1,200), np.linspace(0,1,200) )
                # Compute the solution, compute this level set
@@ -837,7 +858,7 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
                plt.scatter(paramsStTop[k], paramsStTop[k+1], c = "white", marker = "*", label = "optimum found")
                if(contours):
                     plt.contour(rr[0, :], ss[0, :], fObjMesh, colors = ["white"], extent = [0,1,0,1], origin = "lower", levels = 30, linewidths = 0.5)
-               plt.title("Level set of objective function, parameters for straight rays on side edges changed, r" + str(j) + " s" + str(j))
+               plt.title("Level set of objective function, parameters for straight rays on side edges changed, r" + str(kStTop) + " s" + str(kStTop))
                plt.xlabel("r" + str(k))
                plt.ylabel("s" + str(k+1))
                plt.legend()
@@ -1563,14 +1584,16 @@ def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat,
 # Backtracking for updates close to the identity
 
 
-def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+def backTrClose_block0k(alpha0, k, dlamk, dmuk, dCollapsed,
+                        params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
                         indCrTop, paramsCrTop, indStTop, paramsStTop):
      '''
      Backtracking to find the next block [lamk, muk] in the generalized objective function (considers points on the sides
      of the triangle fan)
-     it considers two directions: steepest descent
-                                  steepest descent projected onto the line lamk = muk
+     it considers three directions: steepest descent
+                                    steepest descent projected onto the line lamk = muk
+                                    steepest descent for the collapsed point (i.e. muk =∼ lamk)
      '''
      f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1582,6 +1605,8 @@ def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, g
      params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
      params_test_proj = np.copy(params)
      params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+     params_collapsed = np.copy(params)
+     params_collapsed[k:(k+2)] = params[k] - alpha*dCollapsed
      # Compare the function value
      f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1589,24 +1614,32 @@ def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, g
      f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
+     f_test_collapsed = fObj_generalized(params_collapsed, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop, indStTop, paramsStTop)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( ( (f_test < f_before) or (f_test_proj < f_before) ) and i < 8 ):
+     while( ( (f_test < f_before) or (f_test_proj < f_before) or (f_test_collapsed < f_before) ) and i < 8 ):
           alpha = alpha*1.3 # increase the step size
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          params_collapsed[k:(k+2)] = params[k] - alpha*dCollapsed
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop)
           f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_test_collapsed = fObj_generalized(params_collapsed, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
           i += 1
      i = 0
      # Then if there is no decrease try decreasing alpha, the step size
-     while( ( (f_before < f_test) or (f_before < f_test_proj) ) and i < 25 ):
+     while( ( (f_before < f_test) and (f_before < f_test_proj) and (f_before < f_test_collapsed) ) and i < 25 ):
           alpha = alpha*0.2 # increase the step size
           params_test[k:(k+2)] = params[k:(k+2)] - alpha*d_middle
           params_test_proj[k:(k+2)] = project_ontoLine(params_test[k:(k+2)])
+          params_collapsed[k:(k+2)] = params[k] - alpha*dCollapsed
           #breakpoint()
           f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1614,23 +1647,30 @@ def backTrClose_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, g
           f_test_proj = fObj_generalized(params_test_proj, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
+          f_test_collapsed = fObj_generalized(params_collapsed, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop, indStTop, paramsStTop)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test and f_before <= f_test_proj):
+     if( f_before <= f_test and f_before <= f_test_proj and f_before <= f_test_collapsed):
           return params[k], params[k+1]
-     elif( f_test < f_test_proj ):
+     elif( f_test < f_test_proj and f_test < f_test_collapsed ):
           return params_test[k], params_test[k+1]
-     else:
+     elif( f_test_proj < f_test_collapsed ):
           return params_test_proj[k], params_test_proj[k+1]
+     else:
+          return params_collapsed[k], params_collapsed[k+1]
 
-def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, dCollapsed,
+                           params, x0, T0, grad0, x1, T1, grad1, xHat,
                            listIndices, listxk, listB0k, listBk, listBkBk1,
                            indCrTop, paramsCrTop, indStTop, paramsStTop):
      '''
      Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
      on the sides of the triangle fan)
-     it considers two directions: steepest descent
-                                  steepest descent projected onto the line rk = sk
+     it considers three directions: steepest descent
+                                    steepest descent projected onto the line rk = sk
+                                    steepest descent for the collapsed point (i.e. rk =∼ sk)
      '''
      f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1640,9 +1680,11 @@ def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, 
      #breakpoint()
      paramsCrTop_test = np.copy(paramsCrTop)
      paramsCrTop_test_proj = np.copy(paramsCrTop)
+     paramsCrTop_collapsed = np.copy(paramsCrTop)
      alpha = alpha0*1/(max(norm(d_middle), 1))
      paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
      paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+     paramsCrTop_collapsed[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop] - alpha*dCollapsed
      # Compare the function value
      f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1650,48 +1692,63 @@ def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, 
      f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+     f_test_collapsed = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                         listIndices, listxk, listB0k, listBk, listBkBk1,
+                                         indCrTop, paramsCrTop_collapsed, indStTop, paramsStTop)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( ( (f_test < f_before) or (f_test_proj < f_before) ) and i < 8 ):
+     while( ( (f_test < f_before) or (f_test_proj < f_before) or (f_test_collapsed < f_before ) ) and i < 8 ):
           alpha = alpha*1.3
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
           paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+          paramsCrTop_collapsed[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop] - alpha*dCollapsed
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test, indStTop, paramsStTop)
           f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+          f_test_collapsed = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop_collapsed, indStTop, paramsStTop)
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( ((f_before <= f_test) or (f_before <= f_test_proj)) and i < 25):
+     while( ((f_before <= f_test) and (f_before <= f_test_proj) and (f_before < f_test_collapsed) ) and i < 25):
           alpha = alpha*0.2
           paramsCrTop_test[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop:(kCrTop+2)] - alpha*d_middle
           paramsCrTop_test_proj[kCrTop:(kCrTop + 2)] = project_ontoLine(paramsCrTop_test[kCrTop:(kCrTop + 2)])
+          paramsCrTop_collapsed[kCrTop:(kCrTop + 2)] = paramsCrTop[kCrTop] - alpha*dCollapsed
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop_test, indStTop, paramsStTop)
           f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop_test_proj, indStTop, paramsStTop)
+          f_test_collapsed = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                              listIndices, listxk, listB0k, listBk, listBkBk1,
+                                              indCrTop, paramsCrTop_collapsed, indStTop, paramsStTop)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test and f_before <= f_test_proj):
+     if( f_before <= f_test and f_before <= f_test_proj and f_before <= f_test_collapsed):
           return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
-     elif( f_test < f_test_proj ):
+     elif( f_test < f_test_proj and f_test < f_test_collapsed ):
           return paramsCrTop[kCrTop], paramsCrTop[kCrTop+1]
-     else:
+     elif( f_test_proj < f_test_collapsed):
           return paramsCrTop_test_proj[kCrTop], paramsCrTop_test_proj[kCrTop+1]
+     else:
+          return paramsCrTop_collapsed[kCrTop], paramsCrTop_collapsed[kCrTop + 1]
 
 
-def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, dCollapsed,
+                           params, x0, T0, grad0, x1, T1, grad1, xHat,
                            listIndices, listxk, listB0k, listBk, listBkBk1,
                            indCrTop, paramsCrTop, indStTop, paramsStTop):
      '''
      Backtracking to find the next block [rk, sk] in the generalized objective functions (considers points
      on the sides of the triangle fan)
-     it considers two directions: steepest descent
-                                  steepest descent projected onto the line rk = sk
+     it considers three directions: steepest descent
+                                    steepest descent projected onto the line rk = sk
+                                    steepest descent for the collapsed point (i.e. rk =∼ sk)
      '''
      f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1700,9 +1757,11 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
      d_middle = np.array([drk, dsk])
      paramsStTop_test = np.copy(paramsStTop)
      paramsStTop_test_proj = np.copy(paramsStTop)
+     paramsStTop_collapsed = np.copy(paramsStTop)
      alpha = alpha0*1/(max(norm(d_middle), 1))
      paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
      paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+     paramsStTop_collapsed[kStTop:(kStTop + 2)] = paramsStTop[kStTop] - alpha*dCollapsed
      # Compare the function value
      f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1710,38 +1769,51 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, 
      f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+     f_test_collaped = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                        listIndices, listxk, listB0k, listBk, listBkBk1,
+                                        indCrTop, paramsCrTop, indStTop, paramsStTop_collapsed)
      # If there is a decrease in the function, try increasing alpha, the step size
-     while( (f_test < f_before) and (f_test_proj < f_before) and i < 8 ):
+     while( ( (f_test < f_before) or (f_test_proj < f_before) or (f_test_collapsed < f_before )) and i < 8 ):
           alpha = alpha*1.3
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
           paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+          paramsStTop_collapsed[kStTop:(kStTop + 2)] = paramsStTop[kStTop] - alpha*dCollapsed
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test)
           f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+          f_test_collaped = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                                             indCrTop, paramsCrTop, indStTop, paramsStTop_collapsed)
           i += 1
      i = 0
      # If there is no decrease in the function value, try decreasing alpha, the step size
-     while( (f_before <= f_test) and (f_before <= f_test_proj) and i < 25):
+     while( ( (f_before <= f_test) and (f_before <= f_test_proj) and (f_before <= f_test_collapsed ) ) and i < 25):
           alpha = alpha*0.2
           paramsStTop_test[kStTop:(kStTop + 2)] = paramsStTop[kStTop:(kStTop+2)] - alpha*d_middle
           paramsStTop_test_proj[kStTop:(kStTop + 2)] = project_ontoLine(paramsStTop_test[kStTop:(kStTop + 2)])
+          paramsStTop_collapsed[kStTop:(kStTop + 2)] = paramsStTop[kStTop] - alpha*dCollapsed
           f_test = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                     listIndices, listxk, listB0k, listBk, listBkBk1,
                                     indCrTop, paramsCrTop, indStTop, paramsStTop_test)
           f_test_proj = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop_test_proj)
+          f_test_collaped = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                                             listIndices, listxk, listB0k, listBk, listBkBk1,
+                                             indCrTop, paramsCrTop, indStTop, paramsStTop_collapsed)
           i += 1
      # Now we should have a decrease or set alpha to 0
-     if( f_before <= f_test and f_before <= f_test_proj):
+     if( f_before <= f_test and f_before <= f_test_proj and f_before <= f_test_collapsed):
           return paramsStTop[kStTop], paramsStTop[kStTop+1]
-     elif( f_test < f_test_proj ):
+     elif( f_test < f_test_proj and f_test < f_test_collapsed ):
           return paramsStTop_test[kStTop], paramsStTop_test[kStTop+1]
-     else:
+     elif( f_test_proj < f_test_collapsed):
           return paramsStTop_test_proj[kStTop], paramsStTop_test_proj[kStTop+1]
+     else:
+          return paramsStTop_collapsed[kStTop], paramsStTop_collapsed[kStTop + 1]
 
 ###################################
 # Backtracking for updates far from the identity
@@ -1923,24 +1995,24 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      # Compute directions
      drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
      gradCrTop[kCrTop] = drkM1
-     breakpoint() ##############################################################################
      dskM1 = partial_fObj_shCr(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
-     gradCrTop[kCrTop + 1] = dskM1
-     #breakpoint() ##############################################################################
-     # Decide if we need close or far backtracking
+     gradCrTop[kCrTop + 1] = dskM1     # Decide if we need close or far backtracking
      r = close_to_identity(rkM1, skM1)
      if( r <= gamma ):
           # Meaning we have to do a close update
-          rkM1, skM1 = backTrClose_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+          # Compute the "collapsed direction"
+          drkM1_collapsed = partial_fObj_collapsedShooter(mukM1, rkM1, lamk, x0, B0kM1, xkM1, BkM1,
+                                                          xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                          x0, B0k, xk, Bk, etakPrev, etak)
+          rkM1, skM1 = backTrClose_blockCrTop(1, kCrTop, drkM1, dskM1, drkM1_collapsed,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat,
                                               listIndices, listxk, listB0k, listBk, listBkBk1,
                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
      else:
           # Meaning we dont have to do a close update
           rkM1, skM1 = backTr_blockCrTop(1, kCrTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
      # Project back
      rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
      mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk, BkM1Bk_1)
@@ -1959,7 +2031,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                          x1, T1, grad1, xHat, listIndices, listxk,
                                          listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-     #breakpoint() ##############################################################################
      # Update
      params[k-1] = mukM1
      paramsCrTop[kCrTop] = rkM1
@@ -1971,7 +2042,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           # Now go with the block [lamk, muk] - we have to do this here since we have already updated rkM1 and skM1
      dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
      gradParams[k] = dlamk
-     #breakpoint() ##############################################################################
      # We need to know if the next receiver is on h0k1 or on hkk1
      if( nTop + 1 == indCrTop[currentCrTop] or nTop + 1 == indStTop[currentStTop] ):
           # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
@@ -1982,22 +2052,24 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           else:
                rk = paramsStTop[2*currentStTop]
           dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
-          #breakpoint() ##############################################################################
           gradParams[k+1] = dmuk
           r = close_to_identity(lamk, muk)
           # Decide which type of backtracking we have to do: close or far
           if ( r<= gamma):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(skM1, muk, rk, xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                              x0, B0k, xk, Bk,
+                                                              xk, BkBk1_0, xk1, BkBk1_1,
+                                                              etakPrev, etak) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
           else:
                # We have a far update
                lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
           # Now we project, we use rk to project back muk and skM1 to project back lamk
           lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           skM1_projected = project_skGivenlamk1(skM1, lamk, x0, B0k, xk, Bk, xkM1, BkM1Bk_0, BkM1Bk_1)
@@ -2015,7 +2087,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                          T0, grad0, x1, T1, grad1, xHat, listIndices,
                                          listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
           # Update
           params[k] = lamk
           params[k+1] = muk
@@ -2028,24 +2099,25 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           Bk1 = listBk[j+1]
           etak1 = listIndices[j+1]
           dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
-          #breakpoint() ##############################################################################
           gradParams[k+1] = dmuk
           r = close_to_identity(lamk, muk)
           # Decide which type of backtracking we have to do: close or far
           if (r <= gamma):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(skM1, muk, lamk1, xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                              x0, B0k, xk, Bk,
+                                                              x0, B0k1, xk1, Bk1, etak, etak1) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
                gamma = gamma*theta_gamma
                gammas[j-1] = gamma
-               #breakpoint() ##############################################################################
           else:
                # Meaning we have to do a far update
                lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
           # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
           lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           lamk_free = project_box(lamk)
@@ -2056,7 +2128,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                               listB0k, listBk, listBkBk1,
                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
           paramsCrTop[kCrTop + 1] = skM1
-          #breakpoint() ##############################################################################
           # Depending on dmuk and the curvature of hkhk1 we project back muk differently
           muk_free = project_box(muk)
           if( dmuk >= 0 or listCurvingInwards[j] != 1):
@@ -2075,7 +2146,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           params[k] = lamk
           params[k+1] = muk
           params[k+2] = lamk1
-          #breakpoint() ##############################################################################
      else:
           # We just have to update lamk because we are on lamn1
           alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -2092,7 +2162,6 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                               paramsCrTop, indStTop, paramsStTop)
           params[k] = lamk
           paramsCrTop[kCrTop +1] = skM1
-          #breakpoint() ##############################################################################
      #Now we just return whatever we did
      return currentCrTop, params, paramsCrTop, gradParams, gradCrTop
 
@@ -2138,24 +2207,24 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      # Compute directions
      drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
      gradStTop[kStTop] = drkM1
-     #breakpoint() ##############################################################################
      dskM1 = partial_fObj_shSt(skM1, rkM1, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etaRegionOutside)
      gradStTop[kStTop + 1] = dskM1
-     #breakpoint() ##############################################################################
      # Decide if we need close or far backtracking
      r = close_to_identity(rkM1, skM1)
      if( r <= gamma ):
           # Meaning we have to do a close update
-          rkM1, skM1 = backTrClose_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
+          drkM1_collapsed = partial_fObj_collapsedShooter(mukM1, rkM1, lamk, x0, B0kM1, xkM1, BkM1,
+                                                          xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                          x0, B0k, xk, Bk, etakPrev, etak)
+          rkM1, skM1 = backTrClose_blockStTop(1, kStTop, drkM1, dskM1, drkM1_collapsed,
+                                              params, x0, T0, grad0, x1, T1, grad1, xHat,
                                               listIndices, listxk, listB0k, listBk, listBkBk1,
                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
      else:
           # Meaning we dont have to do a close update
           rkM1, skM1 = backTr_blockStTop(1, kStTop, drkM1, dskM1, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                          listIndices, listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
      # Project back
      rkM1_projected = project_rkGivenmuk(rkM1, mukM1, x0, B0kM1, xkM1, BkM1, xk, Bk, BkM1Bk_0, BkM1Bk_1)
      mukM1_projected = project_mukGivenrk(mukM1, rkM1, x0, B0kM1, xkM1, BkM1, BkM1Bk_0, xk, BkM1Bk_1)
@@ -2174,7 +2243,6 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                          x1, T1, grad1, xHat, listIndices, listxk,
                                          listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-     #breakpoint() ##############################################################################
      # Update
      params[k-1] = mukM1
      paramsStTop[kStTop] = rkM1
@@ -2185,7 +2253,6 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      # Now we can update lamk muk - we have to do this here since we have already updated rkM1 and skM1
      dlamk = partial_fObj_recCr(skM1, muk, lamk, xkM1, BkM1Bk_0, xk, BkM1Bk_1, x0, B0k, xk, Bk, etakPrev, etak)
      gradParams[k] = dlamk
-     #breakpoint() ##############################################################################
      # We need to know if the next receiver is on h0k1 or on hkk1
      if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentCrTop] ):
           # The next receiver is on hkhk1 NOTE THAT THE PROCESS NEVER ENTERS HERE IF j = n (number of regions)
@@ -2196,13 +2263,17 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           else:
                rk = paramsCrTop[2*currentCrTop]
           dmuk = partial_fObj_shCr(muk, lamk, rk, x0, B0k, xk, Bk, xk, BkBk1_0, xk1, BkBk1_1, etak, listIndices[n+j+1])
-          #breakpoint() ##############################################################################
           gradParams[k+1] = dmuk
           r = close_to_identity(lamk, muk)
           # Decide which type of backtracking we have to do: close or far
           if ( r<= gamma):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(skM1, muk, rk, xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                              x0, B0k, xk, Bk,
+                                                              xk, BkBk1_0, xk1, BkBk1_1,
+                                                              etakPrev, etak) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
           else:
@@ -2227,7 +2298,6 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                          T0, grad0, x1, T1, grad1, xHat, listIndices,
                                          listxk, listB0k, listBk, listBkBk1,
                                          indCrTop, paramsCrTop, indStTop, paramsStTop)
-          #breakpoint() ##############################################################################
           # Update
           params[k] = lamk
           params[k+1] = muk
@@ -2240,24 +2310,25 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           Bk1 = listBk[j+1]
           etak1 = listIndices[j+1]
           dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
-          #breakpoint() ##############################################################################
           gradParams[k+1] = dmuk
           r = close_to_identity(lamk, muk)
           # Decide which type of backtracking we have to do: close or far
           if (r <= gamma):
                # Meaning we have to do a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(skM1, muk, lamk1, xkM1, BkM1Bk_0, xk, BkM1Bk_1,
+                                                              x0, B0k, xk, Bk,
+                                                              x0, B0k1, xk1, Bk1, etak, etak1) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
                gamma = gamma*theta_gamma
                gammas[j-1] = gamma
-               #breakpoint() ##############################################################################
           else:
                # Meaning we have to do a far update
                lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
-               #breakpoint() ##############################################################################
           # Now we project back, we use lamk1 to project back muk and skM1 to project back lamk
           lamk_projected = project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           lamk_free = project_box(lamk)
@@ -2267,9 +2338,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                                               x1, T1, grad1, xHat, listIndices, listxk,
                                               listB0k, listBk, listBkBk1,
                                               indCrTop, paramsCrTop, indStTop, paramsStTop)
-          paramsStTop[kStTop + 1] = skM1
-          #breakpoint() ##############################################################################
-          # Depending on dmuk and the curvature of hkhk1 we project back muk differently
+          paramsStTop[kStTop + 1] = skM1          # Depending on dmuk and the curvature of hkhk1 we project back muk differently
           muk_free = project_box(muk)
           if( dmuk >= 0 or listCurvingInwards[j] != 1):
                # Means that we don't have a point on the side edge and we don't have to worry about that edge
@@ -2287,7 +2356,6 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           params[k] = lamk
           params[k+1] = muk
           params[k+2] = lamk1
-          #breakpoint() ##############################################################################
      else:
           # We just have to update lamk because we are on lamn1
           alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -2332,14 +2400,12 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           Bk = listBk[j+1]
      BkM1 = listBk[j-1]
      Bk = listBk[j]
-     BkM1Bk_0 = listBkBk1[k-1] # grad of hkhk1 at xk
-     BkM1Bk_1 = listBkBk1[k] # grad of hkhk1 at xk1
      etakPrev = listIndices[j-1] # index of refraction from previous triangle
      etak = listIndices[j] # index of refraction in current triangle
      etaRegionOutside = listIndices[n+j] # index of refraction ouside from the side of the previous triangle
      # The update starts here
      dlamk = partial_fObj_recCr(mukM1, muk, lamk, x0, B0kM1, xkM1, BkM1, x0, B0k, xk, Bk, etakPrev, etak)
-     breakpoint()
+     #breakpoint()
      gradParams[k] = dlamk
      # We need to see if the next receiver is on h0k1 or on hkk1
      if( nTop + 1 == indStTop[currentStTop] or nTop + 1 == indCrTop[currentStTop] ):
@@ -2357,7 +2423,11 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           r = close_to_identity(lamk, muk)
           if( r <= gamma ):
                # Meaning we have a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(mukM1, muk, rk, x0, BkM1, xkM1, BkM1,
+                                                              x0, B0k, xk, Bk,
+                                                              xk, BkBk1_0, xk1, BkBk1_1, etakPrev, etak) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
                gamma = gamma*theta_gamma
@@ -2404,13 +2474,18 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           params[k+1] = muk
      elif(j <  n):
           # This means that the next receiver is on h0k1
+          breakpoint()
           dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
           gradParams[k+1] = dmuk
           # Decide which type of backtracking we have to do: close or far
           r = close_to_identity(lamk, muk)
           if( r<= gamma):
                # Meaning we have a close update
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, x0, T0, grad0, x1, T1, grad1, xHat,
+               dmuk_collapsed = partial_fObj_collapsedShooter(mukM1, muk, lamk1, x0, BkM1, xkM1, BkM1,
+                                                              x0, B0k, xk, Bk,
+                                                              x0, B0k1, xk1, Bk1, etakPrev, etak) 
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+                                               params, x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
                gamma = gamma*theta_gamma
@@ -2658,7 +2733,8 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      gammas = 0.25*np.ones((n + 1))
      iter = 0
      change_fVal = 1
-     while( abs(change_fVal) > tol and iter < maxIter):
+     normChangeP = 1
+     while( abs(change_fVal) > tol and iter < maxIter and normChangeP > tol):
           paramskM1, paramsCrTopkM1, paramsStTopkM1 = paramsk, paramsCrTopk, paramsStTopk
           # Forward pass
           paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = forwardPassUpdate(paramsk, gammas,
