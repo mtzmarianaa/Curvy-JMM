@@ -55,5 +55,3 @@ int faceBetween3Points(triMesh_2Ds *triM_2D, int index1, int index2, int index3)
 void twoTrianglesFromEdge(triMesh_2Ds *triM_2D, int index0, int index1, int possibleTriangles[2], int possibleThirdVertices[2]);
 
 void pointWhereRegionChanges(triMesh_2Ds *triM_2D, int *current_states, int x0_ind, int x1_ind, int xHat, int directionToStart, infoTriangleFan *infoOut);
-
-w

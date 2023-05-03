@@ -32,64 +32,64 @@ tol = 1e-10
 # ##### X1 TO THE LEFT OF X0
 
 
-# ###########################################
-print("\n\n\n x0 and x1 on the boundary close, x1 to the left of x0\n\n")
+# # ###########################################
+# print("\n\n\n x0 and x1 on the boundary close, x1 to the left of x0\n\n")
 
-xSource = np.array([-15, -10])
-center = np.array([0,0])
-R = 10.0
-eta1 = 1.0
-eta2 = 1.452
+# xSource = np.array([-15, -10])
+# center = np.array([0,0])
+# R = 10.0
+# eta1 = 1.0
+# eta2 = 1.452
 
-t0 = 1.86*pi
-t1 = 1.87*pi
+# t0 = 1.86*pi
+# t1 = 1.87*pi
 
-# Define the points
-x1 = np.array([10*cos(t0), 10*sin(t0)])
-x2 = np.array([10*cos(t1), 10*sin(t1)])
-x0 = np.array([x1[0] , x1[1] - 0.12])
-xHat = x2
+# # Define the points
+# x1 = np.array([10*cos(t0), 10*sin(t0)])
+# x2 = np.array([10*cos(t1), 10*sin(t1)])
+# x0 = np.array([x1[0] , x1[1] - 0.12])
+# xHat = x2
 
-hc = norm(x1-x2)
+# hc = norm(x1-x2)
 
-# Their derivatives
-B1B2_0 = np.array([-sin(t0), cos(t0)])
-B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
-B1B2_1 = np.array([-sin(t1), cos(t1)])
-B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
-B01 = x1-x0
-B1 = np.copy(B01)
-B02 = x2-x0
-B2 = np.copy(B02)
+# # Their derivatives
+# B1B2_0 = np.array([-sin(t0), cos(t0)])
+# B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
+# B1B2_1 = np.array([-sin(t1), cos(t1)])
+# B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
+# B01 = x1-x0
+# B1 = np.copy(B01)
+# B02 = x2-x0
+# B2 = np.copy(B02)
 
-listIndices = [eta1, eta1, eta2]
-listxk = [x0, x1, x2]
-listB0k = [B01, B02]
-listBk = [B1, B2]
-listBkBk1 = [B1B2_0, B1B2_1]
+# listIndices = [eta1, eta1, eta2]
+# listxk = [x0, x1, x2]
+# listB0k = [B01, B02]
+# listBk = [B1, B2]
+# listBkBk1 = [B1B2_0, B1B2_1]
 
-# Compute solutions
+# # Compute solutions
 
-T0, type0, grad0 = trueSolution(x0[0], x0[1], xSource, center, R, eta1, eta2)
-grad0 = np.array(grad0)
-T1, type1, grad1 = trueSolution(x1[0], x1[1], xSource, center, R, eta1, eta2)
-grad1 = np.array(grad1)
+# T0, type0, grad0 = trueSolution(x0[0], x0[1], xSource, center, R, eta1, eta2)
+# grad0 = np.array(grad0)
+# T1, type1, grad1 = trueSolution(x1[0], x1[1], xSource, center, R, eta1, eta2)
+# grad1 = np.array(grad1)
 
-# Compute the true solution for x2
+# # Compute the true solution for x2
 
-T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
+# T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
-# Use blockCoordinateGradient
+# # Use blockCoordinateGradient
 
-mu1 = 0.5
-lam2 = 0.5
-params0 = [mu1, lam2, 1.0]
-r1 = 0.5
-s1 = 0.7
-indCrTop = [1]
-paramsCrTop0 = [r1, s1]
-indStTop = None
-paramsStTop0 = None
+# mu1 = 0.5
+# lam2 = 0.5
+# params0 = [mu1, lam2, 1.0]
+# r1 = 0.5
+# s1 = 0.7
+# indCrTop = [1]
+# paramsCrTop0 = [r1, s1]
+# indStTop = None
+# paramsStTop0 = None
 
 # # # TEST ALL THE PROJECTIONS THAT COULD BE DONE IN THIS SET UP
 
@@ -148,78 +148,78 @@ paramsStTop0 = None
 
 
 
-# Compute one step of the pass forward method
+# # Compute one step of the pass forward method
 
-listCurvingInwards = [1]
-gammas = [0.1]
-theta_gamma = 1
+# listCurvingInwards = [1]
+# gammas = [0.1]
+# theta_gamma = 1
 
-# Run opti
+# # Run opti
 
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 10)
+# paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 10)
 
-# Plot results
+# # Plot results
 
-oP.plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
-                listBk, params0, paramsk, listObjVals, listGradNorms, listChangefObj,
-                listChangeParams = listChangeParams, trueSol = None, contours = True,
-                listBkBk1 = listBkBk1, indCrTop = indCrTop, paramsCrTop0 = paramsCrTop0, 
-                indStTop = indStTop, paramsStTop0 = paramsStTop0, 
-                paramsCrTop = paramsCrTopk, paramsStTop = paramsStTopk)
+# oP.plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
+#                 listBk, params0, paramsk, listObjVals, listGradNorms, listChangefObj,
+#                 listChangeParams = listChangeParams, trueSol = None, contours = True,
+#                 listBkBk1 = listBkBk1, indCrTop = indCrTop, paramsCrTop0 = paramsCrTop0, 
+#                 indStTop = indStTop, paramsStTop0 = paramsStTop0, 
+#                 paramsCrTop = paramsCrTopk, paramsStTop = paramsStTopk)
 
  
 
-rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
-fk_grid = np.empty((200,200))
+# rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+# fk_grid = np.empty((200,200))
 
-for i in range(200):
-    for j in range(200):
-        r1 = rs[i,j]
-        s1 = ss[i,j]
-        paramsCrTop = np.array([r1, s1])
-        fk_grid[i,j] = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                          listxk, listB0k, listBk, listBkBk1,
-                          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
-                          indStTop = indStTop, paramsStTop = paramsStTopk)
-
-
-# 3D plot
-ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
-ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
-ax.scatter( paramsCrTopk[0], paramsCrTopk[1], listObjVals[-1], c = "black", marker = "*", label = "optimum found")
-ax.set_xlim3d([0,1])
-ax.set_ylim3d([0,1])
-ax.legend()
-plt.title("Objective function with optimum $\mu_1$, $\lambda_2$, difference between minimum and minimum found: " + str(np.min(fk_grid) - listObjVals[-1]) )
-ax.set_ylabel("$s_1$")
-ax.set_xlabel("$r_1$")
-ax.set_zlabel("$g_{C,D}$")
+# for i in range(200):
+#     for j in range(200):
+#         r1 = rs[i,j]
+#         s1 = ss[i,j]
+#         paramsCrTop = np.array([r1, s1])
+#         fk_grid[i,j] = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+#                           listxk, listB0k, listBk, listBkBk1,
+#                           indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+#                           indStTop = indStTop, paramsStTop = paramsStTopk)
 
 
-
-
-rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
-fk_grid = np.empty((200,200))
-
-for i in range(200):
-    for j in range(200):
-        r1 = rs[i,j]
-        s1 = ss[i,j]
-        paramsCrTop = np.array([r1, s1])
-        fk_grid[i,j] = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                        listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop = indCrTop, paramsCrTop = paramsCrTop,
-                                        indStTop = indStTop, paramsStTop = paramsStTop0)
+# # 3D plot
+# ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+# ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+# ax.scatter( paramsCrTopk[0], paramsCrTopk[1], listObjVals[-1], c = "black", marker = "*", label = "optimum found")
+# ax.set_xlim3d([0,1])
+# ax.set_ylim3d([0,1])
+# ax.legend()
+# plt.title("Objective function with optimum $\mu_1$, $\lambda_2$, difference between minimum and minimum found: " + str(np.min(fk_grid) - listObjVals[-1]) )
+# ax.set_ylabel("$s_1$")
+# ax.set_xlabel("$r_1$")
+# ax.set_zlabel("$g_{C,D}$")
 
 
 
-# 3D plot
-ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
-ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
-plt.title("Objective function with initial $\mu_1$, $\lambda_2$" )
-ax.set_ylabel("$s_1$")
-ax.set_xlabel("$r_1$")
-ax.set_zlabel("$g_{C,D}$")
+
+# rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+# fk_grid = np.empty((200,200))
+
+# for i in range(200):
+#     for j in range(200):
+#         r1 = rs[i,j]
+#         s1 = ss[i,j]
+#         paramsCrTop = np.array([r1, s1])
+#         fk_grid[i,j] = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+#                                         listxk, listB0k, listBk, listBkBk1,
+#                                         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+#                                         indStTop = indStTop, paramsStTop = paramsStTop0)
+
+
+
+# # 3D plot
+# ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+# ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+# plt.title("Objective function with initial $\mu_1$, $\lambda_2$" )
+# ax.set_ylabel("$s_1$")
+# ax.set_xlabel("$r_1$")
+# ax.set_zlabel("$g_{C,D}$")
 
 
 
@@ -245,136 +245,138 @@ ax.set_zlabel("$g_{C,D}$")
 
 
 # ###########################################
-print("\n\n\n x0 and x1 on the boundary close, x1 to the left of x0\n\n")
+# print("\n\n\n x0 and x1 on the boundary close, x1 to the left of x0\n\n")
 
-xSource = np.array([-15, -10])
-center = np.array([0,0])
-R = 10.0
-eta1 = 1.0
-eta2 = 1.452
+# xSource = np.array([-15, -10])
+# center = np.array([0,0])
+# R = 10.0
+# eta1 = 1.0
+# eta2 = 1.452
 
-t0 = 1.86*pi
-t1 = 1.87*pi
+# t0 = 1.86*pi
+# t1 = 1.87*pi
 
-# Define the points
-x1 = np.array([10*cos(t0), 10*sin(t0)])
-x2 = np.array([10*cos(t1), 10*sin(t1)])
-x0 = np.array([x1[0] , x1[1] + 0.12])
-xHat = x2
+# # Define the points
+# x1 = np.array([10*cos(t0), 10*sin(t0)])
+# x2 = np.array([10*cos(t1), 10*sin(t1)])
+# x0 = np.array([x1[0] , x1[1] + 0.12])
+# xHat = x2
 
-hc = norm(x1-x2)
+# hc = norm(x1-x2)
 
-# Their derivatives
-B1B2_0 = np.array([-sin(t0), cos(t0)])
-B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
-B1B2_1 = np.array([-sin(t1), cos(t1)])
-B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
-B01 = x1-x0
-B1 = np.copy(B01)
-B02 = x2-x0
-B2 = np.copy(B02)
+# # Their derivatives
+# B1B2_0 = np.array([-sin(t0), cos(t0)])
+# B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
+# B1B2_1 = np.array([-sin(t1), cos(t1)])
+# B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
+# B01 = x1-x0
+# B1 = np.copy(B01)
+# B02 = x2-x0
+# B2 = np.copy(B02)
 
-listIndices = [eta1, eta1, eta2]
-listxk = [x0, x1, x2]
-listB0k = [B01, B02]
-listBk = [B1, B2]
-listBkBk1 = [B1B2_0, B1B2_1]
+# listIndices = [eta1, eta1, eta2]
+# listxk = [x0, x1, x2]
+# listB0k = [B01, B02]
+# listBk = [B1, B2]
+# listBkBk1 = [B1B2_0, B1B2_1]
 
-# Compute solutions
+# # Compute solutions
 
-T0, type0, grad0 = trueSolution(x0[0], x0[1], xSource, center, R, eta1, eta2)
-grad0 = np.array(grad0)
-T1, type1, grad1 = trueSolution(x1[0], x1[1], xSource, center, R, eta1, eta2)
-grad1 = np.array(grad1)
+# T0, type0, grad0 = trueSolution(x0[0], x0[1], xSource, center, R, eta1, eta2)
+# grad0 = np.array(grad0)
+# T1, type1, grad1 = trueSolution(x1[0], x1[1], xSource, center, R, eta1, eta2)
+# grad1 = np.array(grad1)
 
-# Compute the true solution for x2
+# # Compute the true solution for x2
 
-T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
+# T2, type2, grad2 = trueSolution(x2[0], x2[1], xSource, center, R, eta1, eta2)
 
-# Use blockCoordinateGradient
+# # Use blockCoordinateGradient
 
-mu1 = 0.5
-lam2 = 0.5
-params0 = [mu1, lam2, 1.0]
-r1 = 0.2
-s1 = 0.6
-indCrTop = [1]
-paramsCrTop0 = [r1, s1]
-indStTop = None
-paramsStTop0 = None
-# Compute one step of the pass forward method
+# mu1 = 0.5
+# lam2 = 0.5
+# params0 = [mu1, lam2, 1.0]
+# r1 = 0.2
+# s1 = 0.6
+# indCrTop = [1]
+# paramsCrTop0 = [r1, s1]
+# indStTop = None
+# paramsStTop0 = None
+# # Compute one step of the pass forward method
 
-listCurvingInwards = [0]
-gammas = [0.1]
-theta_gamma = 1
+# listCurvingInwards = [0]
+# gammas = [0.1]
+# theta_gamma = 1
 
-
-# Run opti
-
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 15)
-
-# Plot results
-
-oP.plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
-                listBk, params0, paramsk, listObjVals, listGradNorms, listChangefObj,
-                listChangeParams = listChangeParams, trueSol = None, contours = True,
-                listBkBk1 = listBkBk1, indCrTop = indCrTop, paramsCrTop0 = paramsCrTop0, 
-                indStTop = indStTop, paramsStTop0 = paramsStTop0, 
-                paramsCrTop = paramsCrTopk, paramsStTop = paramsStTopk)
+# itt.plotFann(x0, listB0k, listxk, listBk, listBkBk1 = listBkBk1, params = params0, indCrTop = indCrTop, paramsCrTop = paramsCrTop0,indStTop = indStTop, paramsStTop = paramsStTop0)
 
 
+# # Run opti
 
-rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
-fk_grid = np.empty((200,200))
+# paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 25)
 
-for i in range(200):
-    for j in range(200):
-        r1 = rs[i,j]
-        s1 = ss[i,j]
-        paramsCrTop = np.array([r1, s1])
-        fk_grid[i,j] = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                          listxk, listB0k, listBk, listBkBk1,
-                          indCrTop = indCrTop, paramsCrTop = paramsCrTop,
-                          indStTop = indStTop, paramsStTop = paramsStTopk)
+# # Plot results
+
+# oP.plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
+#                 listBk, params0, paramsk, listObjVals, listGradNorms, listChangefObj,
+#                 listChangeParams = listChangeParams, trueSol = None, contours = True,
+#                 listBkBk1 = listBkBk1, indCrTop = indCrTop, paramsCrTop0 = paramsCrTop0, 
+#                 indStTop = indStTop, paramsStTop0 = paramsStTop0, 
+#                 paramsCrTop = paramsCrTopk, paramsStTop = paramsStTopk)
 
 
 
-# 3D plot
-ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
-ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
-ax.scatter( paramsCrTopk[0], paramsCrTopk[1], listObjVals[-1], c = "black", marker = "*", label = "optimum found")
-ax.set_xlim3d([0,1])
-ax.set_ylim3d([0,1])
-ax.legend()
-plt.title("Objective function with optimum $\mu_1$, $\lambda_2$, difference between minimum and minimum found: " + str(np.min(fk_grid) - listObjVals[-1]) )
-ax.set_ylabel("$s_1$")
-ax.set_xlabel("$r_1$")
-ax.set_zlabel("$g_{C,D}$")
+# rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+# fk_grid = np.empty((200,200))
+
+# for i in range(200):
+#     for j in range(200):
+#         r1 = rs[i,j]
+#         s1 = ss[i,j]
+#         paramsCrTop = np.array([r1, s1])
+#         fk_grid[i,j] = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+#                           listxk, listB0k, listBk, listBkBk1,
+#                           indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+#                           indStTop = indStTop, paramsStTop = paramsStTopk)
+
+
+
+# # 3D plot
+# ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+# ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+# ax.scatter( paramsCrTopk[0], paramsCrTopk[1], listObjVals[-1], c = "black", marker = "*", label = "optimum found")
+# ax.set_xlim3d([0,1])
+# ax.set_ylim3d([0,1])
+# ax.legend()
+# plt.title("Objective function with optimum $\mu_1$, $\lambda_2$, difference between minimum and minimum found: " + str(np.min(fk_grid) - listObjVals[-1]) )
+# ax.set_ylabel("$s_1$")
+# ax.set_xlabel("$r_1$")
+# ax.set_zlabel("$g_{C,D}$")
 
 
 
 
-rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
-fk_grid = np.empty((200,200))
+# rs, ss = np.meshgrid( np.linspace(0, 1, 200), np.linspace(0, 1, 200))
+# fk_grid = np.empty((200,200))
 
-for i in range(200):
-    for j in range(200):
-        r1 = rs[i,j]
-        s1 = ss[i,j]
-        paramsCrTop = np.array([r1, s1])
-        fk_grid[i,j] = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
-                                        listxk, listB0k, listBk, listBkBk1,
-                                        indCrTop = indCrTop, paramsCrTop = paramsCrTop,
-                                        indStTop = indStTop, paramsStTop = paramsStTop0)
+# for i in range(200):
+#     for j in range(200):
+#         r1 = rs[i,j]
+#         s1 = ss[i,j]
+#         paramsCrTop = np.array([r1, s1])
+#         fk_grid[i,j] = fObj_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+#                                         listxk, listB0k, listBk, listBkBk1,
+#                                         indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+#                                         indStTop = indStTop, paramsStTop = paramsStTop0)
 
 
-# 3D plot
-ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
-ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
-plt.title("Objective function with initial $\mu_1$, $\lambda_2$" )
-ax.set_ylabel("$s_1$")
-ax.set_xlabel("$r_1$")
-ax.set_zlabel("$g_{C,D}$")
+# # 3D plot
+# ax = plt.figure(figsize=(800/96, 800/96), dpi=96).add_subplot(projection='3d')
+# ax.plot_surface(rs, ss, fk_grid, cmap = 'cet_linear_bmy_10_95_c78', edgecolor='royalblue', lw=0.5, rstride=8, cstride=8, alpha=0.3)
+# plt.title("Objective function with initial $\mu_1$, $\lambda_2$" )
+# ax.set_ylabel("$s_1$")
+# ax.set_xlabel("$r_1$")
+# ax.set_zlabel("$g_{C,D}$")
 
 
 
@@ -436,6 +438,7 @@ listxk = [x0, x1, x2]
 listB0k = [B01, B02]
 listBk = [B1, B2]
 listBkBk1 = [B1B2_0, B1B2_1]
+listCurvingInwards = [1]
 
 # Compute solutions
 
@@ -462,7 +465,7 @@ paramsCrTop0 = None
 
 # Run opti
 
-paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = False, maxIter = 15)
+paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals,listGradNorms, listChangefObj, listChangeParams = blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards, plotSteps = True, maxIter = 20)
 
 # Plot results
 
@@ -529,13 +532,10 @@ ax.set_zlabel("$g_{C,D}$")
 
 
 
-
-
-
-
-
-
-
+# 26.646719969902048
+# 26.640279755376817
+# 26.63688486487169
+# 26.642103199880815
 
 
 
