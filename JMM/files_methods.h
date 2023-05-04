@@ -19,3 +19,5 @@ void read_n2File_double(double *flattenMatrix, char const *pathFile);
 
 void read_n2File_int(int *flattenMatrix, char const *pathFile);
 
+void read_n3File_int(int *flattenMatrix, char const *pathFile);
+

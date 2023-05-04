@@ -190,3 +190,46 @@ void read_n2File_int(int *flattenMatrix, char const *pathFile) {
     }
 }
 
+
+
+void read_n3File_int(int *flattenMatrix, char const *pathFile) {
+  // this method reads an nx3 int matrix stored in a text file
+    FILE *fp;
+    char *line = NULL;
+    int i = 0;
+    size_t len = 0; // length of each line of the file
+    ssize_t read; // reading each line in the file
+    int row[3]; // temporary row
+    row[0] = 0;
+    row[1] = 0;
+    row[2] = 0;
+    int nPoints;
+
+    printf("\ntrying to open to file\n");
+    // Check if the file exists under that path
+    fp = fopen(pathFile, "r");
+    // if the file doesnt exist or for some reason it can't be opened:
+    if (fp == NULL) {
+        printf("No such file, sorry");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("\nFile successfully found\n");
+    }
+
+    // scan such file
+    fp = fopen(pathFile, "r");
+    while ((read = getline(&line, &len, fp)) != -1) {
+      separateARowInt(line, 3, row);
+      flattenMatrix[i] = row[0];
+      flattenMatrix[i+1] = row[1];
+      flattenMatrix[i+2] = row[2];
+      i = i + 3;
+    }
+    fclose(fp);
+    if(line){
+        free(line);
+    }
+}
+
+
