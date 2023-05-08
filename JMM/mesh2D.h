@@ -1,10 +1,15 @@
 #pragma once
 
-#include "coord.h"
-#include "faces.h"
 #include "neighbors.h"
 #include "files_methods.h"
 
+#include <stdlib.h>
+
+typedef struct {
+  // Boundary curve struct in 2D
+  size_t i_Edge; // to which edge these tangents belong to
+  double B[2][2]; // B1 and B2, tangents at the end point of the edge i
+} boundaryCurve;
 
 typedef struct {
   // Mesh struct in 2D that also captures information
@@ -23,13 +28,6 @@ typedef struct {
 } mesh2S;
 
 
-typedef struct {
-  // Boundary curve struct in 2D
-  size_t i_Edge; // to which edge these tangents belong to
-  double B[2][2]; // B1 and B2, tangents at the end point of the edge i
-} boundaryCurve;
-
-
 void mesh2_alloc(mesh2S **mesh2);
 
 void mesh2_dealloc(mesh2S **mesh2);
@@ -40,9 +38,14 @@ void boundaryCurve_dealloc(mesh2S **h_i);
 
 void boundaryCurve_init(boundaryCurve *h_i, size_t i_Edge, double B[2][2]);
 
-void mesh2_init(mesh2S *mesh2, double (*points)[2], size_t nPoints, size_t (*faces)[3], size_t nFaces, size_t (*edges)[2], size_t nEdges, double *eta, boundaryCurve *h_i);
+void mesh2_init(mesh2S *mesh2, double (*points)[2], size_t nPoints, size_t (*faces)[3], size_t nFaces, size_t (*edges)[2], size_t nEdges, neighborsRS *neighbors, neighborsRS *incidentFaces, double *eta, boundaryCurve *h_i) ;
 
+void boundaryCurve_init_from_meshpy(boundaryCurve *h_i, size_t nEdges, char const *pathBoundary);
 
+void mesh2_init_from_meshpy(mesh2S *mesh2, char const *pathPoints, char const *pathFaces, char const *pathEdges, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathIndices, char const *pathBoundary) ;
 
+void printGeneralInfoMesh(mesh2S *mesh2);
+
+void printEverythingInMesh(mesh2S *mesh2);
 
 

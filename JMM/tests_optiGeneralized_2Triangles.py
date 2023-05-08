@@ -58,9 +58,9 @@ xHat = x3
 hc = norm(x1-x2)
 
 # Their derivatives
-B1B2_0 = np.array([-sin(t0), cos(t0)])
+B1B2_0 = np.array([-10*sin(t0), 10*cos(t0)])
 B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
-B1B2_1 = np.array([-sin(t1), cos(t1)])
+B1B2_1 = np.array([-10*sin(t1), 10*cos(t1)])
 B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
 B2B3_0 = x3 - x2
 B2B3_1 = x3 - x2
@@ -162,9 +162,9 @@ hc = norm(x1-x2)
 
 # Their derivatives
 B1B2_0 = np.array([-sin(t0), cos(t0)])
-B1B2_0 = (B1B2_0/norm(B1B2_0))*sqrt(hc)
+B1B2_0 = (B1B2_0/norm(B1B2_0))*hc
 B1B2_1 = np.array([-sin(t1), cos(t1)])
-B1B2_1 = (B1B2_1/norm(B1B2_1))*sqrt(hc)
+B1B2_1 = (B1B2_1/norm(B1B2_1))*hc
 B2B3_0 = x3 - x2
 B2B3_1 = x3 - x2
 B01 = x1-x0

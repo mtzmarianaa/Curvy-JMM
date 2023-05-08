@@ -4,6 +4,22 @@
 #include <stdlib.h>
 #include <string.h>
 
+void separateARowSize_t(char *line, int nElementsRow, size_t *row) {
+    // In this method given a line of text read from a file 
+    // indices of neighbors we separate them and put it in row.
+    char *char_part;
+    int int_part;
+    int_part = strtol(line, &char_part, 10);
+    row[0] = (size_t)int_part;
+    char *end = char_part;
+    char_part = char_part + 1;
+    for (int i = 1; i<nElementsRow; i++){
+        int_part = strtol(char_part++, &end , 10);
+        row[i] = (size_t)int_part;
+        char_part = end + 1;
+    }
+}
+
 void separateARowInt(char *line, int nElementsRow, int *row) {
     // In this method given a line of text read from a file 
     // indices of neighbors we separate them and put it in row.
@@ -104,6 +120,40 @@ void readIntColumn(const char *pathFile, int *column){
     }
 }
 
+
+void readDbColumn(const char *pathFile, double *column) {
+    // this method is going to store what is found on the pathFile text file to a column (should only be a column stored in that file)
+    FILE *fp;
+    char * line = NULL;
+    int i = 0;
+    size_t len = 0;
+    ssize_t read;
+    double row[1];
+    row[0] = 0;
+    printf("\ntrying to open to file\n");
+    fp = fopen(pathFile, "r");
+    // if the file doesnt exists or it cant be opened
+    if(fp == NULL) {
+        printf("No such file for double column");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("\nFile successfully found \n");
+    }
+    // scan the file
+    fp = fopen(pathFile, "r");
+    while( (read = getline(&line, &len, fp)) != -1 ) {
+        separateARowDb(line, 1, row);
+        column[i] = row[0];
+        i++;
+    }
+    fclose(fp);
+    if(line){
+        free(line);
+    }
+}
+
+
 void saveTimes(double times[1], const char *pathFile){
   FILE *fp;
   fp = fopen(pathFile, "wb");
@@ -151,6 +201,43 @@ void read_n2File_double(double *flattenMatrix, char const *pathFile) {
     }
 }
 
+void read_n2File_size_t(size_t *flattenMatrix, char const *pathFile) {
+  // this method reads an nx2 int matrix stored in a text file
+    FILE *fp;
+    char *line = NULL;
+    int i = 0;
+    size_t len = 0; // length of each line of the file
+    ssize_t read; // reading each line in the file
+    size_t row[2]; // temporary row
+    row[0] = 0;
+    row[1] = 0;
+    int nPoints;
+
+    printf("\ntrying to open to file\n");
+    // Check if the file exists under that path
+    fp = fopen(pathFile, "r");
+    // if the file doesnt exist or for some reason it can't be opened:
+    if (fp == NULL) {
+        printf("No such file, sorry");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("\nFile successfully found\n");
+    }
+
+    // scan such file
+    fp = fopen(pathFile, "r");
+    while ((read = getline(&line, &len, fp)) != -1) {
+      separateARowSize_t(line, 2, row);
+      flattenMatrix[i] = row[0];
+      flattenMatrix[i+1] = row[1];
+      i = i + 2;
+    }
+    fclose(fp);
+    if(line){
+        free(line);
+    }
+}
 
 void read_n2File_int(int *flattenMatrix, char const *pathFile) {
   // this method reads an nx2 int matrix stored in a text file
@@ -221,6 +308,48 @@ void read_n3File_int(int *flattenMatrix, char const *pathFile) {
     fp = fopen(pathFile, "r");
     while ((read = getline(&line, &len, fp)) != -1) {
       separateARowInt(line, 3, row);
+      flattenMatrix[i] = row[0];
+      flattenMatrix[i+1] = row[1];
+      flattenMatrix[i+2] = row[2];
+      i = i + 3;
+    }
+    fclose(fp);
+    if(line){
+        free(line);
+    }
+}
+
+
+
+void read_n3File_size_t(size_t *flattenMatrix, char const *pathFile) {
+  // this method reads an nx3 int matrix stored in a text file
+    FILE *fp;
+    char *line = NULL;
+    int i = 0;
+    size_t len = 0; // length of each line of the file
+    ssize_t read; // reading each line in the file
+    size_t row[3]; // temporary row
+    row[0] = 0;
+    row[1] = 0;
+    row[2] = 0;
+    int nPoints;
+
+    printf("\ntrying to open to file\n");
+    // Check if the file exists under that path
+    fp = fopen(pathFile, "r");
+    // if the file doesnt exist or for some reason it can't be opened:
+    if (fp == NULL) {
+        printf("No such file, sorry");
+        exit(EXIT_FAILURE);
+    }
+    else{
+        printf("\nFile successfully found\n");
+    }
+
+    // scan such file
+    fp = fopen(pathFile, "r");
+    while ((read = getline(&line, &len, fp)) != -1) {
+      separateARowSize_t(line, 3, row);
       flattenMatrix[i] = row[0];
       flattenMatrix[i+1] = row[1];
       flattenMatrix[i+2] = row[2];

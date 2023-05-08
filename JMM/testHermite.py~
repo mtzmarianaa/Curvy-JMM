@@ -1,0 +1,16 @@
+
+import matplotlib.pyplot as plt
+import numpy as np
+from numpy.linalg import norm
+from math import sqrt, pi, cos, sin
+
+
+import matplotlib.colors as clr
+from mpl_toolkits.mplot3d import axes3d
+
+
+colormap2 = "cet_linear_worb_100_25_c53_r"
+colormap2_r = "cet_linear_worb_100_25_c53"
+
+
+
