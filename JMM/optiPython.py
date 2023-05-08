@@ -1,6 +1,3 @@
-
-
-
 # Before going into C with the optimization rutine
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
@@ -8,8 +5,7 @@
 
 
 
-import pdb
-
+import pdb # FOR DEBUGGING
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -19,17 +15,13 @@ import intermediateTests as itt
 from scipy.optimize import root_scalar # to project back blocks [mu_k, lambda_k+1]
 import colorcet as cc
 import matplotlib.colors as clr
+import json
 
-
-# colormap2  = clr.LinearSegmentedColormap.from_list('Retro',
-#                                                    [(0,    '#000000'),
-#                                                     (0.1, '#2c3454'),
-#                                                     (0.25, '#0033ff'),
-#                                                     (0.60, '#00f3ff'),
-#                                                     (1,    '#e800ff')], N=256)
 
 colormap2 = "cet_linear_worb_100_25_c53_r"
 colormap2_r = "cet_linear_worb_100_25_c53"
+
+
 
 def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
      '''
@@ -2865,5 +2857,69 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      return paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals, listGradNorms, listChangefObj, listChangeParams
           
           
+
+
+######## Define function and class such that we can put everything in order
+# and know which cases to solve for
+
+
+class triangleFan:
+     '''
+     Triangle fan class. In here we can dump a json file
+     type of string and decode it to get what we want.
+     '''
+     def __init__(self):
+        '''
+        OPTIMIZER ON A TRIANGLE FAN
+        :param ndarray params: mu1, lam2,...
+        :param ndarray x0: size (2,)
+        :param double T0: tau at x0
+        :param ndarray grad0: grad tau at x0
+        :param ndarray x1: size (2,)
+        :param double T1: tau at x1
+        :param ndarray grad1: grad tau at x1
+        :param ndarray xHat: point we want to update
+        :param list listIndices: list of indices of refraction
+        :param list listxk: list of lists (of size 2) for the points on the triangle fan
+        :param list listBk: list of tangents of the boundary at the points on the triangle fan
+        :param int maxIter: max number of iterations the optimzer should perform
+        :param double tol: tolerance for the optimizer
+        :param bool plotSteps: if each step in the optimization should be plotted or not
+        :param bool saveIterates: if the iterates should be saved or not
+        '''
+        self.params = None
+        self.x0 = None
+        self.T0 = None
+        self.grad0 = None
+        self.x1 = None
+        self.T1 = None
+        self.grad1 = None
+        self.xHat = None
+        self.listIndices = None
+        self.listxk = None
+        self.listBk = None
+        self.maxIter = 40
+        self.tol = 1e-12
+        self.plotSteps = False
+        self.saveIterates = False
+
+     def initFromJSON(self, jsonString):
+          '''
+          Set the parameters of this class from a json type of string
+          '''
+          params_dict = json.loads(jsonString) # Loading this json type of string
+          self.x0 =  np.array(params_dict["x0"])
+          self.T0 = params_dict["T0"]
+          self.grad0 = np.array( params_dict["grad0"] )
+          self.x1 = np.array( params_dict["x1"])
+          self.T1 = params_dict["T1"]
+          self.grad1 = np.array( params_dict["grad1"])
+          self.xHat = np.array( params_dict["xHat"] )
+          self.listIndices = params_dict["listIndices"]
+          self.listxk = params_dict["listxk"]
+          self.listBk = params_dict["listBk"]
+          # Then we need to put them in the desired format
+          
+
 
 
