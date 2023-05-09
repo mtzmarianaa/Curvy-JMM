@@ -2886,6 +2886,7 @@ class triangleFan:
         :param list listBk: list of tangents of the boundary at the points on the triangle fan
         :param list listBkBk1: list of tangents on the top edges of the triangle fan
         :param list listCurvingInwards: if the current triangle top is curving inwards the triangle fan
+        :param ndarray optionsTop: options for the points on the top edge, 0 no points, 1 Cr type, 2 St type
         :param bool plotBefore: if plot triangle fan before optimizing
         :param bool plotAfter: if plot triangle fan after optimizing
         :param int maxIter: max number of iterations the optimzer should perform
@@ -2908,7 +2909,13 @@ class triangleFan:
         self.listBk = None
         self.listBkBk1 = None
         self.listCurvingInwards = None
-        self.possibleCrStParams = None # All the possible optimization problems we might have
+        self.optionsTop = None
+        self.optiParams = None
+        self.optiIndCrTop = None
+        self.optiParamsCrTop = None
+        self.optiIndStTop = None
+        self.optiParamsStTop = None
+        self.opti_fVal = 10000000
         self.plotBefore = True # If plot the triangle fan before optimizing
         self.plotAfter = True # If plot the triangle fan after optimizing
         self.maxIter = 40
@@ -2967,19 +2974,32 @@ class triangleFan:
                else:
                     self.listCurvingInwards.append(0)
           # Now we need to know which optimization problems to consider
+          # 0: no points on the top Edge, 1: Cr, 2: St
           options = []
           for k in range(1, n+1):
                option1 = np.zeros((n))
                option1[::k] = 1
-               option2 = np.ones((n))
-               option2[::k] = 0
+               option2 = np.zeros((n))
+               option2[::k] = 2
+               option3 = np.ones((n))
+               option3[::k] = 0
+               option4 = np.ones((n))
+               option4[::k] = 2
+               option5 = 2*np.ones((n))
+               option5[::k] = 0
+               option6 = 2*np.ones((n))
+               option6[::k] = 1
                options.append(option1)
                options.append(option2)
+               options.append(option3)
+               options.append(option4)
+               options.append(option5)
+               options.append(option6)
+          options = np.array(options)
           # Then we take all of the possible combinations
-          comb_array = np.array(np.meshgrid(*options)).T.reshape(-1, n)
+          comb_array = np.array(np.meshgrid(options)).T.reshape(-1, n)
           comb_array = np.unique(comb_array, axis = 0)
-          optionsCrTop = np.copy(comb_array)
-          optionsStTop = np.copy(comb_array)
+          optionsTop = np.copy(comb_array)
           for k in range(n):
                j = 2*k
                BkBk1 = self.listBkBk1[j+1]
@@ -2989,33 +3009,51 @@ class triangleFan:
                # Iterate over the top edges of the triangle fan
                if( self.listCurvingInwards[k] == 0 ):
                     # We don't need to consider an St type of update
-                    optionsStTop[:, k] = 0
+                    optionsTop[:, k] = 0
                if( self.listIndices[n + k] > self.listIndices[k] ):
                     # We dont need to consider an St type of update
-                    optionsStTop[:, k] = 0
+                    optionsTop[:, k] = 0
                if( norm(BkM1Bk -( xk1 - xk)) < tol and norm(BkBk1 - (xk1 - xk))< tol ):
                     # The top edge is just a straight line
-                    optionsCrTop[:, k] = 0
-                    optionsStTop[:, k] = 0
-          optionsStTop = np.unique(optionsStTop, axis = 0)
-          optionsCrTop = np.unique(optionsCrTop, axis = 0)
-          sumStTop = np.sum(optionsStTop, axis = 0)
-          sumCrTop = np.sum(optionsCrTop, axis = 0)
-          optionsParamsStTop = []
-          optionsParamsCrTop = []
-          for opSt in range(len(optionsStTop)):
-               nParams = 2*sumStTop[opSt]
-               paramsStTop = 0.4*np.ones(nParams)
-               paramsStTop[::2] = 0.6
-               optionsParamsStTop.append(paramsStTop)
-          for opCr in range(len(optionsCrTop)):
-               nParams = 2*sumCrTop[opCr]
-               paramsCrTop = 0.4*np.ones(nParams)
-               paramsCrTop[::2] = 0.6
-               optionsParamsCrTop.append(paramsCrTop)
+                    optionsTop[:, k] = 0
+                    optionsTop[:, k] = 0
+          self.optionsTop = np.unique(optionsTop, axis = 0)
      
-     def optimize(self, jsonString):
-          
+     def optimize(self):
+          # After loading all of the information from the json type of string we can do different types
+          # of optimization
+          for k in range(len(self.optionsTop)):
+               # We  have this amount of optimization problems to solve
+               thisOption = self.optionsTop[k] # Current option we are considering
+               indCrTop = np.where(thisOption == 1)[0]
+               if(len(indCrTop) == 0):
+                    indCrTop = None
+                    paramsCrTop = None
+               else:
+                    indCrTop = indCrTop + 1
+                    paramsCrTop = 0.4*np.ones((2*len(indCrTop)))
+                    paramsCrTop[::2] = 0.6
+               indStTop = np.where(thisOption == 2)[0]
+               if(len(indStTop) == 0):
+                    indStTop = None
+                    paramsStTop = None
+               else:
+                    indStTop = indStTop + 1
+                    paramsStTop = 0.4*np.ones((2*len(indStTop)))
+                    paramsStTop[::2] = 0.6
+               # We have everything that we need, now we solve the current optimization problem
+               paramsk, paramsCrTopk, paramsStTopk, _, _, _, listObjVals,_, _, _ = blockCoordinateGradient_generalized(self.params, self.x0, self.T0, self.grad0, self.x1, self.T1, self.grad1, self.xHat, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop, self.listCurvingInwards, plotSteps = False, maxIter = self.maxIter)
+               fk = listObjVals[-1]
+               if(fk < self.opti_fVal):
+                    # We've found a better path and type of path
+                    self.opti_fVal = fk
+                    self.optiParams = paramsk
+                    self.optiIndCrTop = indCrTop
+                    self.optiParamsCrTop = paramsCrTopk
+                    self.optiIndStTop = indStTop
+                    self.optiParamsStTop = paramsStTopk
+          if( self.plotAfter):
+               itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.optiParams, indCrTop = self.optiIndCrTop, paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop, paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
 
 
 
