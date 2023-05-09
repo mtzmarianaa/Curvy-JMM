@@ -1,14 +1,39 @@
 #pragma once
 
-#include "triMesh_2D.h"
+#include "mesh2D.h"
 #include "linAlg.h"
 #include "priority_queue.h"
 #include "updates_2D.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+typedef struct triangleFan {
+  size_t nRegions;
+  double *params; // mu1, lam2, mu2, ..., lamn, mun, lamn1, mun1 =1 should be size 2*nRegions + 1
+  double x0[2];
+  double T0;
+  double grad0[2];
+  double x1[2];
+  double T1;
+  double grad1[2];
+  double xHat[2];
+  double *listIndices; // in a triangle fan the etas are going to be called indices
+  double (*listxk)[2]; // list of points x0, x1, ..., xHat in the triangle fan
+  double (*listB0k)[2];
+  double (*listBk)[2];
+  double (*listBkBk1)[2];
+  double *paramsCrTop; // initialize and then fill in after optimizing
+  double *paramsStTop; // initialize and then fill in after optimizing
+  double THat; // T(xHat) found after optimizing
+} triangleFanS;
+
 typedef struct eik_grid {
   int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
   int nStart; // number of points in start
-  triMesh_2Ds *triM_2D; // mesh structure that includes coordinates, neighbors, incident faces, etc.
+  mesh2S mesh2; // NEW MESH struct
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct

@@ -1962,7 +1962,6 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
      on the sides of the triangle fan)
      it considers one direction: steepest descent
      '''
-     breakpoint()
      f_before = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
                         indCrTop, paramsCrTop, indStTop, paramsStTop)
@@ -2402,7 +2401,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                dmuk_collapsed = partial_fObj_collapsedShooter(skM1, muk, lamk1, xkM1, BkM1Bk_0, xk, BkM1Bk_1,
                                                               x0, B0k, xk, Bk,
                                                               x0, B0k1, xk1, Bk1, etak, etak1) 
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed, params,
                                                x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
@@ -2560,8 +2559,11 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
           params[k+1] = muk
      elif(j <  n):
           # This means that the next receiver is on h0k1
-          breakpoint()
-          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etakM1)
+          lamk1 = params[k+2]
+          B0k1 = listB0k[j+1]
+          Bk1 = listBk[j+1]
+          etak1 = listIndices[j+1]
+          dmuk = partial_fObj_shCr(muk, lamk, lamk1, x0, B0k, xk, Bk, x0, B0k1, xk1, Bk1, etak, etak1)
           gradParams[k+1] = dmuk
           # Decide which type of backtracking we have to do: close or far
           r = close_to_identity(lamk, muk)
@@ -2581,40 +2583,40 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                lamk, muk = backTr_block0k(1, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                                           listIndices, listxk, listB0k, listBk, listBkBk1,
                                           indCrTop, paramsCrTop, indStTop, paramsStTop)
-               # Now we project back, we use rk to project back muk and mukM1 to project back lamk
-               # See if we need to use hkM1k to project back lamk
-               if( dlamk > 0 or listCurvingInwards[j-1] != 1):
-                    # There is no problem with hkM1k
-                    lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-                    mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-               else:
-                    # There is a problem with hkM1k
-                    lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-                    mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
-               lamk_free = project_box(lamk)
-               mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
+          # Now we project back, we use rk to project back muk and mukM1 to project back lamk
+          # See if we need to use hkM1k to project back lamk
+          if( dlamk > 0 or listCurvingInwards[j-1] != 1):
+               # There is no problem with hkM1k
+               lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+               mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
+          else:
+               # There is a problem with hkM1k
+               lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+               mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
+          lamk_free = project_box(lamk)
+          mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
                                                    params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                                    listxk, listB0k, listBk, listBkBk1,
                                                    indCrTop, paramsCrTop, indStTop, paramsStTop)
-               # Project back muk using lamk1
-               if( dmuk > 0 or listCurvingInwards[j] != 1):
-                    # There is no problem with hkk1
-                    muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
-                    lamk1_projected = project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, B, B0k1, xk1, Bk1)
-               else:
-                    # There is a problem with hkk1
-                    BkBk1_0 = listBkBk1[k+1]
-                    BkBk1_1 = listBkBk1[k+2]
-                    muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-                    lamk1_projected = project_lamkGivenmuk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
-               muk_free = project_box(muk)
-               muk, lamk1 = projections_muk_lamk1(muk_projected, lamk1_projected, muk_free, lamk1, k+1,
+          # Project back muk using lamk1
+          if( dmuk > 0 or listCurvingInwards[j] != 1):
+               # There is no problem with hkk1
+               muk_projected = project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+               lamk1_projected = project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
+          else:
+               # There is a problem with hkk1
+               BkBk1_0 = listBkBk1[k+1]
+               BkBk1_1 = listBkBk1[k+2]
+               muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+               lamk1_projected = project_lamkGivenmuk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
+          muk_free = project_box(muk)
+          muk, lamk1 = projections_muk_lamk1(muk_projected, lamk1_projected, muk_free, lamk1, k+1,
                                                   params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                                   listxk, listB0k, listBk, listBkBk1,
                                                   indCrTop, paramsCrTop, indStTop, paramsStTop)
-               params[k] = lamk
-               params[k+1] = muk
-               params[k+2] = lamk1
+          params[k] = lamk
+          params[k+1] = muk
+          params[k+2] = lamk1
      else:
           # This means that j = n, we are on lamn1
           alpha = backTr_coord(1, k, dlamk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -2747,7 +2749,6 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                             indCrTop, paramsCrTop, indStTop, paramsStTop)
                paramsCrTop[0] = r1
           else:
-               breakpoint()
                r1 = paramsStTop[0]
                r1_projected = project_rkGivenmuk(r1, mu1_free, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1)
                mu1, r1 = projections_muk_rkSt(mu1_projected, r1_projected, mu1_free, r1, 0, 0, params, x0,
@@ -2807,11 +2808,11 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      # Add artificial mun1 if necessary
      if( len(paramsk) < 2*n + 1):
           paramsk = np.append(paramsk, [1])
-     if( paramsCrTop0 == None):
+     if( paramsCrTop0 is None):
           paramsCrTopk = np.array([0,0])
      else:
           paramsCrTopk = np.copy(paramsCrTop0)
-     if( paramsStTop0 == None):
+     if( paramsStTop0 is None):
           paramsStTopk = np.array([0,0])
      else:
           paramsStTopk = np.copy(paramsStTop0)
@@ -2841,7 +2842,6 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
                                 listxk, listB0k, listBk, listBkBk1,
                                 indCrTop = indCrTop, paramsCrTop = paramsCrTopk,
                                 indStTop = indStTop, paramsStTop = paramsStTopk)
-          print("fk: ", fk)
           gradk = sqrt( norm(gradParamsk)**2 + norm(gradCrTopk)**2 + norm(gradStTopk)**2)
           normChangeP = sqrt( norm( paramskM1 - paramsk)**2 + norm( paramsCrTopkM1 - paramsCrTopk)**2 + norm(paramsStTopkM1 - paramsStTopk)**2 )
           listChangeParams.append(normChangeP)
@@ -2887,8 +2887,9 @@ class triangleFan:
         :param list listBkBk1: list of tangents on the top edges of the triangle fan
         :param list listCurvingInwards: if the current triangle top is curving inwards the triangle fan
         :param ndarray optionsTop: options for the points on the top edge, 0 no points, 1 Cr type, 2 St type
-        :param bool plotBefore: if plot triangle fan before optimizing
-        :param bool plotAfter: if plot triangle fan after optimizing
+        :param bool plotBefore: if plot triangle fan before optimizing for a certain path type
+        :param bool plotAfter: if plot triangle fan after optimizing for a certain path type
+        :param bool plotOpti: if plot optimal triangle fan of all possible path types
         :param int maxIter: max number of iterations the optimzer should perform
         :param double tol: tolerance for the optimizer
         :param bool plotSteps: if each step in the optimization should be plotted or not
@@ -2916,9 +2917,10 @@ class triangleFan:
         self.optiIndStTop = None
         self.optiParamsStTop = None
         self.opti_fVal = 10000000
-        self.plotBefore = True # If plot the triangle fan before optimizing
-        self.plotAfter = True # If plot the triangle fan after optimizing
-        self.maxIter = 40
+        self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
+        self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
+        self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
+        self.maxIter = 30
         self.tol = 1e-12
         self.plotSteps = False
         self.saveIterates = False
@@ -2943,6 +2945,7 @@ class triangleFan:
           self.listBkBk1 = np.array(params_dict["listBkBk1"])
           self.plotBefore = bool(params_dict["plotBefore"])
           self.plotAfter = bool(params_dict["plotAfter"])
+          self.plotOpti = bool(params_dict["plotOpti"])
           self.nRegions = len(self.listxk) - 2
           self.params = np.ones((2*self.nRegions + 1))
           # Then we need to put the B0k, Bk in the desired format
@@ -3042,8 +3045,19 @@ class triangleFan:
                     paramsStTop = 0.4*np.ones((2*len(indStTop)))
                     paramsStTop[::2] = 0.6
                # We have everything that we need, now we solve the current optimization problem
+               if( self.plotBefore ):
+                    f_before = fObj_generalized(self.params, self.x0, self.T0, self.grad0,
+                                                self.x1, self.T1, self.grad1, self.xHat,
+                                                self.listIndices, self.listxk, self.listB0k,
+                                                self.listBk, self.listBkBk1,
+                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
+                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.params, indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = indStTop, paramsStTop = paramsStTop, listBkBk1 = self.listBkBk1)
+                    plt.title("Initial parameters in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=f_before))
                paramsk, paramsCrTopk, paramsStTopk, _, _, _, listObjVals,_, _, _ = blockCoordinateGradient_generalized(self.params, self.x0, self.T0, self.grad0, self.x1, self.T1, self.grad1, self.xHat, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop, self.listCurvingInwards, plotSteps = False, maxIter = self.maxIter)
                fk = listObjVals[-1]
+               if( self.plotAfter ):
+                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = paramsk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk, indStTop = indStTop, paramsStTop = paramsStTopk, listBkBk1 = self.listBkBk1)
+                    plt.title("Optimal parameters in triangle fan for this type of path, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=fk))
                if(fk < self.opti_fVal):
                     # We've found a better path and type of path
                     self.opti_fVal = fk
@@ -3052,8 +3066,10 @@ class triangleFan:
                     self.optiParamsCrTop = paramsCrTopk
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
-          if( self.plotAfter):
+          if( self.plotOpti):
                itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.optiParams, indCrTop = self.optiIndCrTop, paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop, paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
+               plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal))
+          return self.opti_fVal
 
 
 
