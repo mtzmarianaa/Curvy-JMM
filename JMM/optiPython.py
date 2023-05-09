@@ -2758,12 +2758,10 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                paramsStTop[0] = r1
           params[0] = mu1
           gradParams[0] = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
-     #breakpoint() ##############################################################################
      # Now we start with blocks of size 2
      n = len(listxk) - 2
      for j in range(1, n+1):
           # j goes from 1 to n
-          #breakpoint() ##############################################################################
           ###### Compute the directions - first we want to update [  rkM1,  skM1 ] if applicable
           if( j == indCrTop[currentCrTop] ):
                # This means that the current muk comes from a point on the side edge of the previous triangle (comes from creeping)
@@ -2856,7 +2854,121 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
           iter += 1
      return paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals, listGradNorms, listChangefObj, listChangeParams
           
-          
+
+
+def getGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop):
+     '''
+     Compute the gradient of the eikonal, straight rights
+     '''
+     nGrads = len(params) + len(indCrTop) + len(indStTop) #  Number of gradients we need to compute
+     grads = np.zeros((nGrads, 2)) # Initialize
+     # Set indStTop if indCrTop is given
+     if(paramsStTop is None or indStTop is None):
+          indStTop = [-1]
+          paramsStTop = [0,0]
+     # Set indCrTop if indStTop is given
+     if(paramsCrTop is None or indCrTop is None):
+          indCrTop = [-1]
+          paramsCrTop = [0,0]
+     currentCrTop = 0
+     currentStTop = 0
+     n = len(listxk) - 2
+     muk = params[0]
+     etak = listIndices[0]
+     Bk = listBk[0]
+     B0k = listB0k[0]
+     zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
+     BkBk1_0 = listBkBk1[0]
+     BkBk1_1 = listBkBk1[1]
+     lam2 = params[1]
+     mu2 = params[2]
+     B0k = listB0k[1]
+     Bk = listBk[1]
+     xk1 = listxk[2]
+     etak1 = listIndices[1]
+     etaMin = min(etak, etak1)
+     yk1 = itt.hermite_boundary(lam2, x0, B0k, xk, Bk)
+     zk1 = itt.hermite_boundary(mu2, x0, B0k, xk, Bk)
+     Bmu2 = itt.gradientBoundary(mu2, x0, B0k, xk, Bk)
+     # We need to know where it goes
+     nTop = 1
+     if( nTop == indCrTop[currentCrTop]  ):
+          # This means that there is creeping along this triangle top
+          # Hence from zkPrev the path goes to ak and creeps to bk
+          # which then shoots to yk and then creeps to zk
+          etaRegionOutside = listIndices[n+1]
+          etaMinCr = min(etaRegionOutside, etak)
+          rk = paramsCrTop[2*currentCrTop]
+          sk = paramsCrTop[2*currentCrTop + 1]
+          ak = itt.hermite_boundary(rk, x0, BkBk1_0, x1, BkBk1_1)
+          bk = itt.hermite_boundary(sk, x0, BkBk1_0, x1, BkBk1_1)
+          Bsk = itt.gradientBoundary(sk, x0, BkBk1_0, x1, BkBk1_1)
+          grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
+          grads[1, :] = Bsk/norm(Bsk)*etaMinCr # creeping ray from r1 to s1
+          grads[2, :] = (yk1 - bk)/norm(yk1 - bk)*etak # Ray from s1 to lam2
+          grads[3, :] = Bmu2/norm(Bmu2)*etaMin # Creeping ray from lam2 to mu2
+          currGrad = 4
+          if( currentCrTop < len(indCrTop) - 1):
+               currentCrTop += 1
+     if( nTop == indStTop[currentStTop]  ):
+          # This means that there is creeping along this triangle top
+          # Hence from zkPrev the path goes to ak and creeps to bk
+          # which then shoots to yk and then creeps to zk
+          etaRegionOutside = listIndices[n+1]
+          rk = paramsStTop[2*currentStTop]
+          sk = paramsStTop[2*currentStTop + 1]
+          ak = itt.hermite_boundary(rk, x0, BkBk1_0, x1, BkBk1_1)
+          bk = itt.hermite_boundary(sk, x0, BkBk1_0, x1, BkBk1_1)
+          grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
+          grads[1, :] = (bk - ak)/norm(bk - ak)*etaRegionOutside # Ray from r1 to s1
+          grads[2, :] = (yk1 - bk)/norm(yk1 - bk)*etak # Ray from s1 to lam2
+          grads[3, :] = Bmu2/norm(Bmu2)*etaMin # Creeping ray from lam2 to mu2
+          currGrad = 4
+          if( currentStTop < len(indStTop) - 1):
+               currentStTop += 1
+     else:
+          # Means that the next point is on h0hk1
+          grads[0, :] = (yk1 - zk)/norm(yk1 - zk)*etak
+          grads[1, :] = Bmu2/norm(Bmu2)*etaMin
+          currGrad = 2
+     # NOW WE CIRCLE AROUND THE TRIANGLE FAN
+     for j in range(1, n + 1):
+          # j goes from 1 to n
+          # Circle around all the regions
+          k = 2*j - 1
+          nTop = j+1
+          mukM1 = muk
+          lamk = params[k]
+          muk = params[k+1]
+          B0kM1 = B0k
+          BkM1 = Bk
+          B0k = listB0k[j]
+          xkM1 = listxk[j]
+          xk = listxk[j+1]
+          Bk = listBk[j]
+          BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+          BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
+          etakPrev = etak
+          etak = listIndices[j]
+          etaMin = min(etakPrev, etak)
+          # Compute the points
+          zkPrev = zk
+          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+          # We need to know where the path goes next
+          if( nTop == indCrTop[currentCrTop]  ):
+               # This means that there is creeping along this triangle top
+               # Hence from zkPrev the path goes to ak and creeps to bk
+               # which then shoots to yk and then creeps to zk
+               etaRegionOutside = listIndices[n+j+1]
+               etaMinCr = min(etaRegionOutside, etak)
+               rk = paramsCrTop[2*currentCrTop]
+               sk = paramsCrTop[2*currentCrTop + 1]
+               ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               if( currentCrTop < len(indCrTop) - 1):
+                    currentCrTop += 1
+     
 
 
 ######## Define function and class such that we can put everything in order
@@ -2887,6 +2999,13 @@ class triangleFan:
         :param list listBkBk1: list of tangents on the top edges of the triangle fan
         :param list listCurvingInwards: if the current triangle top is curving inwards the triangle fan
         :param ndarray optionsTop: options for the points on the top edge, 0 no points, 1 Cr type, 2 St type
+        :param ndarray optiParams: optimal parameters
+        :param ndarray optiIndCrTop: optimal indices for CrTop (determines the type of path)
+        :param ndarray optiParamsCrTop: optimal parameters for CrTop
+        :param ndarray optiIndStTop: optimal indices for StTop (determines the type of path)
+        :param ndarray optiParamsStTop: optimal parameters for StTop
+        :param double opti_fVal: optimal value of objective function
+        :param ndarray grads: gradient of the eikonal using all params, paramsCrTop, paramsStTop
         :param bool plotBefore: if plot triangle fan before optimizing for a certain path type
         :param bool plotAfter: if plot triangle fan after optimizing for a certain path type
         :param bool plotOpti: if plot optimal triangle fan of all possible path types
@@ -2917,6 +3036,7 @@ class triangleFan:
         self.optiIndStTop = None
         self.optiParamsStTop = None
         self.opti_fVal = 10000000
+        self.grads = None
         self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
         self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
         self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types

@@ -28,27 +28,29 @@ typedef struct triangleFan {
   double *paramsCrTop; // initialize and then fill in after optimizing
   double *paramsStTop; // initialize and then fill in after optimizing
   double THat; // T(xHat) found after optimizing
+  double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop
 } triangleFanS;
 
 typedef struct eik_grid {
-  int *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
-  int nStart; // number of points in start
+  size_t *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
+  size_t nStart; // number of points in start
   mesh2S mesh2; // NEW MESH struct
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
-  int *current_states; // 0 far, 1 trial, 2 valid
-  int (*parents_path)[3]; // this are the two parent nodes (their indices) from which each node has been updated
-  double *lambdas; // lambdas from which (using the two parents) the node was updated
-  double *mus; // mus from the two step update (if needed)
-  int *type_update; // type of update used for that node
+  size_t *current_states; // 0 far, 1 trial, 2 valid
+  triangleFanS *triFans; // triangle fan of the optimal update associated to each point in the mesh (includes opti params)
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
 
 void eik_grid_dealloc(eik_gridS **eik_g );
 
-void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_2D);
+void triangleFan_alloc(triangleFanS **triFan);
+
+void triangleFan_dealloc(triangleFanS **triFan);
+
+void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, mesh2S *mesh2);
 
 void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints,
 			   char const *pathNeighbors, char const *pathIncidentFaces,

@@ -28,31 +28,39 @@ void eik_grid_dealloc(eik_gridS **eik_g ) {
   *eik_g = NULL;
 }
 
-void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_2D) 
+void triangleFan_alloc(triangleFanS **triFan) {
+  *triFan = malloc(sizeof(triangleFanS));
+  assert(*triFan != NULL);
+}
+
+void triangleFan_dealloc(triangleFanS **triFan) {
+  free(*triFan);
+  *triFan = NULL;
+}
+
+void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2) 
 {
   // the rest of the parameters, eik_vals, p_queueG, current_states are going to be assigned inside
   eik_g->start = start;
   eik_g->nStart = nStart;
-  eik_g->triM_2D = triM_2D;
+  eik_g->mesh2 = mesh2;
 
   // we first set all the current eik_vals to infinity, set all the current_states to 0 (far)
   double *eik_vals;
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
-  int (*parents_path)[3]; // this is a pointer to a list of the parents that are used to update that node (by indices)
-  double *lambdas; // pointer to the lambdas used to update each node using their parents
-  double *mus;
-  int *current_states;
-  int *type_update;
+  size_t *current_states;
+  size_t *type_update;
+  triangleFanS *triFans;
   
-  eik_vals = malloc(triM_2D->nPoints*sizeof(double)); 
-  current_states = malloc(triM_2D->nPoints*sizeof(int));
-  eik_grad = malloc(2*triM_2D->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
-  parents_path = malloc(3*triM_2D->nPoints*sizeof(int)); // each node has two parents by index
-  lambdas = malloc(triM_2D->nPoints*sizeof(double)); // each node was updated with one lambda which is a double
-  mus = malloc(triM_2D->nPoints*sizeof(double));
-  type_update = malloc(triM_2D->nPoints*sizeof(int)); // each node has a type of update associated to it
+  eik_vals = malloc(mesh2->nPoints*sizeof(double)); 
+  current_states = malloc(mesh2->nPoints*sizeof(int));
+  eik_grad = malloc(2*mesh2->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
+  parents_path = malloc(3*mesh2->nPoints*sizeof(int)); // each node has two parents by index
+  lambdas = malloc(mesh2->nPoints*sizeof(double)); // each node was updated with one lambda which is a double
+  mus = malloc(mesh2->nPoints*sizeof(double));
+  type_update = malloc(mesh2->nPoints*sizeof(int)); // each node has a type of update associated to it
   
-  for(int i = 0; i<triM_2D->nPoints; i++){
+  for(int i = 0; i<mesh2->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
     eik_grad[i][0] = 0; // initialize all the gradients to zero
@@ -86,11 +94,11 @@ void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, triMesh_2Ds *triM_
 
 void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions, char const *pathBoundaryTan, char const *pathBoundaryChain) {
   // the only difference between this and the previous method is that in here we do need to initialize the Mesh structure
-  triMesh_2Ds *triM_2D;
-  triMesh_2Dalloc(&triM_2D);
-  triMesh2_init_from_meshpy(triM_2D, pathPoints, pathNeighbors, pathIncidentFaces, pathFaces, pathIndexRegions, pathBoundaryTan, pathBoundaryChain);
+  mesh2S *mesh2;
+  triMesh_2Dalloc(&mesh2);
+  triMesh2_init_from_meshpy(mesh2, pathPoints, pathNeighbors, pathIncidentFaces, pathFaces, pathIndexRegions, pathBoundaryTan, pathBoundaryChain);
   // and then we can use the previous method
-  eik_grid_init( eik_g, start, nStart, triM_2D); // voila
+  eik_grid_init( eik_g, start, nStart, mesh2); // voila
 }
 
 void printGeneralInfo(eik_gridS *eik_g) {
@@ -100,20 +108,20 @@ void printGeneralInfo(eik_gridS *eik_g) {
   for(int i = 0; i<eik_g->nStart; i++) {
     printf("|   %d   |", eik_g->start[i]);
   }
-  printGeneralInfoMesh(eik_g->triM_2D);
+  printGeneralInfoMesh(eik_g->mesh2);
   printf("Current state of priority queue: \n");
   printeik_queue(eik_g->p_queueG);
   printf("\nCurrent Eikonal values: \n");
-  for(int i = 0; i<eik_g->triM_2D->nPoints; i++){
+  for(int i = 0; i<eik_g->mesh2->nPoints; i++){
     double x[2];
-    x[0] = eik_g->triM_2D->points->x[i];
-    x[1] = eik_g->triM_2D->points->y[i];
+    x[0] = eik_g->mesh2->points->x[i];
+    x[1] = eik_g->mesh2->points->y[i];
     printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %d ||  Eik gradient:   (%fl, %fl)||  Parents:   (%d, %d, %d)||  LamOpt:   %fl ||  MuOpt:   %fl  || Update: %d\n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1], eik_g->parents_path[i][0], eik_g->parents_path[i][1], eik_g->parents_path[i][2], eik_g->lambdas[i], eik_g->mus[i], eik_g->type_update[i]);
   }
 }
 
 void printAllInfoMesh(eik_gridS *eik_g){
-  printEverythingInMesh(eik_g->triM_2D);
+  printEverythingInMesh(eik_g->mesh2);
 }
 
 
@@ -128,12 +136,12 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
   for(int j = 0; j<eik_g->nStart; j++){
     deleteRoot(eik_g->p_queueG);
     indexStart = eik_g->start[j];
-    xStart[0] = eik_g->triM_2D->points->x[ indexStart ];
-    xStart[1] = eik_g->triM_2D->points->y[ indexStart];
-    initialIndexRefraction = s_function_threeSections(xStart, eik_g->triM_2D->indexRegions[ eik_g->triM_2D->incidentFaces[indexStart].neis_i[0] ]);
-    for(int i = 0; i<eik_g->triM_2D->nPoints; i++){
-      xCurrent[0] = eik_g->triM_2D->points->x[i];
-      xCurrent[1] = eik_g->triM_2D->points->y[i];
+    xStart[0] = eik_g->mesh2->points->x[ indexStart ];
+    xStart[1] = eik_g->mesh2->points->y[ indexStart];
+    initialIndexRefraction = s_function_threeSections(xStart, eik_g->mesh2->indexRegions[ eik_g->mesh2->incidentFaces[indexStart].neis_i[0] ]);
+    for(int i = 0; i<eik_g->mesh2->nPoints; i++){
+      xCurrent[0] = eik_g->mesh2->points->x[i];
+      xCurrent[1] = eik_g->mesh2->points->y[i];
       vec2_subtraction( xCurrent, xStart, xMinxStart );
       normCurrent = l2norm(xMinxStart);
       if(normCurrent < rBall ){
@@ -174,294 +182,6 @@ void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2], doub
 
 
 
-void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1, double param, double TFound, double indexRefraction, int typeUpdate) {
-  // this void manages the updates, it doesn't compute them. Once computed the necessary updated (in another funcion)
-  // updateCurrentValues changes everything inside (updates the current eikonal value, its parents, the paramenter used, etc
-  double grad[2], x0[2], x1[2], xHat[2];
-  // if it was previously far then we add this to the queue directly, if it was trial we just update the queue
-  if(eik_g->current_states[indexToBeUpdated] == 0){
-    eik_g->current_states[indexToBeUpdated] = 1;
-    insert(eik_g->p_queueG, TFound, indexToBeUpdated);
-  }
-  else if (eik_g->current_states[indexToBeUpdated] == 1)
-  {
-    update(eik_g->p_queueG, TFound, indexToBeUpdated);
-  }
-  eik_g->current_states[indexToBeUpdated] = 1;
-  eik_g->lambdas[indexToBeUpdated] = param;
-  eik_g->mus[indexToBeUpdated] = 0.0; // because we don't have a third parent
-  eik_g->eik_vals[indexToBeUpdated] = TFound;
-  eik_g->parents_path[indexToBeUpdated][0] = parent0;
-  eik_g->parents_path[indexToBeUpdated][1] = parent1;
-  eik_g->parents_path[indexToBeUpdated][2] = -1; // since we don't have a third parent node
-  // calculate the gradient
-  x0[0] = eik_g->triM_2D->points->x[parent0];
-  x0[1] = eik_g->triM_2D->points->y[parent0];
-  x1[0] = eik_g->triM_2D->points->x[parent1];
-  x1[1] = eik_g->triM_2D->points->y[parent1];
-  xHat[0] = eik_g->triM_2D->points->x[indexToBeUpdated];
-  xHat[1] = eik_g->triM_2D->points->y[indexToBeUpdated];
-  approximateEikonalGradient(x0, x1, xHat, param, indexRefraction, grad);
-  eik_g->eik_grad[indexToBeUpdated][0] = grad[0];
-  eik_g->eik_grad[indexToBeUpdated][1] = grad[1];
-  eik_g->type_update[indexToBeUpdated] = typeUpdate;
-  if(typeUpdate == 2){
-    printf("Updating information for %d from a creeping ray update\n", indexToBeUpdated);
-    printf("Its gradient is then: %lf %lf\n", grad[0], grad[1]);
-  }
-}
-
-
-void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1, int parent2, double lambda, double mu, double TFound, double indexRefraction, int typeUpdate) {
-  // this void manages the updates, it doesn't compute them. Once computed the necessary updated (in another funcion)
-  // updateCurrentValues changes everything inside (updates the current eikonal value, its parents, the paramenter used, etc
-  double grad[2], x0[2], x2[2], xHat[2];
-  // if it was previously far then we add this to the queue directly, if it was trial we just update the queue
-  if(eik_g->current_states[indexToBeUpdated] == 0){
-    eik_g->current_states[indexToBeUpdated] = 1;
-    insert(eik_g->p_queueG, TFound, indexToBeUpdated);
-  }
-  else if (eik_g->current_states[indexToBeUpdated] == 1)
-  {
-    update(eik_g->p_queueG, TFound, indexToBeUpdated);
-  }
-  eik_g->current_states[indexToBeUpdated] = 1;
-  eik_g->lambdas[indexToBeUpdated] = lambda;
-  eik_g->mus[indexToBeUpdated] = mu;
-  eik_g->eik_vals[indexToBeUpdated] = TFound;
-  eik_g->parents_path[indexToBeUpdated][0] = parent0;
-  eik_g->parents_path[indexToBeUpdated][1] = parent1;
-  eik_g->parents_path[indexToBeUpdated][2] = parent2;
-  // calculate the gradient
-  x0[0] = eik_g->triM_2D->points->x[parent0];
-  x0[1] = eik_g->triM_2D->points->y[parent0];
-  x2[0] = eik_g->triM_2D->points->x[parent2];
-  x2[1] = eik_g->triM_2D->points->y[parent2];
-  xHat[0] = eik_g->triM_2D->points->x[indexToBeUpdated];
-  xHat[1] = eik_g->triM_2D->points->y[indexToBeUpdated];
-  approximateEikonalGradient(x0, x2, xHat, mu, indexRefraction, grad);
-  eik_g->eik_grad[indexToBeUpdated][0] = grad[0];
-  eik_g->eik_grad[indexToBeUpdated][1] = grad[1];
-  eik_g->type_update[indexToBeUpdated] = typeUpdate;
-
-}
-
-
-
-void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted) {
-  // after accepting a point (the point with minimum current eikonal value that is on the priority queue)
-  // we proceed to update its neighbors that aren't set to valid at this point in the iteration.
-  // one point updates are skipped (since we have initialized points near the source)
-  // this void manages all the cases -> currently 8 types of updates (check updates.c)
-  int nNeis, x1_ind, x2_ind, xHat_ind;
-  double pi, T0, T1, indexRef_01, indexRef_02, grad0[2], grad1[2];
-  info_updateS *info_update;
-  info_update_alloc(&info_update);
-  infoTriangleFan *infoOut;
-  infoTriangleFan_alloc(&infoOut);
-  // get the information we need
-  pi = acos(-1.0);
-  nNeis = eik_g->triM_2D->neighbors[indexAccepted].len; // to know the amount of neighbors we might update
-  grad0[0] = eik_g->eik_grad[indexAccepted][0]; // information of the eikonal at x0
-  grad0[1] = eik_g->eik_grad[indexAccepted][1];
-  T0 = eik_g->eik_vals[indexAccepted];
-
-  // start iterating through the neighbors of x0, the possible xHat's
-  for(int i = 0; i < nNeis; i++){
-    xHat_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[i];
-    if( eik_g->current_states[xHat_ind] != 2 ){
-      // we can only update those points that are still far or trial NOT VALID
-
-      /* // CASE 2: creeping ray update (we don't need an x1 for this) */
-      /* if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 & */
-      /* 	 eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) { */
-      /* 	indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind); // compute the smallest index of refraction */
-      /* 	info_update_initCr(info_update, indexAccepted, xHat_ind, T0, indexRef_01); */
-      /* 	creepingUpdate(eik_g->triM_2D, info_update); // compute the possible update */
-      /* 	if(info_update->THat < eik_g->eik_vals[xHat_ind]){ */
-      /* 	  // we just found a better update */
-      /* 	  updateCurrentValues(eik_g, xHat_ind, indexAccepted, indexAccepted, 0, info_update->THat, indexRef_01, 2); */
-      /* 	  printf("\n\nJust performed a creeping update to %d   with T0 : %lf  and THat %lf\n", xHat_ind, T0, info_update->THat); */
-      /* 	} */
-      /* } */
-      
-      for( int j = 0; j < nNeis; j ++){
-	// we need to find a possible x1
-	x1_ind = eik_g->triM_2D->neighbors[indexAccepted].neis_i[j];
-	if( i != j & eik_g -> current_states[x1_ind] == 2){
-	  // x1 needs to be VALID
-	  T1 = eik_g->eik_vals[x1_ind];
-	  grad1[0] = eik_g->eik_grad[x1_ind][0]; // information of the eikonal at x1
-	  grad1[1] = eik_g->eik_grad[x1_ind][1];
-	  // HERE IS WHERE WE CONSIDER ALL THE POSSIBLE TYPES OF UPDATES
-
-	  // CASE 1: none of the points involved in this update are on the boundary
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind);
-	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    simple_TwoPointUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 1);
-	    }
-	  }
-
-
-	  // CASE 3: x0 and x1 are on the boundary, xHat is NOT on the boundary
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, xHat_ind);
-	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    fromBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 3);
-	    }
-	  }
-
-	  // CASE 4.1: X1 AND XHAT ARE ON THE BOUNDARY, x0 is not on the boundary
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
-	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 1);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind]){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 5);
-	    }
-	  }
-
-	  // CASE 6: just x1 is on the boundary, x0 and xHat are not on the boundary
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] != 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] != 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
-	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    justx1Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 7);
-	    }
-	  }
-
-	  
-	  // CASE 7: just xHat is on the boundary, x0 and x1 are not on the boundary
-	  if(eik_g->triM_2D->boundary_tan[indexAccepted][0] == 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	     eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
-	    indexRef_01 = regionBetweenTwoPoints(eik_g->triM_2D, indexAccepted, x1_ind);
-	    info_update_initTwo(info_update, indexAccepted, x1_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01);
-	    justxHatBoundary_TwoPointUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-	      // we just found a better update
-	      updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 8);
-	    }
-	  }
-
-	  //////////
-	  // Otherwise we need to see if the region changes or not
-	  // First direction
-	  pointWhereRegionChanges(eik_g->triM_2D, eik_g->current_states, indexAccepted, x1_ind, xHat_ind, 0, infoOut);
-	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
-	    // this means that there is no change in region and since the angle is smaller than pi we
-	    // can build a straight line from x0x1 to xHat
-
-	    // CASE 4.2: x0 and xHat are on the boundary, x1 is not on the boundary
-	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	       eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
-	      indexRef_01 = infoOut->indexRef_01;
-	      anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 0);
-	      if(info_update->THat <  eik_g->eik_vals[xHat_ind]){
-		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
-	      }
-	    }
-
-	    // CASE 5: just x0 on the boundary, x1 and xHat are not on the boundary
-	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	       eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
-	      indexRef_01 = infoOut->indexRef_01;
-	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
-	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
-	      }
-	    }
-	    
-	  }
-
-	  else if(infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat)<= pi & eik_g->current_states[infoOut->xChange_ind] == 0){
-	    // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and x0x2 to x0xHat and x2 is set as far (otherwise it would make no sense to waste resources to make a two step update
-	    x2_ind = infoOut->xChange_ind;
-	    indexRef_01 = infoOut->indexRef_01;
-	    indexRef_02 = infoOut->indexRef_02;
-	    info_update_init(info_update, indexAccepted, x1_ind, x2_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01, indexRef_02);
-	    twoStepUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-	      // we've found a better update
-	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 9);
-	    }
-	  }
-
-	  // Second direction
-	  pointWhereRegionChanges(eik_g->triM_2D, eik_g->current_states, indexAccepted, x1_ind, xHat_ind, 1, infoOut);
-	  if(infoOut->xChange_ind == -1 & infoOut->angle_xHat <= pi){
-	    // this means that there is no change in region and since the angle is smaller than pi we
-	    // can build a straight line from x0x1 to xHat
-
-	    // CASE 4.2: x0 and xHat are on the boundary, x1 is not on the boundary
-	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	       eik_g->triM_2D->boundary_tan[xHat_ind][0] != 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] != 0) {
-	      indexRef_01 = infoOut->indexRef_01;
-	      anchorHatonBoundary_freeSpaceUpdate(eik_g->triM_2D, info_update, 0);
-	      if(info_update->THat <  eik_g->eik_vals[xHat_ind]){
-		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 4);
-	      }
-	    }
-
-	    // CASE 5: just x0 on the boundary, x1 and xHat are not on the boundary
-	    if(eik_g->triM_2D->boundary_tan[indexAccepted][0] != 0 & eik_g->triM_2D->boundary_tan[indexAccepted][1] != 0 &
-	       eik_g->triM_2D->boundary_tan[x1_ind][0] == 0 & eik_g->triM_2D->boundary_tan[x1_ind][1] == 0 &
-	       eik_g->triM_2D->boundary_tan[xHat_ind][0] == 0 & eik_g->triM_2D->boundary_tan[xHat_ind][1] == 0) {
-	      indexRef_01 = infoOut->indexRef_01;
-	      justx0Boundary_TwoPointUpdate(eik_g->triM_2D, info_update);
-	      if(info_update->THat <  eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-		// we've found a better update
-		updateCurrentValues(eik_g, xHat_ind, indexAccepted, x1_ind, info_update->lambda, info_update->THat, indexRef_01, 6);
-	      }
-	    }
-	    
-	  }
-
-	  else if(infoOut->xChange_ind != -1 & infoOut->angle_xChange <= pi & fabs(infoOut->angle_xChange - infoOut->angle_xHat)<= pi & eik_g->current_states[infoOut->xChange_ind] == 0){
-	    // this means that there is a change in direction + we can build two straight lines, one from x0x1 to x0x2 and x0x2 to x0xHat and x2 is set as far (otherwise it would make no sense to waste resources to make a two step update
-	    x2_ind = infoOut->xChange_ind;
-	    indexRef_01 = infoOut->indexRef_01;
-	    indexRef_02 = infoOut->indexRef_02;
-	    info_update_init(info_update, indexAccepted, x1_ind, x2_ind, xHat_ind, T0, grad0, T1, grad1, indexRef_01, indexRef_02);
-	    twoStepUpdate(eik_g->triM_2D, info_update);
-	    if(info_update->THat < eik_g->eik_vals[xHat_ind] & info_update->lambda != -1){
-	      // we've found a better update
-	      updateCurrentValues3(eik_g, xHat_ind, indexAccepted, x1_ind, x2_ind, info_update->lambda, info_update->mu, info_update->THat, indexRef_02, 9);
-	    }
-	  }
-	}
-      }
-    }
-  }
-  info_update_dealloc(&info_update);
-  infoTriangleFan_dalloc(&infoOut); // deallocate the useful structs
-}
-
-
 
 
 
@@ -480,15 +200,15 @@ void popAddNeighbors(eik_gridS *eik_g){
   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
   // printf("We've updated the current state of %d to valid\n", minIndex);
   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
-  // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->triM_2D->points->x[minIndex], eik_g->triM_2D->points->y[minIndex]);
+  // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->mesh2->points->x[minIndex], eik_g->mesh2->points->y[minIndex]);
   // printf("Its neighbors are: \n");
-  // nNeighs = eik_g->triM_2D->neighbors[minIndex].len; // get the number of neighbors of the minimum index
+  // nNeighs = eik_g->mesh2->neighbors[minIndex].len; // get the number of neighbors of the minimum index
   // for(int i=0; i<nNeighs; i++){
-  //   printf("|     %d     |", eik_g->triM_2D->neighbors[minIndex].neis_i[i] );
+  //   printf("|     %d     |", eik_g->mesh2->neighbors[minIndex].neis_i[i] );
   // }
   // printf("\n");
   // for(int i=0; i<nNeighs; i++){
-  //   printf("|     (%fl, %fl)     |", eik_g->triM_2D->points->x[eik_g->triM_2D->neighbors[minIndex].neis_i[i]], eik_g->triM_2D->points->y[eik_g->triM_2D->neighbors[minIndex].neis_i[i]] );
+  //   printf("|     (%fl, %fl)     |", eik_g->mesh2->points->x[eik_g->mesh2->neighbors[minIndex].neis_i[i]], eik_g->mesh2->points->y[eik_g->mesh2->neighbors[minIndex].neis_i[i]] );
   // }
   // printf("\n");
 }
@@ -504,7 +224,7 @@ int nStillInQueue(eik_gridS *eik_g) {
 void saveComputedValues(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
-  fwrite(eik_g->eik_vals, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fwrite(eik_g->eik_vals, sizeof(double), eik_g->mesh2->nPoints, fp);
   fclose(fp);
 }
 
@@ -512,7 +232,7 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) {
     FILE *fp;
     fp = fopen(pathFile, "wb");
     
-    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+    for (int i=0; i<eik_g->mesh2->nPoints; ++i){
       fwrite(eik_g->eik_grad[i], sizeof(double), 2, fp);
     }
 
@@ -523,7 +243,7 @@ void saveComputedParents(eik_gridS *eik_g, const char *pathFile) {
     FILE *fp;
     fp = fopen(pathFile, "wb");
     
-    for (int i=0; i<eik_g->triM_2D->nPoints; ++i){
+    for (int i=0; i<eik_g->mesh2->nPoints; ++i){
       fwrite(eik_g->parents_path[i], sizeof(int), 3, fp);
     }
 
@@ -533,20 +253,20 @@ void saveComputedParents(eik_gridS *eik_g, const char *pathFile) {
 void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
-  fwrite(eik_g->lambdas, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fwrite(eik_g->lambdas, sizeof(double), eik_g->mesh2->nPoints, fp);
   fclose(fp);
 }
 
 void saveComputedMus(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
-  fwrite(eik_g->mus, sizeof(double), eik_g->triM_2D->nPoints, fp);
+  fwrite(eik_g->mus, sizeof(double), eik_g->mesh2->nPoints, fp);
   fclose(fp);
 }
 
 void saveComputedTypesUpdate(eik_gridS *eik_g, const char *pathFile) {
   FILE *fp;
   fp = fopen(pathFile, "wb");
-  fwrite(eik_g->type_update, sizeof(int), eik_g->triM_2D->nPoints, fp);
+  fwrite(eik_g->type_update, sizeof(int), eik_g->mesh2->nPoints, fp);
   fclose(fp);
 }
