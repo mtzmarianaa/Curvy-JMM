@@ -3004,12 +3004,12 @@ class triangleFan:
           optionsParamsStTop = []
           optionsParamsCrTop = []
           for opSt in range(len(optionsStTop)):
-               nParams = 2*sumStTop[opSt]
+               nParams = int(2*sumStTop[opSt])
                paramsStTop = 0.4*np.ones(nParams)
                paramsStTop[::2] = 0.6
                optionsParamsStTop.append(paramsStTop)
           for opCr in range(len(optionsCrTop)):
-               nParams = 2*sumCrTop[opCr]
+               nParams = int(2*sumCrTop[opCr])
                paramsCrTop = 0.4*np.ones(nParams)
                paramsCrTop[::2] = 0.6
                optionsParamsCrTop.append(paramsCrTop)

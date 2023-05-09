@@ -2920,7 +2920,6 @@ class triangleFan:
           '''
           Set the parameters of this class from a json type of string
           '''
-          tol = 1e-12
           params_dict = json.loads(jsonString) # Loading this json type of string
           self.x0 =  np.array(params_dict["x0"])
           self.T0 = params_dict["T0"]
@@ -2977,42 +2976,11 @@ class triangleFan:
                options.append(option2)
           # Then we take all of the possible combinations
           comb_array = np.array(np.meshgrid(*options)).T.reshape(-1, n)
-          comb_array = np.unique(comb_array, axis = 0)
-          optionsCrTop = np.copy(comb_array)
-          optionsStTop = np.copy(comb_array)
           for k in range(n):
-               j = 2*k
-               BkBk1 = self.listBkBk1[j+1]
-               BkM1Bk = self.listBkBk1[j]
-               xk = self.listxk[k + 1]
-               xk1 = self.listxk[k+2]
                # Iterate over the top edges of the triangle fan
-               if( self.listCurvingInwards[k] == 0 ):
-                    # We don't need to consider an St type of update
-                    optionsStTop[:, k] = 0
-               if( self.listIndices[n + k] > self.listIndices[k] ):
-                    # We dont need to consider an St type of update
-                    optionsStTop[:, k] = 0
-               if( norm(BkM1Bk -( xk1 - xk)) < tol and norm(BkBk1 - (xk1 - xk))< tol ):
-                    # The top edge is just a straight line
-                    optionsCrTop[:, k] = 0
-                    optionsStTop[:, k] = 0
-          optionsStTop = np.unique(optionsStTop, axis = 0)
-          optionsCrTop = np.unique(optionsCrTop, axis = 0)
-          sumStTop = np.sum(optionsStTop, axis = 0)
-          sumCrTop = np.sum(optionsCrTop, axis = 0)
-          optionsParamsStTop = []
-          optionsParamsCrTop = []
-          for opSt in range(len(optionsStTop)):
-               nParams = 2*sumStTop[opSt]
-               paramsStTop = 0.4*np.ones(nParams)
-               paramsStTop[::2] = 0.6
-               optionsParamsStTop.append(paramsStTop)
-          for opCr in range(len(optionsCrTop)):
-               nParams = 2*sumCrTop[opCr]
-               paramsCrTop = 0.4*np.ones(nParams)
-               paramsCrTop[::2] = 0.6
-               optionsParamsCrTop.append(paramsCrTop)
+               if( self.listCurvingInwards == 1 ):
+                    # We need to consider an St type of update
+                    
      
      def optimize(self, jsonString):
           
