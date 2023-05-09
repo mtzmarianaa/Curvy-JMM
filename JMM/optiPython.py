@@ -2856,21 +2856,26 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
           
 
 
-def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop):
+def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop):
      '''
      Compute the gradient of the eikonal, straight rights
      '''
-     nGrads = len(params) + 2*len(indCrTop) + 2*len(indStTop) #  Number of gradients we need to compute
-     grads = np.zeros((nGrads, 2)) # Initialize
-     path = np.zeros((nGrads, 2)) # Initialize
+     tol = 1e-10
+     nGrads = len(params)  #  Number of gradients we need to compute
      # Set indStTop if indCrTop is given
      if(paramsStTop is None or indStTop is None):
           indStTop = [-1]
           paramsStTop = [0,0]
+     else:
+          nGrads += 2*len(indStTop)
      # Set indCrTop if indStTop is given
      if(paramsCrTop is None or indCrTop is None):
           indCrTop = [-1]
           paramsCrTop = [0,0]
+     else:
+          nGrads += 2*len(indCrTop)
+     grads = np.zeros((nGrads, 2)) # Initialize
+     path = np.zeros((nGrads, 2)) # Initialize
      currentCrTop = 0
      currentStTop = 0
      n = len(listxk) - 2
@@ -2878,7 +2883,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
      etak = listIndices[0]
      Bk = listBk[0]
      B0k = listB0k[0]
-     zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
+     x0 = listxk[0]
+     xk = listxk[1]
+     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
      path[0, :] = zk
      BkBk1_0 = listBkBk1[0]
      BkBk1_1 = listBkBk1[1]
@@ -2889,8 +2896,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
      xk1 = listxk[2]
      etak1 = listIndices[1]
      etaMin = min(etak, etak1)
-     yk1 = itt.hermite_boundary(lam2, x0, B0k, xk, Bk)
-     zk1 = itt.hermite_boundary(mu2, x0, B0k, xk, Bk)
+     yk1 = itt.hermite_boundary(lam2, x0, B0k, xk1, Bk)
+     zk1 = itt.hermite_boundary(mu2, x0, B0k, xk1, Bk)
      Bmu2 = itt.gradientBoundary(mu2, x0, B0k, xk, Bk)
      # We need to know where it goes
      nTop = 1
@@ -2900,12 +2907,12 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
           # which then shoots to yk and then creeps to zk
           etaRegionOutside = listIndices[n+1]
           etaMinCr = min(etaRegionOutside, etak)
-          x2 = listxk[2]
+          xk1 = listxk[2]
           rk = paramsCrTop[2*currentCrTop]
           sk = paramsCrTop[2*currentCrTop + 1]
-          ak = itt.hermite_boundary(rk, x1, BkBk1_0, x2, BkBk1_1)
-          bk = itt.hermite_boundary(sk, x1, BkBk1_0, x2, BkBk1_1)
-          Bsk = itt.gradientBoundary(sk, x1, BkBk1_0, x2, BkBk1_1)
+          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          Bsk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
                grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
           path[1, :] = ak
@@ -2925,8 +2932,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
           x2 = listxk[2]
           rk = paramsStTop[2*currentStTop]
           sk = paramsStTop[2*currentStTop + 1]
-          ak = itt.hermite_boundary(rk, x1, BkBk1_0, x2, BkBk1_1)
-          bk = itt.hermite_boundary(sk, x1, BkBk1_0, x2, BkBk1_1)
+          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
                grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
           path[1, :] = ak
@@ -2950,12 +2957,11 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
           path[1, :] = yk1
           currGrad = 2
      # NOW WE CIRCLE AROUND THE TRIANGLE FAN
-     for j in range(1, n + 1):
+     for j in range(1, n ):
           # j goes from 1 to n
           # Circle around all the regions
-          k = 2*j # Starts in k = 2, all the wat to k = 2n 
+          k = 2*j-1 # Starts in k = 1, all the wat to k = 2n -3
           nTop = j+1
-          mukM1 = muk
           lamk = params[k]
           muk = params[k+1]
           B0k = listB0k[j]
@@ -3033,10 +3039,11 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
                     currentCrTop += 1
-          else:
+          elif( j < n ) :
                # The next point is on h0hk1
                lamk1 = params[k+2]
                muk1 = params[k+3]
+               xk1 = listxk[j+2]
                B0k1 = listB0k[j+1]
                Bk1 = listBk[j+1]
                yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
@@ -3047,11 +3054,11 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listbkBk1, 
                BkBk1_0 = listBkBk1[k]
                BkBk1_0 = listBkBk1[k+1]
                xk1 = listxk[j+2]
-               path[currGrad, :] = yk1
-               path[currGrad + 1, :] = zk1
+               path[currGrad + 1, :] = yk1
+               path[currGrad + 2, :] = zk1
                if( np.any( zk != yk1 ) ):
                     grads[currGrad, :] = (yk1 - zk)/norm(yk1 - zk)*etak
-               if( lamk1 != muk1 ):
+               if( abs(lamk1 - muk1) > tol ):
                     grads[currGrad + 1, :] = Bmuk1/norm(Bmuk1)*etaMin
                currGrad += 2
      return path, grads
@@ -3092,7 +3099,9 @@ class triangleFan:
         :param ndarray optiIndStTop: optimal indices for StTop (determines the type of path)
         :param ndarray optiParamsStTop: optimal parameters for StTop
         :param double opti_fVal: optimal value of objective function
+        :param ndarray path: optimal path
         :param ndarray grads: gradient of the eikonal using all params, paramsCrTop, paramsStTop
+        :param ndarray lastGrad: gradient that is going to be used as grad0 or grad1 when we set xHat to valid
         :param bool plotBefore: if plot triangle fan before optimizing for a certain path type
         :param bool plotAfter: if plot triangle fan after optimizing for a certain path type
         :param bool plotOpti: if plot optimal triangle fan of all possible path types
@@ -3123,7 +3132,9 @@ class triangleFan:
         self.optiIndStTop = None
         self.optiParamsStTop = None
         self.opti_fVal = 10000000
+        self.path = None
         self.grads = None
+        self.lastGrad = None
         self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
         self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
         self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
@@ -3273,6 +3284,14 @@ class triangleFan:
                     self.optiParamsCrTop = paramsCrTopk
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
+          # Save path and grads
+          self.path, self.grads = getPathGradEikonal(self.optiParams, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, self.optiIndCrTop, self.optiParamsCrTop, self.optiIndStTop, self.optiParamsStTop)
+          gradLast = self.grads[-1]
+          k = len(self.grads) - 1
+          while( norm(gradLast) == 0 and k > 0):
+               gradLast = self.grads[k]
+               k = k -1
+          self.lastGrad = gradLast
           if( self.plotOpti):
                itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.optiParams, indCrTop = self.optiIndCrTop, paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop, paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
                plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal))
