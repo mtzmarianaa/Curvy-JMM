@@ -29,6 +29,8 @@ typedef struct triangleFan {
   double *paramsStTop; // initialize and then fill in after optimizing
   double THat; // T(xHat) found after optimizing
   double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop
+  double (*path)[2]; // path computed using all params, paramsCrTop, paramsStTop
+  double gradHat[2]; // gradient which is going to be used for xHat
 } triangleFanS;
 
 typedef struct eik_grid {
