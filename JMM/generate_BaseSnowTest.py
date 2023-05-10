@@ -21,11 +21,11 @@ colormap2_r = "cet_linear_worb_100_25_c53"
 
 plt.ion()
 
-h = 0.0075
+h = 0.050
 h_string = str(h)
 eta1 = 1.0
 eta2 = 1.45
-currentH = "H12"
+currentH = "H9"
 path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
 path_info = '/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/'
 
@@ -163,7 +163,10 @@ print("List of neighbors done")
 # Create the list for the incident faces and edges
 
 mesh_IncidentFaces_sq = [[] for i in range(N_points_square)]
-facets_created = []
+mesh_square_facets = np.sort(mesh_square_facets, axis = 0)
+mesh_square_facets= np.unique(mesh_square_facets, axis = 0)
+mesh_square_facets = [list(f) for f in mesh_square_facets]
+edgesInFace = np.ones((len(mesh_square_tris), 4), dtype = np.int64 )
 
 for t in range(len(mesh_square_tris)):
     # Iterate through each triangle
@@ -175,18 +178,43 @@ for t in range(len(mesh_square_tris)):
     mesh_IncidentFaces_sq[p1].append(t)
     mesh_IncidentFaces_sq[p2].append(t)
     # For the edges
-    facets_created.append((p0, p1))
-    facets_created.append((p0, p2))
-    facets_created.append((p1,p2))
+    if( [p0, p1] not in mesh_square_facets):
+        mesh_square_facets.append([p0, p1])
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = len(mesh_square_facets) - 1
+        edgesInFace[t,0] = j + 1
+    else:
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = mesh_square_facets.index([p0,p1])
+        edgesInFace[t,0] = j + 1
+    if( [p0, p2] not in mesh_square_facets):
+        mesh_square_facets.append([p0, p2])
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = len(mesh_square_facets) - 1
+        edgesInFace[t,0] = j + 1
+    else:
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = mesh_square_facets.index([p0,p2])
+        edgesInFace[t,0] = j + 1
+    if( [p1, p2] not in mesh_square_facets):
+        mesh_square_facets.append([p1, p2])
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = len(mesh_square_facets) - 1
+        edgesInFace[t,0] = j + 1
+    else:
+        j = int(edgesInFace[t,0])
+        edgesInFace[t, j] = mesh_square_facets.index([p1,p2])
+        edgesInFace[t,0] = j + 1
+    # Add this edges to their corresponding 
 
-# Combine the facets_created with mesh_square_facets
-facets_created = np.array(facets_created)
-mesh_square_facets = np.concatenate((mesh_square_facets, facets_created), axis=0)
-indices = np.unique(mesh_square_facets, return_index=True, axis=0)[1] # Index of the unique rows
-indices = np.sort(indices)
-mesh_square_facets = mesh_square_facets[indices]
+# Format the way we need it
+mesh_square_facets = np.array(mesh_square_facets)
+edgesInFace = np.delete(edgesInFace, 0, axis = 1)
+
 
 print("List of incident faces done")
+print("List of edges done")
+print("List edges in face done")
     
 # Create the labels per face
 
@@ -279,6 +307,8 @@ np.savetxt(path_info + currentH + '/'+ currentH +'_NeighTriangles.txt', mesh_squ
 np.savetxt(path_info + currentH + '/'+ currentH +'_BoundaryCurve.txt', mesh_square_boundaryCurve, delimiter =', ', fmt = '%.8f' )
 
 np.savetxt(path_info + currentH + '/'+ currentH +'_Indices.txt', np.array(faces_label), delimiter =', ', fmt = '%.8f' )
+
+np.savetxt(path_info + currentH + '/'+ currentH +'_EdgesInFace.txt', edgesInFace.astype(int), delimiter =', ', fmt ='%.0f' )
 
 separator = "," 
 

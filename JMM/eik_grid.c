@@ -29,14 +29,14 @@ void eik_grid_dealloc(eik_gridS **eik_g ) {
   *eik_g = NULL;
 }
 
-void triangleFan_alloc(triangleFanS **triFan) {
-  *triFan = malloc(sizeof(triangleFanS));
-  assert(*triFan != NULL);
+void triangleFan_alloc(fanUpdateS **fanUpdate) {
+  *fanUpdate = malloc(sizeof(fanUpdateS));
+  assert(*fanUpdate != NULL);
 }
 
-void triangleFan_dealloc(triangleFanS **triFan) {
-  free(*triFan);
-  *triFan = NULL;
+void triangleFan_dealloc(fanUpdateS **fanUpdate) {
+  free(*fanUpdate);
+  *fanUpdate = NULL;
 }
 
 void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2) 
@@ -51,7 +51,7 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   size_t *current_states;
   size_t *type_update;
-  triangleFanS *triFans;
+  fanUpdateS *fanUpdates;
   
   eik_vals = malloc(mesh2->nPoints*sizeof(double)); 
   current_states = malloc(mesh2->nPoints*sizeof(int));
@@ -91,6 +91,19 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   }
   eik_g->p_queueG = p_queueG;
   assert(&eik_g != NULL); // eik_g should not be null
+}
+
+
+void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
+		    double grad0[2], double T1, double grad1[2]) {
+  // Init a triangle fan before using this information in the optimization
+  fanUpdate->triFan = triFan;
+  fanUpdate->T0 = T0;
+  fanUpdate->grad0[0] = grad0[0];
+  fanUpdate->grad0[1] = grad0[1];
+  fanUpdate->T1 = T1;
+  fanUpdate->grad1[0] = grad1[0];
+  fanUpdate->grad1[1] = grad1[1];
 }
 
 void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions, char const *pathBoundaryTan, char const *pathBoundaryChain) {
