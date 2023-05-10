@@ -17,6 +17,7 @@ This is the Eikonal grid with different specifications
 #include <assert.h>
 #include <math.h>
 #include <string.h>
+#include <json-c/json.h> // used for reading the json type string from python
 
 void eik_grid_alloc(eik_gridS **eik_g ) {
   *eik_g = malloc(sizeof(eik_gridS));
