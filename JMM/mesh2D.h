@@ -83,3 +83,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
 				 size_t index0, size_t index1,
 				 size_t indexHat, size_t *listIndicesNodes);
 
+
+void printEverythingTriFan(triangleFanS *triFan);
+
+
