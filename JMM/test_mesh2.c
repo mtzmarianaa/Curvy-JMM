@@ -26,11 +26,11 @@ int main(){
     mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
 			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
 
-    /* printf("GENERAL INFO \n\n"); */
-    /* printGeneralInfoMesh(mesh2); */
+    printf("GENERAL INFO \n\n");
+    printGeneralInfoMesh(mesh2);
 
-    /* printf("\n\n\n\nALL INFO \n\n"); */
-    /* printEverythingInMesh(mesh2); */
+    printf("\n\n\n\nALL INFO \n\n");
+    printEverythingInMesh(mesh2);
 
 
     // Now we test the triangleFan

@@ -104,6 +104,15 @@ void boundaryCurve_init_from_meshpy(boundaryCurve *h_i, size_t nEdges, char cons
   while( (read = getline(&line, &len, fp) != -1 ) ) {
     separateARowDb(line, 5, row);
     numEdge = (int)row[0];
+    while( i < numEdge ) {
+      // meaning that the i-th edge is not a curvy boundary
+      h_i[i].i_Edge = i;
+      h_i[i].B[0][0] = 0;
+      h_i[i].B[0][1] = 0;
+      h_i[i].B[1][0] = 0;
+      h_i[i].B[1][1] = 0;
+      i ++;
+    }
     if( numEdge == i ){
       // meaning tha the i-th edge is a curvy boundary
       h_i[i].i_Edge = i;
@@ -111,15 +120,6 @@ void boundaryCurve_init_from_meshpy(boundaryCurve *h_i, size_t nEdges, char cons
       h_i[i].B[0][1] = row[2];
       h_i[i].B[1][0] = row[3];
       h_i[i].B[1][1] = row[4];
-      i ++;
-    }
-    else {
-      // meaning that the i-th edge is not a curvy boundary
-      h_i[i].i_Edge = i;
-      h_i[i].B[0][0] = 0;
-      h_i[i].B[0][1] = 0;
-      h_i[i].B[1][0] = 0;
-      h_i[i].B[1][1] = 0;
       i ++;
     }
   }

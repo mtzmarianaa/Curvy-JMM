@@ -21,11 +21,11 @@ colormap2_r = "cet_linear_worb_100_25_c53"
 
 plt.ion()
 
-h = 0.050
+h = 0.375
 h_string = str(h)
 eta1 = 1.0
 eta2 = 1.45
-currentH = "H9"
+currentH = "H0"
 path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
 path_info = '/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/'
 
@@ -58,12 +58,12 @@ def round_trip_connect(start, end, boundary_tan = False, tans = None, hc = None)
         # This means that we also want to get the boundary tan struct
         B = []
         for i in range(start, end):
-            tans_i = tans[i-1]/norm(tans[i-1])*hc[i-1]
-            tans_i1 = tans[i]/norm(tans[i])*hc[i]
-            B.append( (i-1, tans_i[0], tans_i[1], tans_i1[0], tans_i1[1] ) )
-        tans_n = tans[end-1]/norm(tans[end-1])*hc[end -1]
-        tans1 = tans[start-1]/norm(tans[start-1])*hc[start -1]
-        B.append( (end -1, tans_n[0], tans_n[1], tans1[0], tans1[1] ) )
+            tans_i = tans[i]/norm(tans[i])*hc[i-1]
+            tans_i1 = tans[i+1]/norm(tans[i+1])*hc[i]
+            B.append( (i, i+1, tans_i[0], tans_i[1], tans_i1[0], tans_i1[1] ) )
+        tans_n = tans[end]/norm(tans[end])*hc[end]
+        tans_1 = tans[start]/norm(tans[start])*hc[start]
+        B.append( (start, end, tans_1[0], tans_1[1], tans_n[0], tans_n[1] ) )
         return facets, B
     else:
         return facets
@@ -94,10 +94,13 @@ hc = [norm( points_base[0, :] - points_base[1, :] )]*len(points_base) # All are 
 
 # The points on the outline of the snowman and the tangent
 points =  [(-15, -10)] # start with x0 so that in each mesh we know its index
+hc = [0] + hc
 points.extend([ (points_base[i, 0], points_base[i, 1]) for i in range( len(points_base) ) ] )
 # Add the facets
-facets, mesh_square_boundaryCurve = round_trip_connect(1, len(points) -1, boundary_tan = True, tans = tan_base, hc = hc ) # we don't want to connnect x0
-
+tans = np.zeros((len(points), 2))
+tans[1:, :] = tan_base
+facets, mesh_square_boundaryCurve = round_trip_connect(1, len(points) -1, boundary_tan = True, tans = tans, hc = hc ) # we don't want to connnect x0
+mesh_square_boundaryCurve = np.array(mesh_square_boundaryCurve)
 
 
 ##############################################################################
@@ -124,8 +127,8 @@ mesh_square_tris = np.array(mesh_square.elements) # These are thee faces we want
 mesh_square_tris = np.sort(mesh_square_tris, axis = 1) # But we want them in order
 mesh_square_neigTriangles = np.array(mesh_square.neighbors) # These are the neighbors we want to export
 mesh_square_neigTriangles = np.sort(mesh_square_neigTriangles, axis = 1) # We also want these sorted
-mesh_square_facets = np.array(mesh_square.facets) # These are the edges we want to export
-mesh_square_boundaryCurve = np.array(mesh_square_boundaryCurve) # Because our C code adds the NULL automatically
+mesh_square_facets = np.array(mesh_square.facets) # These are the edges we want to exportmesh_square_boundaryCurve = np.array(mesh_square_boundaryCurve) # Because our C code adds the NULL automatically
+mesh_square_facets = np.sort(mesh_square_facets, axis = 1) # We also want these sorted
 
 print("Triangulation done, number of points: ", len(mesh_square_points))
 
@@ -163,10 +166,7 @@ print("List of neighbors done")
 # Create the list for the incident faces and edges
 
 mesh_IncidentFaces_sq = [[] for i in range(N_points_square)]
-mesh_square_facets = np.sort(mesh_square_facets, axis = 0)
-mesh_square_facets= np.unique(mesh_square_facets, axis = 0)
 mesh_square_facets = [list(f) for f in mesh_square_facets]
-edgesInFace = np.ones((len(mesh_square_tris), 4), dtype = np.int64 )
 
 for t in range(len(mesh_square_tris)):
     # Iterate through each triangle
@@ -177,44 +177,54 @@ for t in range(len(mesh_square_tris)):
     mesh_IncidentFaces_sq[p0].append(t)
     mesh_IncidentFaces_sq[p1].append(t)
     mesh_IncidentFaces_sq[p2].append(t)
-    # For the edges
-    if( [p0, p1] not in mesh_square_facets):
-        mesh_square_facets.append([p0, p1])
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = len(mesh_square_facets) - 1
-        edgesInFace[t,0] = j + 1
-    else:
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = mesh_square_facets.index([p0,p1])
-        edgesInFace[t,0] = j + 1
-    if( [p0, p2] not in mesh_square_facets):
-        mesh_square_facets.append([p0, p2])
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = len(mesh_square_facets) - 1
-        edgesInFace[t,0] = j + 1
-    else:
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = mesh_square_facets.index([p0,p2])
-        edgesInFace[t,0] = j + 1
-    if( [p1, p2] not in mesh_square_facets):
-        mesh_square_facets.append([p1, p2])
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = len(mesh_square_facets) - 1
-        edgesInFace[t,0] = j + 1
-    else:
-        j = int(edgesInFace[t,0])
-        edgesInFace[t, j] = mesh_square_facets.index([p1,p2])
-        edgesInFace[t,0] = j + 1
-    # Add this edges to their corresponding 
+    # For the edges, all of of them, then we will filter them
+    mesh_square_facets.append([p0, p1])
+    mesh_square_facets.append([p0, p2])
+    mesh_square_facets.append([p1, p2])
 
 # Format the way we need it
 mesh_square_facets = np.array(mesh_square_facets)
-edgesInFace = np.delete(edgesInFace, 0, axis = 1)
+mesh_square_facets = np.sort(mesh_square_facets, axis = 1)
+mesh_square_facets = np.unique(mesh_square_facets, axis = 0)
+
 
 
 print("List of incident faces done")
 print("List of edges done")
+
+
+
+# Now we create the np array for the edges in face
+edgesInFaces = np.ones((len(mesh_square_tris), 4), dtype = np.int64 )
+
+for i in range(len(mesh_square_facets)):
+    # Indices
+    indFrom = np.where(mesh_square_tris == mesh_square_facets[i, 0])[0]
+    indTo = np.where(mesh_square_tris == mesh_square_facets[i, 1])[0]
+    indFaces = list(set(indFrom) & set(indTo) ) # This should be a list of length 2 or 1
+    assert( len(indFaces) <= 2)
+    for k in range(len(indFaces)):
+        j = edgesInFaces[indFaces[k], 0]
+        edgesInFaces[indFaces[k], j] = i
+        edgesInFaces[indFaces[k], 0] += 1
+
+edgesInFaces = edgesInFaces[:, 1:]
+
 print("List edges in face done")
+
+# We need to put mesh_square_boundaryCurve in order
+for i in range(len(mesh_square_boundaryCurve)):
+        # Indices
+        indFrom = np.where(mesh_square_facets == mesh_square_boundaryCurve[i, 0])[0]
+        indTo = np.where(mesh_square_facets == mesh_square_boundaryCurve[i, 1])[0]
+        indEdge = list(set(indFrom) & set(indTo) ) # This should be a list of length 1
+        assert( len(indEdge) == 1)
+        mesh_square_boundaryCurve[i, 1] = indEdge[0]
+
+
+mesh_square_boundaryCurve = mesh_square_boundaryCurve[:, 1:]
+print(" Mesh square boundary organized")
+
     
 # Create the labels per face
 
@@ -308,7 +318,7 @@ np.savetxt(path_info + currentH + '/'+ currentH +'_BoundaryCurve.txt', mesh_squa
 
 np.savetxt(path_info + currentH + '/'+ currentH +'_Indices.txt', np.array(faces_label), delimiter =', ', fmt = '%.8f' )
 
-np.savetxt(path_info + currentH + '/'+ currentH +'_EdgesInFace.txt', edgesInFace.astype(int), delimiter =', ', fmt ='%.0f' )
+np.savetxt(path_info + currentH + '/'+ currentH +'_EdgesInFace.txt', edgesInFaces.astype(int), delimiter =', ', fmt ='%.0f' )
 
 separator = "," 
 
