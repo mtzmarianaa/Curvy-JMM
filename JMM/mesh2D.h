@@ -76,6 +76,8 @@ void printEverythingInMesh(mesh2S *mesh2);
 void twoTrianglesFromEdge(mesh2S *mesh2, size_t index0, size_t index1,
 			  size_t possibleTriangles[2], size_t possibleThirdVertices[2] );
 
+double minEtaFromTwoPoints(mesh2S *mesh2, size_t index0, size_t index1);
+
 size_t faceBetween3Points(mesh2S *mesh2, size_t index0, size_t index1, size_t index2);
 
 

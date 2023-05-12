@@ -3,7 +3,6 @@
 #include "mesh2D.h"
 #include "linAlg.h"
 #include "priority_queue.h"
-#include "updates_2D.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,67 +28,54 @@ typedef struct fanUpdate {
 typedef struct eik_grid {
   size_t *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
   size_t nStart; // number of points in start
-  mesh2S mesh2; // NEW MESH struct
+  mesh2S *mesh2; // NEW MESH struct
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   size_t *current_states; // 0 far, 1 trial, 2 valid
-  fanUpdateS *fanUpdates; // triangle fan of the optimal update associated to each point in the mesh (includes opti params)
+  fanUpdateS *fanUpdate; // triangle fan of the optimal update associated to each point in the mesh (includes opti params)
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
 
 void eik_grid_dealloc(eik_gridS **eik_g );
 
-void triangleFan_alloc(fanUpdateS **fanUpdate);
+void fanUpdate_alloc(fanUpdateS **fanUpdate);
 
-void triangleFan_dealloc(fanUpdateS **fanUpdate);
+void fanUpdate_dalloc(fanUpdateS **fanUpdate);
 
-void eik_grid_init( eik_gridS *eik_g, int *start, int nStart, mesh2S *mesh2);
+void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2);
 
 void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
 		    double grad0[2], double T1, double grad1[2]);
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints,
-			   char const *pathNeighbors, char const *pathIncidentFaces,
-			   char const *pathFaces, char const *pathIndexRegions,
-			   char const *pathBoundaryTan, char const *pathBoundaryChain);
+void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char const *pathPoints, char const *pathFaces,
+			    char const *pathEdges, char const *pathEdgesInFace,
+			    char const *pathNeighbors, char const *pathIncidentFaces,
+			    char const *pathIndices, char const *pathBoundary) ;
 
 void printGeneralInfo(eik_gridS *eik_g);
 
+void printInfoFanUpdate(eik_gridS *eik_g, size_t k) ;
+
 void printAllInfoMesh(eik_gridS *eik_g);
 
-void initializePointsNear(eik_gridS *eik_g, double rBall);
+//void initializePointsNear(eik_gridS *eik_g, double rBall);
 
 void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2],
 				double parameterization, double indexRefraction, double grad[2]);
 
-void updateCurrentValues(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1,
-			 double param, double TFound, double indexRefraction, int typeUpdate);
+void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
+		size_t index0, size_t index1, size_t index2,
+		size_t indexHat, size_t firstTriangle, double angleMax) ;
 
-void updateCurrentValues3(eik_gridS *eik_g, int indexToBeUpdated, int parent0, int parent1,
-			  int parent2, double lambda, double mu, double TFound,
-			  double indexRefraction, int typeUpdate);
-
-void addNeighbors_fromAccepted(eik_gridS *eik_g, int indexAccepted);
-
-
-void popAddNeighbors(eik_gridS *eik_g);
+//void popAddNeighbors(eik_gridS *eik_g);
 
 int currentMinIndex(eik_gridS *eik_g);
 
 int nStillInQueue(eik_gridS *eik_g);
 
-void saveComputedValues(eik_gridS *eik_g, const char *pathFile);
+void saveComputedValues(eik_gridS *eik_g, const char *pathFile) ;
 
-void saveComputedGradients(eik_gridS *eik_g, const char *pathFile);
-
-void saveComputedParents(eik_gridS *eik_g, const char *pathFile);
-
-void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile);
-
-void saveComputedMus(eik_gridS *eik_g, const char *pathFile);
-
-void saveComputedTypesUpdate(eik_gridS *eik_g, const char *pathFile);
-
+void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) ;
 

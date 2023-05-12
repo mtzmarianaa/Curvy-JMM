@@ -323,6 +323,23 @@ void twoTrianglesFromEdge(mesh2S *mesh2, size_t index0, size_t index1,
   }
 }
 
+
+double minEtaFromTwoPoints(mesh2S *mesh2, size_t index0, size_t index1) {
+  size_t possibleTriangles[2], possibleThirdVertices[2];
+  // using the function defined before
+  twoTrianglesFromEdge(mesh2, index0, index1, possibleTriangles, possibleThirdVertices);
+  // compare the etas
+  double eta0, eta1;
+  eta0 = mesh2->eta[possibleTriangles[0]];
+  eta1 = mesh2->eta[possibleTriangles[1]];
+  if( eta0 < eta1 ){
+    return eta0;
+  }
+  else {
+    return eta1;
+  }
+}
+
 size_t faceBetween3Points(mesh2S *mesh2, size_t index0, size_t index1, size_t index2) {
   // given 3 points that share a face it outputs the index of such face found
   // if there is no such face it outputs -1

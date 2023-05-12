@@ -6,10 +6,8 @@ This is the Eikonal grid with different specifications
 
 #include "eik_grid.h"
 #include "priority_queue.h"
-#include "SoSFunction.h"
-#include "opti_method.h"
+// #include "opti_method.h" // currently using Python for the optimization
 #include "linAlg.h"
-#include "updates_2D.h"
 
 
 #include <stdio.h>
@@ -29,18 +27,17 @@ void eik_grid_dealloc(eik_gridS **eik_g ) {
   *eik_g = NULL;
 }
 
-void triangleFan_alloc(fanUpdateS **fanUpdate) {
+void fanUpdate_alloc(fanUpdateS **fanUpdate) {
   *fanUpdate = malloc(sizeof(fanUpdateS));
   assert(*fanUpdate != NULL);
 }
 
-void triangleFan_dealloc(fanUpdateS **fanUpdate) {
+void fanUpdate_dalloc(fanUpdateS **fanUpdate) {
   free(*fanUpdate);
   *fanUpdate = NULL;
 }
 
-void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2) 
-{
+void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2) {
   // the rest of the parameters, eik_vals, p_queueG, current_states are going to be assigned inside
   eik_g->start = start;
   eik_g->nStart = nStart;
@@ -50,36 +47,22 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   double *eik_vals;
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   size_t *current_states;
-  size_t *type_update;
   fanUpdateS *fanUpdates;
   
   eik_vals = malloc(mesh2->nPoints*sizeof(double)); 
   current_states = malloc(mesh2->nPoints*sizeof(int));
   eik_grad = malloc(2*mesh2->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
-  parents_path = malloc(3*mesh2->nPoints*sizeof(int)); // each node has two parents by index
-  lambdas = malloc(mesh2->nPoints*sizeof(double)); // each node was updated with one lambda which is a double
-  mus = malloc(mesh2->nPoints*sizeof(double));
-  type_update = malloc(mesh2->nPoints*sizeof(int)); // each node has a type of update associated to it
   
   for(int i = 0; i<mesh2->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
-    eik_grad[i][0] = 0; // initialize all the gradients to zero
+    eik_grad[i][0] = 0;
     eik_grad[i][1] = 0;
-    parents_path[i][0] = i; // initialize both parents as themselves
-    parents_path[i][1] = i;
-    parents_path[i][2] = i;
-    lambdas[i] = 0; // initialize all lambdas to 0 (meaning that its parent is itself, useful for the starting points)
-    mus[i] = 0;
-    type_update[i] = -1; // initialize the type of update for each node to -1
   }
+  
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
   eik_g->eik_grad = eik_grad;
-  eik_g->parents_path = parents_path;
-  eik_g->lambdas = lambdas;
-  eik_g->mus = mus;
-  eik_g->type_update = type_update;
 
   // we initialize the priority queue, all the elements in start are going to be inserted and their current states set to 1
   // notice that we need to add both the index of the starting points AND their eikonal value (which is 0) to the p_queue struct
@@ -106,21 +89,24 @@ void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
   fanUpdate->grad1[1] = grad1[1];
 }
 
-void eik_grid_initFromFile(eik_gridS *eik_g, int *start, int nStart, char const *pathPoints, char const *pathNeighbors, char const *pathIncidentFaces, char const *pathFaces, char const *pathIndexRegions, char const *pathBoundaryTan, char const *pathBoundaryChain) {
+void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char const *pathPoints, char const *pathFaces,
+			    char const *pathEdges, char const *pathEdgesInFace,
+			    char const *pathNeighbors, char const *pathIncidentFaces,
+			    char const *pathIndices, char const *pathBoundary) {
   // the only difference between this and the previous method is that in here we do need to initialize the Mesh structure
   mesh2S *mesh2;
-  triMesh_2Dalloc(&mesh2);
-  triMesh2_init_from_meshpy(mesh2, pathPoints, pathNeighbors, pathIncidentFaces, pathFaces, pathIndexRegions, pathBoundaryTan, pathBoundaryChain);
+  mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+			 pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
   // and then we can use the previous method
   eik_grid_init( eik_g, start, nStart, mesh2); // voila
 }
 
 void printGeneralInfo(eik_gridS *eik_g) {
   printf("\n\n\n\n     GENERAL INFORMATION ON THIS EIKONAL STRUCT     \n\n");
-  printf("Number of starting points: %d \n", eik_g->nStart);
+  printf("Number of starting points: %zu \n", eik_g->nStart);
   printf("The starting points are: \n");
   for(int i = 0; i<eik_g->nStart; i++) {
-    printf("|   %d   |", eik_g->start[i]);
+    printf("|   %zu   |", eik_g->start[i]);
   }
   printGeneralInfoMesh(eik_g->mesh2);
   printf("Current state of priority queue: \n");
@@ -128,10 +114,30 @@ void printGeneralInfo(eik_gridS *eik_g) {
   printf("\nCurrent Eikonal values: \n");
   for(int i = 0; i<eik_g->mesh2->nPoints; i++){
     double x[2];
-    x[0] = eik_g->mesh2->points->x[i];
-    x[1] = eik_g->mesh2->points->y[i];
-    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %d ||  Eik gradient:   (%fl, %fl)||  Parents:   (%d, %d, %d)||  LamOpt:   %fl ||  MuOpt:   %fl  || Update: %d\n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i], eik_g->eik_grad[i][0], eik_g->eik_grad[i][1], eik_g->parents_path[i][0], eik_g->parents_path[i][1], eik_g->parents_path[i][2], eik_g->lambdas[i], eik_g->mus[i], eik_g->type_update[i]);
+    x[0] = eik_g->mesh2->points[i][0];
+    x[1] = eik_g->mesh2->points[i][1];
+    printf("Index   %d    ||  Coordinates:   (%fl, %fl)    ||  Eikonal:   %fl     ||  Current state:   %zu \n", i, x[0], x[1]  , eik_g->eik_vals[i] , eik_g->current_states[i]);
   }
+}
+
+void printInfoFanUpdate(eik_gridS *eik_g, size_t k) {
+  // prints all the information from a triangle fan update
+  triangleFanS *triFan;
+  triFan = eik_g->fanUpdate[k].triFan;
+  printf("\n\n\n  PRINTING INFORMATION FROM THE %zu-th TRIANGLE FAN UPDATE\n", k);
+  printEverythingTriFan(triFan);
+  int i;
+  size_t nReg = triFan->nRegions;
+  printf("\nParams: \n");
+  for( i = 0; i<(2*nReg + 1); i++){
+    printf(" %fl  ", eik_g->fanUpdate[k].params[i]);
+  }
+
+  printf("\nT0: %fl", eik_g->fanUpdate[k].T0);
+  printf("\ngrad0:  %fl  |  %fl", eik_g->fanUpdate[k].grad0[0], eik_g->fanUpdate[k].grad0[1]);
+  printf("\nT1: %fl", eik_g->fanUpdate[k].T1);
+  printf("\ngrad1:  %fl  |  %fl", eik_g->fanUpdate[k].grad1[0], eik_g->fanUpdate[k].grad1[1]);
+  
 }
 
 void printAllInfoMesh(eik_gridS *eik_g){
@@ -140,44 +146,40 @@ void printAllInfoMesh(eik_gridS *eik_g){
 
 
 
-void initializePointsNear(eik_gridS *eik_g, double rBall) {
-  // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL
-  // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the
-  // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that
-  // all those balls belong to the same regions of indices of refraction
-  double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction;
-  int indexStart;
-  for(int j = 0; j<eik_g->nStart; j++){
-    deleteRoot(eik_g->p_queueG);
-    indexStart = eik_g->start[j];
-    xStart[0] = eik_g->mesh2->points->x[ indexStart ];
-    xStart[1] = eik_g->mesh2->points->y[ indexStart];
-    initialIndexRefraction = s_function_threeSections(xStart, eik_g->mesh2->indexRegions[ eik_g->mesh2->incidentFaces[indexStart].neis_i[0] ]);
-    for(int i = 0; i<eik_g->mesh2->nPoints; i++){
-      xCurrent[0] = eik_g->mesh2->points->x[i];
-      xCurrent[1] = eik_g->mesh2->points->y[i];
-      vec2_subtraction( xCurrent, xStart, xMinxStart );
-      normCurrent = l2norm(xMinxStart);
-      if(normCurrent < rBall ){
-        if( eik_g->current_states[i] == 1 ){
-          // if it was previously considered as trial we need to delete this from the queue directly
-          delete_findIndex(eik_g->p_queueG, i);
-        }
-        // if this happens, this point is "close enough" to the starting point so that we can initialize it
-        eik_g->current_states[i] = 2; // we initialized it directly
-        eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value
-        eik_g->parents_path[i][0] = indexStart;
-        eik_g->parents_path[i][1] = indexStart; // both of its parents are the starting point
-	eik_g->parents_path[i][2] = indexStart;
-        eik_g->lambdas[i] = 0; // could also be 1, same thing
-        eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient
-        eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent;
-        addNeighbors_fromAccepted(eik_g, i); // we add its neighbors
-      }
-    }
-  }
+/* void initializePointsNear(eik_gridS *eik_g, double rBall) { */
+/*   // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL */
+/*   // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the */
+/*   // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that */
+/*   // all those balls belong to the same regions of indices of refraction */
+/*   double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction; */
+/*   int indexStart; */
+/*   for(int j = 0; j<eik_g->nStart; j++){ */
+/*     deleteRoot(eik_g->p_queueG); */
+/*     indexStart = eik_g->start[j]; */
+/*     xStart[0] = eik_g->mesh2->points[ indexStart ][0]; */
+/*     xStart[1] = eik_g->mesh2->points[ indexStart ][1]; */
+/*     for(int i = 0; i<eik_g->mesh2->nPoints; i++){ */
+/*       xCurrent[0] = eik_g->mesh2->points[i][0]; */
+/*       xCurrent[1] = eik_g->mesh2->points[i][1]; */
+/*       vec2_subtraction( xCurrent, xStart, xMinxStart ); */
+/*       normCurrent = l2norm(xMinxStart); */
+/*       if(normCurrent < rBall ){ */
+/*         if( eik_g->current_states[i] == 1 ){ */
+/*           // if it was previously considered as trial we need to delete this from the queue directly */
+/*           delete_findIndex(eik_g->p_queueG, i); */
+/*         } */
+/*         // if this happens, this point is "close enough" to the starting point so that we can initialize it */
+/* 	initialIndexRefraction = minEtaFromTwoPoints(eik_g->mesh2, i, indexStart); */
+/*         eik_g->current_states[i] = 2; // we initialized it directly */
+/*         eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value */
+/*         eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient */
+/*         eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent; */
+/*         addNeighbors_fromAccepted(eik_g, i); // we add its neighbors */
+/*       } */
+/*     } */
+/*   } */
 
-}
+/* } */
 
 
 void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]) {
@@ -196,36 +198,128 @@ void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2], doub
 
 
 
-
-
-
-
-
-
-void popAddNeighbors(eik_gridS *eik_g){
-  // int nNeighs;
-  int minIndex = indexRoot(eik_g->p_queueG);
-  // double minEikVal = valueRoot(eik_g->p_queueG);
-  // printf("Initially the queue looks like this: \n");
-  // printeik_queue(eik_g->p_queueG);
-  // printf("\n");
-  deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
-  // printf("We've eliminated the root from the queue successfully\n");
-  eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
-  // printf("We've updated the current state of %d to valid\n", minIndex);
-  addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
-  // printf("The coordinates of the current minimum value just accepted are: (%fl,%fl)\n", eik_g->mesh2->points->x[minIndex], eik_g->mesh2->points->y[minIndex]);
-  // printf("Its neighbors are: \n");
-  // nNeighs = eik_g->mesh2->neighbors[minIndex].len; // get the number of neighbors of the minimum index
-  // for(int i=0; i<nNeighs; i++){
-  //   printf("|     %d     |", eik_g->mesh2->neighbors[minIndex].neis_i[i] );
-  // }
-  // printf("\n");
-  // for(int i=0; i<nNeighs; i++){
-  //   printf("|     (%fl, %fl)     |", eik_g->mesh2->points->x[eik_g->mesh2->neighbors[minIndex].neis_i[i]], eik_g->mesh2->points->y[eik_g->mesh2->neighbors[minIndex].neis_i[i]] );
-  // }
-  // printf("\n");
+void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
+		size_t index0, size_t index1, size_t index2,
+		size_t indexHat, size_t firstTriangle, double angleMax) {
+  double pi;
+  pi = acos(-1.0);
+  // after running twoTrianglesFromEdge select one and initialize a triangle fan like this
+  // angle max is the biggest angle on xk1 x0 xk inside the trianlge fan
+  // this is going to be useful to know if this triangle fan is feasible or not
+  size_t nRegions, *listFaces, *listEdges, *listIndices;
+  double x0[2], x1[2], xHat[2];
+  x0[0] = eik_g->mesh2->points[index0][0];
+  x0[1] = eik_g->mesh2->points[index0][1];
+  x1[0] = eik_g->mesh2->points[index1][0];
+  x1[1] = eik_g->mesh2->points[index1][1];
+  xHat[0] = eik_g->mesh2->points[indexHat][0];
+  xHat[1] = eik_g->mesh2->points[indexHat][1];
+  //////////////////////////
+  // first we need to count the number of regions
+  double etakM1, etak, xk[2], xk1[2], thisAngle, angleRegion;
+  size_t possibleTriangles[2], possibleThirdVertices[2], indexk, indexk1;
+  size_t thisTriangle, prevTriangle;
+  nRegions = 1;
+  indexk = index1;
+  indexk1 = index2;
+  xk[0] = x1[0];
+  xk[1] = x1[1];
+  xk1[0] =  eik_g->mesh2->points[index2][0];
+  xk1[1] =  eik_g->mesh2->points[index2][1];
+  angleMax = angleThreePoints(xk, x0, xk1); // first angle
+  thisAngle = angleMax;
+  angleRegion = thisAngle;
+  thisTriangle = firstTriangle;
+  etak = eik_g->mesh2->eta[firstTriangle];
+  while( indexk1 != indexHat ){
+    // circle around and see what we get
+    twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
+    if( thisTriangle != possibleTriangles[0]){
+      // the next triangle is possibleTriangles[0]
+      indexk = indexk1;
+      indexk1 = possibleThirdVertices[0];
+      prevTriangle = thisTriangle;
+      thisTriangle = possibleTriangles[0];
+    }
+    else {
+      // the next triangle is possibleTriangles[1]
+      indexk = indexk1;
+      indexk1 = possibleThirdVertices[1];
+      prevTriangle = thisTriangle;
+      thisTriangle = possibleTriangles[1];
+    }
+    // update
+    xk[0] = xk1[0];
+    xk[1] = xk1[1];
+    xk1[0] = eik_g->mesh2->points[indexk1][0];
+    xk1[1] = eik_g->mesh2->points[indexk1][1];
+    etakM1 = etak;
+    etak = eik_g->mesh2->eta[thisTriangle];
+    thisAngle = angleThreePoints(xk, x0, xk1);
+    // angle from one region to another one
+    if( etakM1 != etak ){
+      angleRegion = 0;
+    }
+    else{
+      angleRegion = angleRegion + thisAngle;
+    }
+    // but we are looking for the maximum angle of change in regions
+    if( angleRegion > angleMax ){
+      angleMax = thisAngle;
+    }
+    if( angleMax > pi ){
+      // we can't  update here
+      return;
+    }
+    nRegions ++; // add a new region
+  }
+  //////////////////////////
+  // with the number of regions set we can go around and malloc everything
+  // notice that in mesh2D.c we have a function called
+  // triangleFan_initFromIndices and for this we only need the list of indices
+  listIndices = malloc((nRegions + 2)*sizeof(size_t));
+  int i = 2;
+  indexk = index1;
+  indexk1 = index2;
+  thisTriangle = firstTriangle;
+  listIndices[0] = indexk;
+  listIndices[1] =  indexk1;
+  while( indexk1 != indexHat ) {
+    // circle around and see what we get
+    twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
+    if( thisTriangle != possibleTriangles[0] ) {
+      // the next triangle is possibleTriangles[0]
+      indexk = indexk1;
+      indexk1 = possibleThirdVertices[0];
+      prevTriangle = thisTriangle;
+      thisTriangle = possibleTriangles[0];
+    }
+    else {
+      // the next triangle is possibleTriangles[1]
+      indexk = indexk1;
+      indexk1 = possibleThirdVertices[1];
+      prevTriangle = thisTriangle;
+      thisTriangle = possibleTriangles[1];
+    }
+    listIndices[i] = indexk1;
+    i ++;
+    
+  }
+  //////////////////////////
+  // now we have the list of indices, we can initialize the triangle
+  triangleFan_initFromIndices(triFan, eik_g->mesh2, nRegions, index0,
+			      index1, indexHat, listIndices);
 }
+
+
+
+/* void popAddNeighbors(eik_gridS *eik_g) { */
+/*   // int nNeighs; */
+/*   int minIndex = indexRoot(eik_g->p_queueG); */
+/*   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue */
+/*   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid */
+/*   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index */
+/* } */
 
 int currentMinIndex(eik_gridS *eik_g) {
   return indexRoot(eik_g->p_queueG);
@@ -253,34 +347,6 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) {
     fclose(fp);
 }
 
-void saveComputedParents(eik_gridS *eik_g, const char *pathFile) {
-    FILE *fp;
-    fp = fopen(pathFile, "wb");
-    
-    for (int i=0; i<eik_g->mesh2->nPoints; ++i){
-      fwrite(eik_g->parents_path[i], sizeof(int), 3, fp);
-    }
 
-    fclose(fp);
-}
 
-void saveComputedLambdas(eik_gridS *eik_g, const char *pathFile) {
-  FILE *fp;
-  fp = fopen(pathFile, "wb");
-  fwrite(eik_g->lambdas, sizeof(double), eik_g->mesh2->nPoints, fp);
-  fclose(fp);
-}
 
-void saveComputedMus(eik_gridS *eik_g, const char *pathFile) {
-  FILE *fp;
-  fp = fopen(pathFile, "wb");
-  fwrite(eik_g->mus, sizeof(double), eik_g->mesh2->nPoints, fp);
-  fclose(fp);
-}
-
-void saveComputedTypesUpdate(eik_gridS *eik_g, const char *pathFile) {
-  FILE *fp;
-  fp = fopen(pathFile, "wb");
-  fwrite(eik_g->type_update, sizeof(int), eik_g->mesh2->nPoints, fp);
-  fclose(fp);
-}
