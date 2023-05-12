@@ -33,13 +33,13 @@ typedef struct triangleFan {
   double x0[2];
   double x1[2];
   double xHat[2];
-  size_t *listFaces; // list of the triangle indices in this triangle fan
+  int  *listFaces; // list of the triangle indices in this triangle fan FILLED WITH -1 IF REDUCED TRIANGLE
   double *listIndices; // in a triangle fan the etas are going to be called indices
-  size_t *listEdges; // edges in this triangle fan
+  int *listEdges; // edges in this triangle fan FILLED WITH -1 IF REDUCED TRIANGLE length 2*nRegions + 1
   double (*listxk)[2]; // list of points x0, x1, ..., xHat in the triangle fan
-  double (*listB0k)[2];
-  double (*listBk)[2];
-  double (*listBkBk1)[2];
+  double (*listB0k)[2]; // length nRegions + 1
+  double (*listBk)[2]; // length nRegions + 1
+  double (*listBkBk1)[2]; // length 2*nRegions
 } triangleFanS;
 
 

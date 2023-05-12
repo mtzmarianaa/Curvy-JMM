@@ -370,7 +370,8 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
 				 size_t index0, size_t index1,
 				 size_t indexHat, size_t *listIndicesNodes) {
   // from information from eikgrid we set up a triangle fan
-  size_t *listFaces, faceBetweenPoints, *listEdges;
+  int *listFaces, *listEdges;
+  size_t faceBetweenPoints;
   double x0[2], x1[2], x2[2], xHat[2], *listIndices;
   double (*listxk)[2], (*listB0k)[2], (*listBk)[2], (*listBkBk1)[2];
   triFan->nRegions = nRegions;
@@ -382,9 +383,9 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   x2[1] = mesh2->points[listIndicesNodes[2]][1];
   xHat[0] = mesh2->points[indexHat][0];
   xHat[1] = mesh2->points[indexHat][1];
-  listFaces = malloc(nRegions*sizeof(size_t));
+  listFaces = malloc(nRegions*sizeof(int));
   listIndices = malloc((2*nRegions + 1)*sizeof(double));
-  listEdges = malloc((2*nRegions + 1)*sizeof(size_t));
+  listEdges = malloc((2*nRegions + 1)*sizeof(int));
   listxk = malloc(2*(nRegions + 2)*sizeof(double));
   listB0k = malloc(2*(nRegions + 1)*sizeof(double));
   listBk = malloc(2*(nRegions + 1)*sizeof(double));
@@ -413,7 +414,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     xk1[1] = mesh2->points[indexk1][1];
     // get the index of the triangle x0 xk xk1
     faceBetweenPoints = faceBetween3Points(mesh2, index0, indexk, indexk1);
-    listFaces[i] = faceBetweenPoints; // add this information
+    listFaces[i] = (int)faceBetweenPoints; // add this information
     listIndices[i] = mesh2->eta[faceBetweenPoints]; // add this index of refraction
     // We need to add the index of refraction of the triangle on the outside
     twoTrianglesFromEdge(mesh2, indexk, indexk1, possibleTriangles, possibleThirdVertices);
@@ -435,7 +436,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     // EDGE0
     if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexk) ) {
       // we are in the x0 xk edge
-      listEdges[i] = edge0;
+      listEdges[i] = (int)edge0;
       listB0k[i][0] = mesh2->h_i[edge0].B[0][0];
       listB0k[i][1] = mesh2->h_i[edge0].B[0][1];
       listBk[i][0] = mesh2->h_i[edge0].B[1][0];
@@ -443,7 +444,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge0][1] == index0) & (mesh2->edges[edge0][0] == indexk) ) {
       // we are in the xk x0 edge
-      listEdges[i] = edge0;
+      listEdges[i] = (int)edge0;
       listB0k[i][0] = mesh2->h_i[edge0].B[1][0];
       listB0k[i][1] = mesh2->h_i[edge0].B[1][1];
       listBk[i][0] = mesh2->h_i[edge0].B[0][0];
@@ -451,7 +452,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexk1) ) {
       // we are in the x0 xk1 edge
-      listEdges[i+1] = edge0;
+      listEdges[i+1] = (int)edge0;
       listB0k[i+1][0] = mesh2->h_i[edge0].B[0][0];
       listB0k[i+1][1] = mesh2->h_i[edge0].B[0][1];
       listBk[i+1][0] = mesh2->h_i[edge0].B[1][0];
@@ -459,7 +460,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge0][1] == index0) & (mesh2->edges[edge0][0] == indexk1) ) {
       // we are in the xk1 x0 edge
-      listEdges[i+1] = edge0;
+      listEdges[i+1] = (int)edge0;
       listB0k[i+1][0] = mesh2->h_i[edge0].B[1][0];
       listB0k[i+1][1] = mesh2->h_i[edge0].B[1][1];
       listBk[i+1][0] = mesh2->h_i[edge0].B[0][0];
@@ -467,7 +468,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge0][1] == indexk) & (mesh2->edges[edge0][0] == indexk1) ) {
       // we are in the xk xk1 edge
-      listEdges[nRegions + i + 1] = edge0;
+      listEdges[nRegions + i + 1] = (int)edge0;
       listBkBk1[j][0] = mesh2->h_i[edge0].B[1][0];
       listBkBk1[j][1] = mesh2->h_i[edge0].B[1][1];
       listBkBk1[j+1][0] = mesh2->h_i[edge0].B[0][0];
@@ -475,7 +476,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge0][0] == indexk) & (mesh2->edges[edge0][1] == indexk1) ) {
       // we are in the xk1 xk edge
-      listEdges[nRegions + i + 1] = edge0;
+      listEdges[nRegions + i + 1] = (int)edge0;
       listBkBk1[j+1][0] = mesh2->h_i[edge0].B[1][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge0].B[1][1];
       listBkBk1[j][0] = mesh2->h_i[edge0].B[0][0];
@@ -485,7 +486,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     // EDGE1
     if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexk) ) {
       // we are in the x0 xk edge
-      listEdges[i] = edge1;
+      listEdges[i] = (int)edge1;
       listB0k[i][0] = mesh2->h_i[edge1].B[0][0];
       listB0k[i][1] = mesh2->h_i[edge1].B[0][1];
       listBk[i][0] = mesh2->h_i[edge1].B[1][0];
@@ -493,7 +494,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge1][1] == index0) & (mesh2->edges[edge1][0] == indexk) ) {
       // we are in the xk x0 edge
-      listEdges[i] = edge1;
+      listEdges[i] = (int)edge1;
       listB0k[i][0] = mesh2->h_i[edge1].B[1][0];
       listB0k[i][1] = mesh2->h_i[edge1].B[1][1];
       listBk[i][0] = mesh2->h_i[edge1].B[0][0];
@@ -501,7 +502,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexk1) ) {
       // we are in the x0 xk1 edge
-      listEdges[i+1] = edge1;
+      listEdges[i+1] = (int)edge1;
       listB0k[i+1][0] = mesh2->h_i[edge1].B[0][0];
       listB0k[i+1][1] = mesh2->h_i[edge1].B[0][1];
       listBk[i+1][0] = mesh2->h_i[edge1].B[1][0];
@@ -509,7 +510,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge1][1] == index0) & (mesh2->edges[edge1][0] == indexk1) ) {
       // we are in the xk1 x0 edge
-      listEdges[i+1] = edge1;
+      listEdges[i+1] = (int)edge1;
       listB0k[i+1][0] = mesh2->h_i[edge1].B[1][0];
       listB0k[i+1][1] = mesh2->h_i[edge1].B[1][1];
       listBk[i+1][0] = mesh2->h_i[edge1].B[0][0];
@@ -517,7 +518,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge1][1] == indexk) & (mesh2->edges[edge1][0] == indexk1) ) {
       // we are in the xk xk1 edge
-      listEdges[nRegions + i + 1] = edge1;
+      listEdges[nRegions + i + 1] = (int)edge1;
       listBkBk1[j][0] = mesh2->h_i[edge1].B[1][0];
       listBkBk1[j][1] = mesh2->h_i[edge1].B[1][1];
       listBkBk1[j+1][0] = mesh2->h_i[edge1].B[0][0];
@@ -525,7 +526,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge1][0] == indexk) & (mesh2->edges[edge1][1] == indexk1) ) {
       // we are in the xk1 xk edge
-      listEdges[nRegions + i + 1] = edge1;
+      listEdges[nRegions + i + 1] = (int)edge1;
       listBkBk1[j+1][0] = mesh2->h_i[edge1].B[1][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge1].B[1][1];
       listBkBk1[j][0] = mesh2->h_i[edge1].B[0][0];
@@ -536,7 +537,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     // EDGE2
     if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexk) ) {
       // we are in the x0 xk edge
-      listEdges[i] = edge2;
+      listEdges[i] = (int)edge2;
       listB0k[i][0] = mesh2->h_i[edge2].B[0][0];
       listB0k[i][1] = mesh2->h_i[edge2].B[0][1];
       listBk[i][0] = mesh2->h_i[edge2].B[1][0];
@@ -544,7 +545,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge2][1] == index0) & (mesh2->edges[edge2][0] == indexk) ) {
       // we are in the xk x0 edge
-      listEdges[i] = edge2;
+      listEdges[i] = (int)edge2;
       listB0k[i][0] = mesh2->h_i[edge2].B[1][0];
       listB0k[i][1] = mesh2->h_i[edge2].B[1][1];
       listBk[i][0] = mesh2->h_i[edge2].B[0][0];
@@ -552,7 +553,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexk1) ) {
       // we are in the x0 xk1 edge
-      listEdges[i+1] = edge2;
+      listEdges[i+1] = (int)edge2;
       listB0k[i+1][0] = mesh2->h_i[edge2].B[0][0];
       listB0k[i+1][1] = mesh2->h_i[edge2].B[0][1];
       listBk[i+1][0] = mesh2->h_i[edge2].B[1][0];
@@ -560,7 +561,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge2][1] == index0) & (mesh2->edges[edge2][0] == indexk1) ) {
       // we are in the xk1 x0 edge
-      listEdges[i+1] = edge2;
+      listEdges[i+1] = (int)edge2;
       listB0k[i+1][0] = mesh2->h_i[edge2].B[1][0];
       listB0k[i+1][1] = mesh2->h_i[edge2].B[1][1];
       listBk[i+1][0] = mesh2->h_i[edge2].B[0][0];
@@ -568,7 +569,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge2][1] == indexk) & (mesh2->edges[edge2][0] == indexk1) ) {
       // we are in the xk xk1 edge
-      listEdges[nRegions + i + 1] = edge2;
+      listEdges[nRegions + i + 1] = (int)edge2;
       listBkBk1[j][0] = mesh2->h_i[edge2].B[1][0];
       listBkBk1[j][1] = mesh2->h_i[edge2].B[1][1];
       listBkBk1[j+1][0] = mesh2->h_i[edge2].B[0][0];
@@ -576,7 +577,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
     else if( (mesh2->edges[edge2][0] == indexk) & (mesh2->edges[edge2][1] == indexk1) ) {
       // we are in the xk1 xk edge
-      listEdges[nRegions + i + 1] = edge2;
+      listEdges[nRegions + i + 1] = (int)edge2;
       listBkBk1[j+1][0] = mesh2->h_i[edge2].B[1][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge2].B[1][1];
       listBkBk1[j][0] = mesh2->h_i[edge2].B[0][0];
@@ -608,42 +609,42 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   printf("edge1 %zu \n", edge1);
   printf("edge2 %zu \n", edge2);
   if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexHat)) {
-    listEdges[nRegions] = edge0;
+    listEdges[nRegions] = (int)edge0;
     listB0k[nRegions][0] = mesh2->h_i[edge0].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge0].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge0].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge0].B[1][1];
   }
   else if( (mesh2->edges[edge0][0] == indexHat) & (mesh2->edges[edge0][1] == index0)) {
-    listEdges[nRegions] = edge0;
+    listEdges[nRegions] = (int)edge0;
     listBk[nRegions][0] = mesh2->h_i[edge0].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge0].B[0][1];
     listB0k[nRegions][0] = mesh2->h_i[edge0].B[1][0];
     listB0k[nRegions][1] = mesh2->h_i[edge0].B[1][1];
   }
   if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexHat)) {
-    listEdges[nRegions] = edge1;
+    listEdges[nRegions] = (int)edge1;
     listB0k[nRegions][0] = mesh2->h_i[edge1].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge1].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge1].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge1].B[1][1];
   }
   else if( (mesh2->edges[edge1][0] == indexHat) & (mesh2->edges[edge1][1] == index0)) {
-    listEdges[nRegions] = edge1;
+    listEdges[nRegions] = (int)edge1;
     listBk[nRegions][0] = mesh2->h_i[edge1].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge1].B[0][1];
     listB0k[nRegions][0] = mesh2->h_i[edge1].B[1][0];
     listB0k[nRegions][1] = mesh2->h_i[edge1].B[1][1];
   }
   if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexHat)) {
-    listEdges[nRegions] = edge2;
+    listEdges[nRegions] = (int)edge2;
     listB0k[nRegions][0] = mesh2->h_i[edge2].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge2].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge2].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge2].B[1][1];
   }
   else if( (mesh2->edges[edge2][0] == indexHat) & (mesh2->edges[edge2][1] == index0)) {
-    listEdges[nRegions] = edge2;
+    listEdges[nRegions] = (int)edge2;
     listBk[nRegions][0] = mesh2->h_i[edge2].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge2].B[0][1];
     listB0k[nRegions][0] = mesh2->h_i[edge2].B[1][0];
@@ -668,6 +669,192 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   
 }
 
+void countTrianglesToSave_reduceTriangleFan(triangleFanS *triFan, size_t *trianglesToSave) {
+  // in a triangle fan counts the number of triangles that need to
+  // be saved in a reduction of a triangle fan
+  int k, j;
+  for( k = 0; k<triFan->nRegions; k++ ){
+    trianglesToSave[k] = 0; // initialize everything to zero, assuming we are not going to save any triangle
+  }
+  // CIRCLE AROUND THE TRIANGLE AND COUNT CURVY TRIANGLES
+  double B0k[2], Bk[2], BkBk1_0[2], B0k1[2], Bk1[2], BkBk1_1[2];
+  B0k1[0] = triFan->listB0k[0][0];
+  B0k1[1] = triFan->listB0k[0][1];
+  Bk1[0] = triFan->listBk[0][0];
+  Bk1[1] = triFan->listBk[0][1];
+  for( k = 0; k<triFan->nRegions; k++ ) {
+    j = 2*k;
+    B0k[0] = B0k1[0];
+    B0k[1] = B0k1[1];
+    Bk[0] = Bk1[0];
+    Bk[1] = Bk1[1];
+    B0k1[0] = triFan->listB0k[k+1][0];
+    B0k1[1] = triFan->listB0k[k+1][1];
+    Bk1[0] = triFan->listBk[k+1][0];
+    Bk1[1] = triFan->listBk[k+1][1];
+    BkBk1_0[0] = triFan->listBkBk1[j][0];
+    BkBk1_0[1] = triFan->listBkBk1[j][1];
+    BkBk1_1[0] = triFan->listBkBk1[j+1][0];
+    BkBk1_1[1] = triFan->listBkBk1[j+1][1];
+    // see if any of the internal edges are curve
+    if( l2norm(B0k) != 0 | l2norm(Bk) != 0  ) {
+      // this means that the edge x0 xk of this triangle is curvy
+      trianglesToSave[k] = 1; // we do want to save this to the reduced triangle fan
+      if( k > 0 ) {
+	// if we are not on the first triangle we need to save the previous triangle
+	trianglesToSave[k-1] = 1;
+      }
+    }
+    if( l2norm(B0k) != 0 | l2norm(Bk) != 0 ) {
+      // this means that the edge x0 xk1 of this triangle is curvy
+      trianglesToSave[k] = 1;
+      if( k < triFan->nRegions - 1){
+	// if we are not on the last triangle we also need to save the next triangle
+	trianglesToSave[k+1] = 1;
+      }
+    }
+    // see if any of the top edges are curvy we might need to save both the previous and the next triangle
+    if( l2norm(BkBk1_0) != 0 | l2norm(BkBk1_1) != 0 ) {
+      trianglesToSave[k] = 1;
+      if( k < triFan->nRegions - 1) {
+	// if we are not on the last triangle we also need to save the next triangle
+	trianglesToSave[k+1] = 1;
+      }
+      if(k > 0){
+	// if we are not on the first triangle we need to save the previous triangle
+	trianglesToSave[k-1] = 1;
+      }
+    }
+  }
+}
+
+
+void informationToSave_reduceTriangleFan(triangleFansS *triFan, size_t nRegions_reduced, size_t *trianglesToSave,
+					 int *listFaces, double *listIndices, int *listEdges, double (*listxk)[2],
+					 double (*listB0k)[2], double (*listBk)[2], double (*listBkBk1)[2]){
+  // given a list of triangles we need to save from an original triFan we compute the reduced elements
+  // of the reduced triangle fan
+  double artificialTan[2];
+  int i, k;
+  k = 0;
+  // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat
+  if( nRegions_reduced == 1){
+    // we  have a one artificial triangle
+    listFaces[0] = -1; // because this is an "artificial" triangle
+    listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same
+    listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1
+    listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat
+    listEdges[2] = -1; // artificial edge
+    listxk[2][0] = triFan->xHat[0];
+    listxk[2][1] = triFan->xHat[1];
+    listB0k[0][0] = triFan->listB0k[0][0];
+    listB0k[0][1] = triFan->listB0k[0][1];
+    listB0k[1][0] = triFan->listB0k[triFan->nRegions][0];
+    listB0k[1][1] = triFan->listB0k[triFan->nRegions][1];
+    listBk[0][0] = triFan->listBk[0][0];
+    listBk[0][1] = triFan->listBk[0][1];
+    listBk[1][0] = triFan->listBk[triFan->nRegions][0];
+    listBk[1][1] = triFan->listBk[triFan->nRegions][1];
+    // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1
+    vec2_subtraction(triFan->xHat, triFan->x0, artificialTan);
+    listBkBk1[0][0] = artificialTan[0];
+    listBkBk1[0][1] = artificialTan[1];
+    listBkBk1[1][0] = artificialTan[0];
+    listBkBk1[1][1] = artificialTan[1];
+  }
+  else{
+    // we need to save more than one triangle
+    for( i = 0; i<triFan->nRegions; i++){
+      // see which triangle we need to save (from trianglesToSave)
+      if(trianglesToSave[i] == 1){
+	// we need to save the i-th triangle
+	listFaces[k] = -1; // because these are all artificial triangles
+	listIndices[k] = triFan->listIndices[i]; // the index of this triangle
+	
+      }
+    }
+ 
+  }
+  
+}
+
+
+void reduceTriangleFan(triangleFanS *triFan) {
+  // given a triangle fan reduce it in such way that we are only left
+  // with (possible artificial) triangles where at least one of
+  // their edges is a curve edge
+  if( triFan->nRegions == 1){
+    // this triangle fan originally has just one triangle, we can't further reduce it
+    return;
+  }
+  size_t nRegions_reduced, *trianglesToSave;
+  trianglesToSave = malloc(triFan->nRegions*sizeof(size_t));
+  int k, j;
+  nRegions_reduced = 0;
+  
+  // use the void previously defined
+  countTrianglesToSave_reduceTriangleFan(triFan, trianglesToSave);
+  
+  // count the number of triangles that are different
+  for( k = 0; k<triFan->nRegions; k++){
+    nRegions_reduced += trianglesToSave[k];
+  }
+  if( nRegions_reduced == 0){
+    nregions_reduced = 1; // we don't have curvy boundaries in this case
+  }
+
+  assert(nRegions_reduced <= triFan->nRegions); // we can't have more triangles than the original triangle
+  
+  // ADD THE INFORMATION FROM THE TRIANGLES WE ARE INTERESTED IN 
+  if( nRegions_reduced == triFan->nRegions){
+    // means that each triangle in the original triangle fan
+    // has at least one curvy edge
+    return;
+  }
+  else{
+    // means that we have to reduce the original triangle fan
+    int *listFaces, *listEdges;
+    double *listIndices, (*listxk)[2], (*listB0k)[2], (*listBk)[2], (*listBkBk1)[2];
+    // malloc everything again
+    listFaces = malloc(nRegions_reduced*sizeof(int));
+    listIndices = malloc((2*nRegions_reduced + 1)*sizeof(double));
+    listEdges = malloc((2*nRegions_reduced + 1)*sizeof(int));
+    listxk = malloc(2*(nRegions_reduced + 2)*sizeof(double));
+    listB0k = malloc(2*(nRegions_reduced + 1)*sizeof(double));
+    listBk = malloc(2*(nRegions_reduced + 1)*sizeof(double));
+    listBkBk1 = malloc(2*(2*nRegions_reduced)*sizeof(double));
+    // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat
+    if( nRegions_reduced == 1){
+      // we  have a one artificial triangle
+      listFaces[0] = -1; // because this is an "artificial" triangle
+      listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same
+      listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1
+      listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat
+      listEdges[2] = -1; // artificial edge
+      listxk[2][0] = triFan->xHat[0];
+      listxk[2][1] = triFan->xHat[1];
+      listB0k[0][0] = triFan->listB0k[0][0];
+      listB0k[0][1] = triFan->listB0k[0][1];
+      listB0k[1][0] = triFan->listB0k[triFan->nRegions][0];
+      listB0k[1][1] = triFan->listB0k[triFan->nRegions][1];
+      listBk[0][0] = triFan->listBk[0][0];
+      listBk[0][1] = triFan->listBk[0][1];
+      listBk[1][0] = triFan->listBk[triFan->nRegions][0];
+      listBk[1][1] = triFan->listBk[triFan->nRegions][1];
+      // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1
+      vec2_subtraction(triFan->xHat, triFan->x0, artificialTan);
+      listBkBk1[0][0] = artificialTan[0];
+      listBkBk1[0][1] = artificialTan[1];
+      listBkBk1[1][0] = artificialTan[0];
+      listBkBk1[1][1] = artificialTan[1];
+    }
+    else{
+      // we need to save more than one triangle
+      
+    }
+  }
+}
+
 
 void printEverythingTriFan(triangleFanS *triFan) {
   // we want to print all the information regarding a triangle fan
@@ -679,7 +866,7 @@ void printEverythingTriFan(triangleFanS *triFan) {
   printf("xHat: %lf  |  %lf\n", triFan->xHat[0], triFan->xHat[1]);
   printf("\n\nList faces: \n");
   for( i = 0; i<triFan->nRegions; i++){
-    printf("%zu, ", triFan->listFaces[i]);
+    printf("%d, ", triFan->listFaces[i]);
   }
   
   printf("\n\nList indices: \n");
@@ -689,7 +876,7 @@ void printEverythingTriFan(triangleFanS *triFan) {
   
   printf("\n\nList Edges: \n");
   for( i = 0; i<(2*triFan->nRegions + 1); i++){
-    printf("%zu, ", triFan->listEdges[i]);
+    printf("%d, ", triFan->listEdges[i]);
   }
 
   printf("\n\nList xk: \n");

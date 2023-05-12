@@ -196,17 +196,68 @@ void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2], doub
   grad[1] = indexRefraction*direction[1]/normBase;
 }
 
+void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]) {
+  // given a newly accepted node with index index0 go around its neighbors
+  // and find (at most 2) indices index1 such that the edge x0 x1 is on the valid fron
+  // notice that indices1 is an int because it's going to have a -1 if we just have one valid edge from x0
+  assert( eik_g->current_states[index0] == 2); // this HAS to be a valid node
+  int nNeis, j, i;
+  size_t thisNeighbor, previousNeighbor, thisTriangle;
+  size_t possibleTriangles[2], possibleThirdVertices[2];
+  j = 0;
+  i = 1;
+  indices1[0] = -1;
+  indices1[1] = -1; // no neighbors found yet
+  firstTriangles[0] = -1;
+  firstTriangles[1] = -1; // no triangles found yet
+  nNeis = eik_g->mesh2->neighbors[index0].len; // get the number of neighbors of index0
+  // just start with any neighbor (doesn't really matter which one)
+  thisNeighbor = (size_t)eik_g->mesh2->neighbors[index0].neis_i[0];
+  previousNeighbor = index0;
+  // go around
+  while( j < 2 and i < nNeis ) {
+    // either we find two valid edges or we go around all the possible neighbors
+    twoTrianglesFromEdge(eik_g->mesh2, index0, thisNeighbor, possibleTriangles, possibleThirdVertices[2] );
+    if( possibleThirdVertices[0] != previousNeighbor ) {
+      // the next neighbor is on index 0
+      previousNeighbor = thisNeighbor;
+      thisNeighbor = possibleThirdVertices[0];
+      thisTriangle = possibleTriangles[0];
+    }
+    else{
+      // the next neighbor is on index 1
+      previousNeighbor = thisNeighbor;
+      thisNeighbor = possibleThirdVertices[1];
+      thisTriangle = possibleTriangles[1];
+    }
+    // after we determined which is the neighbor that we need to cycle next
+    if( eik_g->current_states[previousNeighbor] == 2 & eik_g->current_states[thisNeighbor] != 2 ){
+      // thisNeighbor is part of the valid front
+      indices1[j] = (int)previousNeighbor;
+      firstTriangles[j] = (int)thisTriangle;
+      j ++;
+    }
+    i++;
+  }
+  // figure out if we actually have at least one neighbor
+  assert( indices1[0] != -1 | indices1[1] != -1);
+}
+
+
 
 
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double angleMax) {
-  double pi;
-  pi = acos(-1.0);
   // after running twoTrianglesFromEdge select one and initialize a triangle fan like this
   // angle max is the biggest angle on xk1 x0 xk inside the trianlge fan
   // this is going to be useful to know if this triangle fan is feasible or not
-  size_t nRegions, *listFaces, *listEdges, *listIndices;
+  // given two valid indices index0, index1 and a direction index2
+  // we set up a triangle fan triFan that updates from the edge index0 index1
+  // in the direction of the firstTriangle to update indexHat
+  double pi;
+  pi = acos(-1.0);
+  size_t nRegions, *listFaces, *listEdges, *listIndicesNodes;
   double x0[2], x1[2], xHat[2];
   x0[0] = eik_g->mesh2->points[index0][0];
   x0[1] = eik_g->mesh2->points[index0][1];
@@ -277,13 +328,13 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   // with the number of regions set we can go around and malloc everything
   // notice that in mesh2D.c we have a function called
   // triangleFan_initFromIndices and for this we only need the list of indices
-  listIndices = malloc((nRegions + 2)*sizeof(size_t));
+  listIndicesNodes = malloc((nRegions + 2)*sizeof(size_t));
   int i = 2;
   indexk = index1;
   indexk1 = index2;
   thisTriangle = firstTriangle;
-  listIndices[0] = indexk;
-  listIndices[1] =  indexk1;
+  listIndicesNodes[0] = indexk;
+  listIndicesNodes[1] =  indexk1;
   while( indexk1 != indexHat ) {
     // circle around and see what we get
     twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
@@ -301,15 +352,23 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
       prevTriangle = thisTriangle;
       thisTriangle = possibleTriangles[1];
     }
-    listIndices[i] = indexk1;
+    listIndicesNodes[i] = indexk1;
     i ++;
     
   }
   //////////////////////////
   // now we have the list of indices, we can initialize the triangle
   triangleFan_initFromIndices(triFan, eik_g->mesh2, nRegions, index0,
-			      index1, indexHat, listIndices);
+			      index1, indexHat, listIndicesNodes);
 }
+
+
+void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex) {
+  // given a recently accepted node with index minIndex we update its neighbors
+  // using triangle fans and up to two valid edges
+}
+
+
 
 
 

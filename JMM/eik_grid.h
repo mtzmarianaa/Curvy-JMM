@@ -17,11 +17,13 @@ typedef struct fanUpdate {
   double grad0[2];
   double T1;
   double grad1[2];
-  double *paramsCrTop; // initialize and then fill in after optimizing
-  double *paramsStTop; // initialize and then fill in after optimizing
+  size_t nIndCrTop; // number of indices for CrTop
+  double *paramsCrTop; // initialize and then fill in after optimizing, length 2*nIndCrTop
+  size_t nIndStTop; // number of indices for StTop
+  double *paramsStTop; // initialize and then fill in after optimizing, length 2*nIndStTop
   double THat; // T(xHat) found after optimizing
-  double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop
-  double (*path)[2]; // path computed using all params, paramsCrTop, paramsStTop
+  double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop, length 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop
+  double (*path)[2]; // path computed using all params, paramsCrTop, paramsStTop, length 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop
   double gradHat[2]; // gradient which is going to be used for xHat
 } fanUpdateS;
 
@@ -65,9 +67,15 @@ void printAllInfoMesh(eik_gridS *eik_g);
 void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2],
 				double parameterization, double indexRefraction, double grad[2]);
 
+void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]);
+
+void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]);
+
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double angleMax) ;
+
+void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 
 //void popAddNeighbors(eik_gridS *eik_g);
 

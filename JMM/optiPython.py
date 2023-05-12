@@ -3096,8 +3096,10 @@ class triangleFan:
         :param ndarray optiParams: optimal parameters
         :param ndarray optiIndCrTop: optimal indices for CrTop (determines the type of path)
         :param ndarray optiParamsCrTop: optimal parameters for CrTop
+        :param double nIndCrTop: number of indices for CrTop
         :param ndarray optiIndStTop: optimal indices for StTop (determines the type of path)
         :param ndarray optiParamsStTop: optimal parameters for StTop
+        :param double nIndStTop: number of indices for StTop
         :param double opti_fVal: optimal value of objective function
         :param ndarray path: optimal path
         :param ndarray grads: gradient of the eikonal using all params, paramsCrTop, paramsStTop
@@ -3111,7 +3113,7 @@ class triangleFan:
         :param bool saveIterates: if the iterates should be saved or not
         '''
         self.nRegions = 0
-        self.params = None
+        self.params = None     # Always length 2*nRegions + 1
         self.x0 = None
         self.T0 = None
         self.grad0 = None
@@ -3126,11 +3128,13 @@ class triangleFan:
         self.listBkBk1 = None
         self.listCurvingInwards = None
         self.optionsTop = None
-        self.optiParams = None
-        self.optiIndCrTop = None
-        self.optiParamsCrTop = None
-        self.optiIndStTop = None
-        self.optiParamsStTop = None
+        self.optiParams = None     # Always length 2*nRegions + 1
+        self.optiIndCrTop = None     # length nIndCrTop
+        self.optiParamsCrTop = None     # length 2*nIndCrTop
+        self.nIndCrTop = 0
+        self.optiIndStTop = None     # length nIndStTop
+        self.optiParamsStTop = None     # length 2*nIndStTop
+        self.nIndStTop = 0
         self.opti_fVal = 10000000
         self.path = None
         self.grads = None
@@ -3284,6 +3288,9 @@ class triangleFan:
                     self.optiParamsCrTop = paramsCrTopk
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
+          # Save nIndCrTop and nIndStTop
+          self.nIndCrTop = len(self.optiIndCrTop)
+          self.nIndStTop = len(self.optiIndStTop)
           # Save path and grads
           self.path, self.grads = getPathGradEikonal(self.optiParams, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, self.optiIndCrTop, self.optiParamsCrTop, self.optiIndStTop, self.optiParamsStTop)
           gradLast = self.grads[-1]
