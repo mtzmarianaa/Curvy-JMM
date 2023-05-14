@@ -15,15 +15,6 @@ This is the Eikonal grid with different specifications
 #include <assert.h>
 #include <math.h>
 #include <string.h>
-#include <json-c/json.h> // used for reading the json type string from python
-
-
-// things to call out python optimizer
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 
 void eik_grid_alloc(eik_gridS **eik_g ) {
   *eik_g = malloc(sizeof(eik_gridS));
@@ -109,7 +100,8 @@ void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
   fanUpdate->THat = THat;
   fanUpdate->grads = grads;
   fanUpdate->path = path;
-  fanUpdate->gradHat = gradHat;
+  fanUpdate->gradHat[0] = gradHat[0];
+  fanUpdate->gradHat[1] = gradHat[1];
 }
 
 
@@ -156,23 +148,63 @@ void printGeneralInfo(eik_gridS *eik_g) {
   }
 }
 
-void printInfoFanUpdate(eik_gridS *eik_g, size_t k) {
-  // prints all the information from a triangle fan update
-  triangleFanS *triFan;
-  triFan = eik_g->fanUpdate[k].triFan;
-  printf("\n\n\n  PRINTING INFORMATION FROM THE %zu-th TRIANGLE FAN UPDATE\n", k);
-  printEverythingTriFan(triFan);
+void printInfoFanUpdate(fanUpdateS *fanUpdate) {
   int i;
-  size_t nReg = triFan->nRegions;
+  size_t nRegions = fanUpdate->triFan->nRegions;
+  size_t nIndCrTop, nIndStTop, nPoints;
+  nIndCrTop = fanUpdate->nIndCrTop;
+  nIndStTop = fanUpdate->nIndStTop;
+  nPoints = 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop;
+  printf("\n\nPRINTING INFORMATION TRIANGLE FAN UPDATE\n");
+  printf("\nTHat: %fl\n", fanUpdate->THat);
+  printf("\nGradHat:   %fl    %fl\n", fanUpdate->gradHat[0], fanUpdate->gradHat[1]);
+  printf("Triangle fan:\n");
+  printEverythingTriFan(fanUpdate->triFan);
   printf("\nParams: \n");
-  for( i = 0; i<(2*nReg + 1); i++){
-    printf(" %fl  ", eik_g->fanUpdate[k].params[i]);
+  for(i = 0; i<2*nRegions; i++){
+    printf("  %fl  ", fanUpdate->params[i]);
+  }
+  printf("\nT0: \n");
+  printf("%fl", fanUpdate->T0);
+  printf("\ngrad0: \n");
+  printf("%fl  %fl  ", fanUpdate->grad0[0], fanUpdate->grad0[1]);
+  printf("\nT1: \n");
+  printf("%fl", fanUpdate->T1);
+  printf("\ngrad1: \n");
+  printf("%fl  %fl  ", fanUpdate->grad1[0], fanUpdate->grad1[1]);
+
+  printf("\nnIndCrTop:\n");
+  printf("%zu", nIndCrTop);
+  printf("\nindCrTop: \n");
+  for(i = 0; i<nIndCrTop; i++){
+    printf("  %zu  ", fanUpdate->indCrTop[i]);
+  }
+  printf("\nparamsCrTop: \n");
+  for(i = 0; i<2*nIndCrTop; i++){
+    printf("  %fl  ", fanUpdate->paramsCrTop[i]);
   }
 
-  printf("\nT0: %fl", eik_g->fanUpdate[k].T0);
-  printf("\ngrad0:  %fl  |  %fl", eik_g->fanUpdate[k].grad0[0], eik_g->fanUpdate[k].grad0[1]);
-  printf("\nT1: %fl", eik_g->fanUpdate[k].T1);
-  printf("\ngrad1:  %fl  |  %fl", eik_g->fanUpdate[k].grad1[0], eik_g->fanUpdate[k].grad1[1]);
+  printf("\nnIndStTop:\n");
+  printf("%zu", nIndStTop);
+  printf("\nindStTop: \n");
+  for(i = 0; i<nIndStTop; i++){
+    printf("  %zu  ", fanUpdate->indStTop[i]);
+  }
+  printf("\nparamsStTop: \n");
+  for(i = 0; i<2*nIndStTop; i++){
+    printf("  %fl  ", fanUpdate->paramsStTop[i]);
+  }
+
+  printf("\nGrads:\n");
+  for(i = 0; i<nPoints; i++){
+    printf("  |%fl    %fl|  ", fanUpdate->grads[i][0], fanUpdate->grads[i][1]);
+  }
+
+  printf("\nPath:\n");
+  for(i = 0; i<nPoints; i++){
+    printf("  |%fl    %fl|  ", fanUpdate->path[i][0], fanUpdate->path[i][1]);
+  }
+
   
 }
 
@@ -403,81 +435,80 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
   // creates a JSON object to represent input data from a triangle fan
   char temp_buffer[2500]; // temporary buffer
   char num[20]; // temporary char where we are going to store our numbers (hopefully they'll fit)
-  char comma[5], finArr[5], extra[20], sqIn[5], sqFin[5]; // extra things like commas, [, ] ....
+  char comma[5], finArr[5], extra[30], sqIn[5], sqFin[5]; // extra things like commas, [, ] ....
   int i;
-  comma = ", ";
-  finArr = "], ";
-  sqIn = "[";
-  sqFin = "]";
+  strcpy(comma, ", ");
+  strcpy(finArr, "], ");
+  strcpy(sqIn, "[");
+  strcpy(sqFin, "]");
   // add x0
-  temp_buffer = "{\"x0\": [";
-  strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", fanUpdate->triFan->x0[0]); // chartify x0[0]
+  strcpy(temp_buffer, "{\"x0\": [");
+  snprintf(num, 20, "%f", fanUpdate->triFan->x0[0]); // chartify x0[0]
   strcat(temp_buffer, num); // concatenate x0[0] to the temporary buffer
   strcat(temp_buffer, comma);
-  snprintf(num, 50, "%f", fanUpdate->triFan->x0[1]); // chartify x0[1]
+  snprintf(num, 20, "%f", fanUpdate->triFan->x0[1]); // chartify x0[1]
   strcat(temp_buffer, num); // concatenate x0[1] to the temporary buffer
   strcat(temp_buffer, finArr); // finish "x0" : [x0[0], x0[1]]
 
   // add T0
-  extra = "\"T0\": ";
+  strcpy(extra, "\"T0\": ");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", funUpdate->T0); // chartify T0
+  snprintf(num, 20, "%f", fanUpdate->T0); // chartify T0
   strcat(temp_buffer, num);
   strcat(temp_buffer, comma);
 
   // add grad0
-  extra = "\"grad0\": [";
+  strcpy(extra, "\"grad0\": [");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", fanUpdate->grad0[0]); 
+  snprintf(num, 20, "%f", fanUpdate->grad0[0]); 
   strcat(temp_buffer, num); 
   strcat(temp_buffer, comma);
-  snprintf(num, 50, "%f", fanUpdate->grad0[1]);
+  snprintf(num, 20, "%f", fanUpdate->grad0[1]);
   strcat(temp_buffer, num);
   strcat(temp_buffer, finArr);
   
   // add x1
-  extra = "\"x1\": [";
+  strcpy(extra, "\"x1\": [");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", fanUpdate->triFan->x1[0]); 
+  snprintf(num, 20, "%f", fanUpdate->triFan->x1[0]); 
   strcat(temp_buffer, num); 
   strcat(temp_buffer, comma);
-  snprintf(num, 50, "%f", fanUpdate->triFan->x1[1]);
+  snprintf(num, 20, "%f", fanUpdate->triFan->x1[1]);
   strcat(temp_buffer, num);
   strcat(temp_buffer, finArr);
 
   // add T1
-  extra = "\"T1\": ";
+  strcpy(extra,  "\"T1\": ");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", funUpdate->T1); // chartify T1
+  snprintf(num, 20, "%f", fanUpdate->T1); // chartify T1
   strcat(temp_buffer, num);
   strcat(temp_buffer, comma);
 
   // add grad1
-  extra = "\"grad0\": [";
+  strcpy(extra, "\"grad0\": [");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", fanUpdate->grad1[0]); 
+  snprintf(num, 20, "%f", fanUpdate->grad1[0]); 
   strcat(temp_buffer, num); 
   strcat(temp_buffer, comma);
-  snprintf(num, 50, "%f", fanUpdate->grad1[1]);
+  snprintf(num, 20, "%f", fanUpdate->grad1[1]);
   strcat(temp_buffer, num);
   strcat(temp_buffer, finArr);
 
   // add xHat
-  extra = "\"xHat\": [";
+  strcpy(extra, "\"xHat\": [");
   strcat(temp_buffer, extra);
-  snprintf(num, 50, "%f", fanUpdate->triFan->xHat[0]);
+  snprintf(num, 20, "%f", fanUpdate->triFan->xHat[0]);
   strcat(temp_buffer, num);
   strcat(temp_buffer, comma);
-  snprintf(num, 50, "%f", fanUpdate->triFan->xHat[1]); 
+  snprintf(num, 20, "%f", fanUpdate->triFan->xHat[1]); 
   strcat(temp_buffer, num);
   strcat(temp_buffer, finArr);
 
   // use a for loop to add the list of indices
-  extra = "\"listIndices\": [";
+  strcpy(extra, "\"listIndices\": [");
   strcat(temp_buffer, extra);
   for( i = 0; i<2*fanUpdate->triFan->nRegions + 1; i++){
-    snprintf(num, 50, "%f", fanUpdate->triFan->listIndices[i]); // chartify the i-th index
+    snprintf(num, 20, "%f", fanUpdate->triFan->listIndices[i]); // chartify the i-th index
     strcat(temp_buffer, num);
     if( i < 2*fanUpdate->triFan->nRegions){
       strcat(temp_buffer, comma); // add the comma
@@ -487,14 +518,14 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 
 
   // use a for loop to add the list of xk
-  extra = "\"listxk\": [";
+  strcpy(extra, "\"listxk\": [");
   strcat(temp_buffer, extra);
   for( i = 0; i<fanUpdate->triFan->nRegions + 2; i++){
     strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 50, "%f", fanUpdate->triFan->listxk[i][0]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listxk[i][0]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, comma);
-    snprintf(num, 50, "%f", fanUpdate->triFan->listxk[i][1]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listxk[i][1]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, sqFin); // add ]
     if( i <fanUpdate->triFan->nRegions + 1){
@@ -505,14 +536,14 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 
 
   // use a for loop to add the list of B0k
-  extra = "\"listB0k\": [";
+  strcpy(extra, "\"listB0k\": [");
   strcat(temp_buffer, extra);
   for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
     strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 50, "%f", fanUpdate->triFan->listB0k[i][0]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listB0k[i][0]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, comma);
-    snprintf(num, 50, "%f", fanUpdate->triFan->listB0k[i][1]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listB0k[i][1]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, sqFin); // add ]
     if( i <fanUpdate->triFan->nRegions ){
@@ -523,14 +554,14 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 
 
   // use a for loop to add the list of Bk
-  extra = "\"listBk\": [";
+  strcpy(extra, "\"listBk\": [");
   strcat(temp_buffer, extra);
   for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
     strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 50, "%f", fanUpdate->triFan->listBk[i][0]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listBk[i][0]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, comma);
-    snprintf(num, 50, "%f", fanUpdate->triFan->listBk[i][1]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listBk[i][1]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, sqFin); // add ]
     if( i <fanUpdate->triFan->nRegions ){
@@ -541,14 +572,14 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 
 
   // use a for loop to add the list of BkBk1
-  extra = "\"listBkBk1\": [";
+  strcpy(extra, "\"listBkBk1\": [");
   strcat(temp_buffer, extra);
   for( i = 0; i<2*fanUpdate->triFan->nRegions ; i++){
     strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 50, "%f", fanUpdate->triFan->listBkBk1[i][0]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listBkBk1[i][0]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, comma);
-    snprintf(num, 50, "%f", fanUpdate->triFan->listBkBk1[i][1]); 
+    snprintf(num, 20, "%f", fanUpdate->triFan->listBkBk1[i][1]); 
     strcat(temp_buffer, num);
     strcat(temp_buffer, sqFin); // add ]
     if( i <2*fanUpdate->triFan->nRegions -1 ){
@@ -559,10 +590,10 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 
 
   // OPTIONS FOR PLOTTING CHANGE THIS ACCORDINGLY
-  extra = "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1 }";
+  strcpy(extra, "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1 }");
   strcat(temp_buffer, extra);
   
-  printf(temp_buffer); // just to see what we get
+  printf("%s",temp_buffer); // just to see what we get
 
   // our point should point to temp_buffer[0]
   input_json = &temp_buffer[0];
@@ -590,7 +621,7 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
 
   // now for the lists
   json_object *output_list, *value_arr;
-  int i;
+  int i, k;
 
   // get CrTop - extract lists of size_t from output object
   size_t *indCrTop;
@@ -688,7 +719,6 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
   double (*grads)[2];
   size_t nPath = 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop;
   grads = malloc(2*nPath*sizeof(double));
-  double grads_vec[2*nPath]; // flatten grads
   output_list = json_object_object_get(output_obj, "grads");
   if(output_list == NULL || !json_object_is_type(output_list, json_type_array)){
     printf("\nProblem when opening the json file and reading grads\n");
@@ -700,16 +730,18 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
       printf("\nError extracting double value from grads\n");
       exit(EXIT_FAILURE);
     }
-    grads_vec[i] = json_object_get_double(value_arr);
+    if( (i % 2 == 0) ){
+      grads[i][0] = json_object_get_double(value_arr);
+    }
+    else{
+      grads[i][1] = json_object_get_double(value_arr);
+    }
   }
-  // pointer to the right places
-  grads = &grads_vec[i];
 
 
   // get path
   double (*path)[2];
   path = malloc(2*nPath*sizeof(double));
-  double path_vec[2*nPath]; // flatten grads
   output_list = json_object_object_get(output_obj, "path");
   if(output_list == NULL || !json_object_is_type(output_list, json_type_array)){
     printf("\nProblem when opening the json file and reading path\n");
@@ -721,10 +753,13 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
       printf("\nError extracting double value from path\n");
       exit(EXIT_FAILURE);
     }
-    path_vec[i] = json_object_get_double(value_arr);
+    if( (i % 2 == 0) ){
+      path[i][0] = json_object_get_double(value_arr);
+    }
+    else{
+      path[i][1] = json_object_get_double(value_arr);
+    }
   }
-  // pointer to the right places
-  path = &path_vec[i];
 
 
   // get gradHat
@@ -755,7 +790,7 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
   fanUpdate->grads = grads;
   fanUpdate->path = path;
   fanUpdate->gradHat[0] = gradHat[0];
-  fanUpdate->>gradHat[1] = gradHat[1];
+  fanUpdate->gradHat[1] = gradHat[1];
 
 }
 
@@ -824,30 +859,9 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate){
     close(fd); // CLOSE PIPE
 
     // PROCESS ALL THE INFORMATION FROM THE JSON FILE AND PARSE IT ACCORDINGLY
-
-      // deserialize output data
-      json_object *output_obj = json_tokener_parse(buffer);
-      if (output_obj == NULL) {
-          fprintf(stderr, "Error parsing JSON: %s\n", json_tokener_error_desc(json_tokener_get_error(json_tokener_new())));
-          exit(EXIT_FAILURE);
-      }
-
-      // extract array of doubles from output object
-      json_object *output_array = json_object_object_get(output_obj, "result");
-      if (output_array == NULL || !json_object_is_type(output_array, json_type_array)) {
-          fprintf(stderr, "Error extracting array from JSON output\n");
-          exit(EXIT_FAILURE);
-      }
-      int num_elements = json_object_array_length(output_array);
-      double output_values[num_elements];
-      for (int i = 0; i < num_elements; i++) {
-          json_object *value_obj = json_object_array_get_idx(output_array, i);
-          if (value_obj == NULL || !json_object_is_type(value_obj, json_type_double)) {
-              fprintf(stderr, "Error extracting double value from JSON array\n");
-              exit(EXIT_FAILURE);
-          }
-          output_values[i] = json_object_get_double(value_obj);
-      }
+    json_object *output_obj = json_tokener_parse(buffer);
+    deserializeJSONoutput(fanUpdate, output_obj);
+  }
 
 }
 

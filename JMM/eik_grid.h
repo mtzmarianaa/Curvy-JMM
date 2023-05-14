@@ -8,6 +8,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <json-c/json.h> // used for reading the json type string from python
+
+
+// things to call out python optimizer
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 typedef struct fanUpdate {
   // geometric and eikonal information for a triangle fan
@@ -67,7 +76,7 @@ void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char 
 
 void printGeneralInfo(eik_gridS *eik_g);
 
-void printInfoFanUpdate(eik_gridS *eik_g, size_t k) ;
+void printInfoFanUpdate(fanUpdateS *fanUpdate);
 
 void printAllInfoMesh(eik_gridS *eik_g);
 
