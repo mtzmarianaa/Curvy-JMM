@@ -3327,9 +3327,9 @@ class triangleFan:
                plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal) )
           return self.opti_fVal
 
-     def outputJSON(self, triInfo):
+     def outputReadableJSON(self, triInfo):
           '''
-          Optimization plus outputs a JSON like string so that we can read this from C
+          Same as output JSON but this version we can actually read it
           '''
           self.initFromJSON(triInfo) # Gets all the values in place
           self.optimize() # optimize
@@ -3380,6 +3380,66 @@ class triangleFan:
           stringOut += '], "path": ['
           for i in range(nGrads):
                stringOut += '[' + '{fk:6.12f}'.format(fk=self.path[i,0]) + ',' + '{fk:6.12f}'.format(fk=self.path[i,1]) + ']'
+               if( i < nGrads - 1):
+                    stringOut += ','
+          # Add gradHat
+          stringOut += '], "gradHat": [' + '{fk:6.12f}'.format(fk=self.lastGrad[0]) + ',' + '{fk:6.12f}'.format(fk=self.lastGrad[1]) + ']'
+          stringOut += '}'
+          return stringOut
+
+     def outputJSON(self, triInfo):
+          '''
+          Optimization plus outputs a JSON like string so that we can read this from C
+          '''
+          self.initFromJSON(triInfo) # Gets all the values in place
+          self.optimize() # optimize
+          # Add the parameters to the json file
+          stringOut = '{"params": ['
+          for i in range(len(self.params)):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiParams[i] )
+               if( i < len(self.params) - 1):
+                    stringOut += ','
+          # Add nIndCrTop
+          stringOut += '], "nIndCrTop": ' + " {}".format(self.nIndCrTop)
+          # Add indCrTop
+          stringOut += ', "indCrTop": ['
+          for i in range(self.nIndCrTop):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiIndCrTop[i] )
+               if( i < self.nIndCrTop - 1):
+                    stringOut += ','
+          # Add paramsCrTop
+          stringOut += '], "paramsCrTop": ['
+          for i in range(2*self.nIndCrTop):
+               stringOut += ' {}'.format(self.optiParamsCrTop[i] )
+               if( i < 2*self.nIndCrTop - 1):
+                    stringOut += ', '
+         # Add nIndStTop
+          stringOut += '], "nIndStTop": ' + " {}".format(self.nIndStTop)
+          # Add indStTop
+          stringOut += ', "indStTop": ['
+          for i in range(self.nIndStTop):
+               stringOut += '{}'.format(self.optiIndStTop[i] )
+               if( i < self.nIndStTop - 1):
+                    stringOut += ', '
+          # Add paramsStTop
+          stringOut += '], "paramsStTop": ['
+          for i in range(2*self.nIndStTop):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiParamsStTop[i] )
+               if( i < 2*self.nIndStTop - 1):
+                    stringOut += ','
+          # Add THat
+          stringOut += '], "THat": ' + '{fk:6.12f}'.format(fk=self.opti_fVal)
+          # Add gradients
+          stringOut += ', "grads": ['
+          nGrads = len(self.optiParams) + 2*self.nIndCrTop + 2*self.nIndStTop
+          for i in range(nGrads):
+               stringOut += '{fk:6.12f}'.format(fk=self.grads[i,0]) + ',' + '{fk:6.12f}'.format(fk=self.grads[i,1]) 
+               if( i < nGrads - 1):
+                    stringOut += ','
+          # Add paths
+          stringOut += '], "path": ['
+          for i in range(nGrads):
+               stringOut += '{fk:6.12f}'.format(fk=self.path[i,0]) + ',' + '{fk:6.12f}'.format(fk=self.path[i,1]) 
                if( i < nGrads - 1):
                     stringOut += ','
           # Add gradHat

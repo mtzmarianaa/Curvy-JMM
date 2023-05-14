@@ -86,6 +86,8 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 
 void createJSONinput(fanUpdateS *fanUpdate, char *input_json);
 
+void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj);
+
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 
 //void popAddNeighbors(eik_gridS *eik_g);

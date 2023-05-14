@@ -571,6 +571,195 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
 }
 
 
+void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
+  //given a json_object output from the Python optimizer we deserialize it
+  // and save it to fanUpdate
+  size_t nRegions = fanUpdate->triFan->nRegions; // useful to have
+  // malloc what we can malloc
+  fanUpdate->params = malloc((2*nRegions + 1)*sizeof(double));
+  // START READING
+  assert(output_obj != NULL); // we need a json object, not a null
+  // the things we need
+  size_t nIndCrTop, nIndStTop;
+  double THat;
+
+  // get nIndCrTop, nIndStTop, THat
+  nIndCrTop = (size_t)json_object_get_double(json_object_object_get(output_obj, "nIndCrTop"));
+  nIndStTop = (size_t)json_object_get_double(json_object_object_get(output_obj, "nIndStTop"));
+  THat = json_object_get_double(json_object_object_get(output_obj, "THat"));
+
+  // now for the lists
+  json_object *output_list, *value_arr;
+  int i;
+
+  // get CrTop - extract lists of size_t from output object
+  size_t *indCrTop;
+  double *paramsCrTop;
+  if( nIndCrTop == 0 ){
+    indCrTop = NULL;
+    paramsCrTop = NULL;
+  }
+  else{
+    size_t indCrTop_vec[nIndCrTop];
+    double paramsCrTop_vec[2*nIndCrTop];
+    // start with indCrTop
+    output_list = json_object_object_get(output_obj, "indCrTop");
+    if(output_list == NULL || !json_object_is_type(output_list,  json_type_array)) {
+      printf("\nProblem when opening the json file for indCrTop\n");
+      exit(EXIT_FAILURE);
+    }
+    for(i = 0; i<nIndCrTop; i++){
+      value_arr = json_object_array_get_idx(output_list, i); // get the value stored on output_list at index i
+      if (value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+	printf("Error extracting double value from indCrTop\n");
+	exit(EXIT_FAILURE);
+      }
+      indCrTop_vec[i] = (size_t) json_object_get_double(value_arr);
+    }
+    // now with paramsCrTop
+    output_list = json_object_object_get(output_obj, "paramsCrTop");
+    if(output_list == NULL || !json_object_is_type(output_list,  json_type_array)) {
+      printf("\nProblem when opening the json file for paramsCrTop\n");
+      exit(EXIT_FAILURE);
+    }
+    for(i = 0; i<2*nIndCrTop; i++){
+      value_arr = json_object_array_get_idx(output_list, i); // get the value stored on output_list at index i
+      if (value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+	printf("Error extracting double value from paramsCrTop\n");
+	exit(EXIT_FAILURE);
+      }
+      paramsCrTop_vec[i] = json_object_get_double(value_arr);
+    }
+    // pointer to the right places
+    indCrTop = malloc(nIndCrTop*sizeof(size_t));
+    paramsCrTop = malloc(2*nIndCrTop*sizeof(double));
+    indCrTop = &indCrTop_vec[0];
+    paramsCrTop = &paramsCrTop_vec[0];
+  }
+
+
+  // get StTop - extract lists of size_t from output object
+  size_t *indStTop;
+  double *paramsStTop;
+  if( nIndStTop == 0 ){
+    indStTop = NULL;
+    paramsStTop = NULL;
+  }
+  else{
+    size_t indStTop_vec[nIndStTop];
+    double paramsStTop_vec[2*nIndStTop];
+    // start with indStTop
+    output_list = json_object_object_get(output_obj, "indStTop");
+    if(output_list == NULL || !json_object_is_type(output_list,  json_type_array)) {
+      printf("\nProblem when opening the json file for indStTop\n");
+      exit(EXIT_FAILURE);
+    }
+    for(i = 0; i<nIndStTop; i++){
+      value_arr = json_object_array_get_idx(output_list, i); // get the value stored on output_list at index i
+      if (value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+	printf("\nError extracting double value from indStTop\n");
+	exit(EXIT_FAILURE);
+      }
+      indStTop_vec[i] = (size_t) json_object_get_double(value_arr);
+    }
+    // now with paramsStTop
+    output_list = json_object_object_get(output_obj, "paramsStTop");
+    if(output_list == NULL || !json_object_is_type(output_list,  json_type_array)) {
+      printf("\nProblem when opening the json file for paramsStTop\n");
+      exit(EXIT_FAILURE);
+    }
+    for(i = 0; i<2*nIndStTop; i++){
+      value_arr = json_object_array_get_idx(output_list, i); // get the value stored on output_list at index i
+      if (value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+	printf("\nError extracting double value from paramsStTop\n");
+	exit(EXIT_FAILURE);
+      }
+      paramsStTop_vec[i] = json_object_get_double(value_arr);
+    }
+    // pointer to the right places
+    indStTop = malloc(nIndStTop*sizeof(size_t));
+    paramsStTop = malloc(2*nIndStTop*sizeof(double));
+    indStTop = &indStTop_vec[0];
+    paramsStTop = &paramsStTop_vec[0];
+  }
+
+
+  // get grads
+  double (*grads)[2];
+  size_t nPath = 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop;
+  grads = malloc(2*nPath*sizeof(double));
+  double grads_vec[2*nPath]; // flatten grads
+  output_list = json_object_object_get(output_obj, "grads");
+  if(output_list == NULL || !json_object_is_type(output_list, json_type_array)){
+    printf("\nProblem when opening the json file and reading grads\n");
+    exit(EXIT_FAILURE);
+  }
+  for(i = 0; i<2*nPath; i++){
+    value_arr = json_object_array_get_idx(output_list, i);
+    if(value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+      printf("\nError extracting double value from grads\n");
+      exit(EXIT_FAILURE);
+    }
+    grads_vec[i] = json_object_get_double(value_arr);
+  }
+  // pointer to the right places
+  grads = &grads_vec[i];
+
+
+  // get path
+  double (*path)[2];
+  path = malloc(2*nPath*sizeof(double));
+  double path_vec[2*nPath]; // flatten grads
+  output_list = json_object_object_get(output_obj, "path");
+  if(output_list == NULL || !json_object_is_type(output_list, json_type_array)){
+    printf("\nProblem when opening the json file and reading path\n");
+    exit(EXIT_FAILURE);
+  }
+  for(i = 0; i<2*nPath; i++){
+    value_arr = json_object_array_get_idx(output_list, i);
+    if(value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+      printf("\nError extracting double value from path\n");
+      exit(EXIT_FAILURE);
+    }
+    path_vec[i] = json_object_get_double(value_arr);
+  }
+  // pointer to the right places
+  path = &path_vec[i];
+
+
+  // get gradHat
+  double gradHat[2];
+  output_list = json_object_object_get(output_obj, "gradHat");
+  if(output_list == NULL || !json_object_is_type(output_list, json_type_array)){
+    printf("\nProblem when opening the json file and reading gradHat\n");
+    exit(EXIT_FAILURE);
+  }
+  for(i = 0; i<2; i++){
+    value_arr = json_object_array_get_idx(output_list, i);
+    if(value_arr == NULL || !json_object_is_type(value_arr, json_type_double)) {
+      printf("\nError extracting double value from gradHat\n");
+      exit(EXIT_FAILURE);
+    }
+    gradHat[i] = json_object_get_double(value_arr);
+  }
+
+
+  // save everything to fanUpdateS
+  fanUpdate->nIndCrTop = nIndCrTop;
+  fanUpdate->indCrTop = indCrTop;
+  fanUpdate->paramsCrTop = paramsCrTop;
+  fanUpdate->nIndStTop = nIndStTop;
+  fanUpdate->indStTop = indStTop;
+  fanUpdate->paramsStTop = paramsStTop;
+  fanUpdate->THat = THat;
+  fanUpdate->grads = grads;
+  fanUpdate->path = path;
+  fanUpdate->gradHat[0] = gradHat[0];
+  fanUpdate->>gradHat[1] = gradHat[1];
+
+}
+
+
 
 void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate){
   // using pipes and a lot of fancy methos call python from here
