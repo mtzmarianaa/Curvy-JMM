@@ -2863,17 +2863,17 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      tol = 1e-10
      nGrads = len(params)  #  Number of gradients we need to compute
      # Set indStTop if indCrTop is given
-     if(paramsStTop is None or indStTop is None):
+     if(paramsStTop is not None):
+          nGrads += 2*len(indStTop)
+     else:
           indStTop = [-1]
           paramsStTop = [0,0]
-     else:
-          nGrads += 2*len(indStTop)
      # Set indCrTop if indStTop is given
-     if(paramsCrTop is None or indCrTop is None):
+     if(paramsCrTop is not None):
+          nGrads += 2*len(indCrTop)
+     else:
           indCrTop = [-1]
           paramsCrTop = [0,0]
-     else:
-          nGrads += 2*len(indCrTop)
      grads = np.zeros((nGrads, 2)) # Initialize
      path = np.zeros((nGrads, 2)) # Initialize
      currentCrTop = 0
@@ -3273,12 +3273,18 @@ class triangleFan:
                                                 self.listIndices, self.listxk, self.listB0k,
                                                 self.listBk, self.listBkBk1,
                                                 indCrTop, paramsCrTop, indStTop, paramsStTop)
-                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.params, indCrTop = indCrTop, paramsCrTop = paramsCrTop, indStTop = indStTop, paramsStTop = paramsStTop, listBkBk1 = self.listBkBk1)
+                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk,
+                                 params = self.params, indCrTop = indCrTop,
+                                 paramsCrTop = paramsCrTop, indStTop = indStTop,
+                                 paramsStTop = paramsStTop, listBkBk1 = self.listBkBk1)
                     plt.title("Initial parameters in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=f_before))
                paramsk, paramsCrTopk, paramsStTopk, _, _, _, listObjVals,_, _, _ = blockCoordinateGradient_generalized(self.params, self.x0, self.T0, self.grad0, self.x1, self.T1, self.grad1, self.xHat, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop, self.listCurvingInwards, plotSteps = False, maxIter = self.maxIter)
                fk = listObjVals[-1]
                if( self.plotAfter ):
-                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = paramsk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk, indStTop = indStTop, paramsStTop = paramsStTopk, listBkBk1 = self.listBkBk1)
+                    itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk,
+                                 params = paramsk, indCrTop = indCrTop,
+                                 paramsCrTop = paramsCrTopk, indStTop = indStTop,
+                                 paramsStTop = paramsStTopk, listBkBk1 = self.listBkBk1)
                     plt.title("Optimal parameters in triangle fan for this type of path, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=fk))
                if(fk < self.opti_fVal):
                     # We've found a better path and type of path
@@ -3289,10 +3295,24 @@ class triangleFan:
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
           # Save nIndCrTop and nIndStTop
-          self.nIndCrTop = len(self.optiIndCrTop)
-          self.nIndStTop = len(self.optiIndStTop)
+          if( self.optiIndCrTop is None):
+               self.nIndCrTop = 0
+               self.optiIndCrTop = [-1]
+               self.optiParamsCrTop = [-1, -1]
+          else:
+               self.nIndCrTop = len(self.optiIndCrTop)
+          if( self.optiIndStTop is None):
+               self.nIndStTop = 0
+               self.optiIndStTop = [-1]
+               self.optiParamsStTop = [-1, -1]
+          else:
+               self.nIndStTop = len(self.optiIndStTop)
           # Save path and grads
-          self.path, self.grads = getPathGradEikonal(self.optiParams, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, self.optiIndCrTop, self.optiParamsCrTop, self.optiIndStTop, self.optiParamsStTop)
+          self.path, self.grads = getPathGradEikonal(self.optiParams, self.listIndices,
+                                                     self.listxk, self.listB0k,
+                                                     self.listBk, self.listBkBk1,
+                                                     self.optiIndCrTop, self.optiParamsCrTop,
+                                                     self.optiIndStTop, self.optiParamsStTop)
           gradLast = self.grads[-1]
           k = len(self.grads) - 1
           while( norm(gradLast) == 0 and k > 0):
@@ -3300,9 +3320,71 @@ class triangleFan:
                k = k -1
           self.lastGrad = gradLast
           if( self.plotOpti):
-               itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk, params = self.optiParams, indCrTop = self.optiIndCrTop, paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop, paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
-               plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal))
+               itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk,
+                            params = self.optiParams, indCrTop = self.optiIndCrTop,
+                            paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop,
+                            paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
+               plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal) )
           return self.opti_fVal
 
-
+     def outputJSON(self, triInfo):
+          '''
+          Optimization plus outputs a JSON like string so that we can read this from C
+          '''
+          self.initFromJSON(triInfo) # Gets all the values in place
+          self.optimize() # optimize
+          # Add the parameters to the json file
+          stringOut = '{"params": ['
+          for i in range(len(self.params)):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiParams[i] )
+               if( i < len(self.params) - 1):
+                    stringOut += ','
+          # Add nIndCrTop
+          stringOut += '], "nIndCrTop": ' + " {}".format(self.nIndCrTop)
+          # Add indCrTop
+          stringOut += ', "indCrTop": ['
+          for i in range(self.nIndCrTop):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiIndCrTop[i] )
+               if( i < self.nIndCrTop - 1):
+                    stringOut += ','
+          # Add paramsCrTop
+          stringOut += '], "paramsCrTop": ['
+          for i in range(2*self.nIndCrTop):
+               stringOut += ' {}'.format(self.optiParamsCrTop[i] )
+               if( i < 2*self.nIndCrTop - 1):
+                    stringOut += ', '
+         # Add nIndStTop
+          stringOut += '], "nIndStTop": ' + " {}".format(self.nIndStTop)
+          # Add indStTop
+          stringOut += ', "indStTop": ['
+          for i in range(self.nIndStTop):
+               stringOut += '{}'.format(self.optiIndStTop[i] )
+               if( i < self.nIndStTop - 1):
+                    stringOut += ', '
+          # Add paramsStTop
+          stringOut += '], "paramsStTop": ['
+          for i in range(2*self.nIndStTop):
+               stringOut += '{fk:6.12f}'.format(fk=self.optiParamsStTop[i] )
+               if( i < 2*self.nIndStTop - 1):
+                    stringOut += ','
+          # Add THat
+          stringOut += '], "THat": ' + '{fk:6.12f}'.format(fk=self.opti_fVal)
+          # Add gradients
+          stringOut += ', "grads": ['
+          nGrads = len(self.optiParams) + 2*self.nIndCrTop + 2*self.nIndStTop
+          for i in range(nGrads):
+               stringOut += '[' + '{fk:6.12f}'.format(fk=self.grads[i,0]) + ',' + '{fk:6.12f}'.format(fk=self.grads[i,1]) + ']'
+               if( i < nGrads - 1):
+                    stringOut += ','
+          # Add paths
+          stringOut += '], "path": ['
+          for i in range(nGrads):
+               stringOut += '[' + '{fk:6.12f}'.format(fk=self.path[i,0]) + ',' + '{fk:6.12f}'.format(fk=self.path[i,1]) + ']'
+               if( i < nGrads - 1):
+                    stringOut += ','
+          # Add gradHat
+          stringOut += '], "gradHat": [' + '{fk:6.12f}'.format(fk=self.lastGrad[0]) + ',' + '{fk:6.12f}'.format(fk=self.lastGrad[1]) + ']'
+          stringOut += '}'
+          return stringOut
+        
 

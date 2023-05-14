@@ -778,6 +778,27 @@ void informationToSave_reduceTriangleFan(triangleFansS *triFan, size_t nRegions_
   
 }
 
+void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
+		      double x1[2], double xHat[2],
+		      int *listFaces, double *listIndices,
+		      int *listEdges, double (*listxk)[2],
+		      double (*listB0k)[2], double (*listBk)[2],
+		      double (*listBkBk1)[2]) {
+  triFan->nRegions = nRegions;
+  triFan->x0[0] = x0[0];
+  triFan->x0[1] = x0[1];
+  triFan->x1[0] = x1[0];
+  triFan->x1[1] = x1[1];
+  triFan->xHat[0] = xHat[0];
+  triFan->xHat[1] = xHat[1];
+  triFan->listFaces = listFaces;
+  triFan->>listEdges = listEdges;
+  triFan->listxk = listxk;
+  triFan->listB0k = listB0k;
+  triFan->listBk = listBk;
+  triFan->listBkBk1 = listBkBk1;
+}
+
 
 void reduceTriangleFan(triangleFanS *triFan) {
   // given a triangle fan reduce it in such way that we are only left

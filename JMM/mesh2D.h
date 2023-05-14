@@ -86,6 +86,14 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
 				 size_t indexHat, size_t *listIndicesNodes);
 
 
+void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
+		      double x1[2], double xHat[2],
+		      int *listFaces, double *listIndices,
+		      int *listEdges, double (*listxk)[2],
+		      double (*listB0k)[2], double (*listBk)[2],
+		      double (*listBkBk1)[2]);
+
+
 void printEverythingTriFan(triangleFanS *triFan);
 
 

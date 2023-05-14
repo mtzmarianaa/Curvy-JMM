@@ -18,8 +18,10 @@ typedef struct fanUpdate {
   double T1;
   double grad1[2];
   size_t nIndCrTop; // number of indices for CrTop
+  size_t *indCrTop;
   double *paramsCrTop; // initialize and then fill in after optimizing, length 2*nIndCrTop
   size_t nIndStTop; // number of indices for StTop
+  size_t *indStTop;
   double *paramsStTop; // initialize and then fill in after optimizing, length 2*nIndStTop
   double THat; // T(xHat) found after optimizing
   double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop, length 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop
@@ -48,8 +50,15 @@ void fanUpdate_dalloc(fanUpdateS **fanUpdate);
 
 void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2);
 
-void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
-		    double grad0[2], double T1, double grad1[2]);
+void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
+		    double T0, double grad0[2], double T1, double grad1[2],
+		    size_t nIndCrTop, size_t *indCrTop, double *paramsCrTop,
+		    size_t nIndStTop, size_t *indStTop, double *paramsStTop,
+		    double THat, double (*grads)[2], double (*path)[2],
+		    double gradHat[2]);
+
+void fanUpdate_initPreOpti(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
+			   double grad0[2], double T1, double grad1[2]);
 
 void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char const *pathPoints, char const *pathFaces,
 			    char const *pathEdges, char const *pathEdgesInFace,
@@ -74,6 +83,8 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double angleMax) ;
+
+void createJSONinput(fanUpdateS *fanUpdate, char *input_json);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 

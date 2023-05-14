@@ -17,6 +17,14 @@ This is the Eikonal grid with different specifications
 #include <string.h>
 #include <json-c/json.h> // used for reading the json type string from python
 
+
+// things to call out python optimizer
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 void eik_grid_alloc(eik_gridS **eik_g ) {
   *eik_g = malloc(sizeof(eik_gridS));
   assert(*eik_g != NULL);
@@ -77,7 +85,35 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
 }
 
 
-void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
+void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
+		    double T0, double grad0[2], double T1, double grad1[2],
+		    size_t nIndCrTop, size_t *indCrTop, double *paramsCrTop,
+		    size_t nIndStTop, size_t *indStTop, double *paramsStTop,
+		    double THat, double (*grads)[2], double (*path)[2],
+		    double gradHat[2]) {
+  // "manually" initialize a triangle fan update
+  fanUpdate->triFan = triFan;
+  fanUpdate->params = params;
+  fanUpdate->T0 = T0;
+  fanUpdate->grad0[0] = grad0[0];
+  fanUpdate->grad0[1] = grad0[1];
+  fanUpdate->T1 = T1;
+  fanUpdate->grad1[0] = grad1[0];
+  fanUpdate->grad1[1] = grad1[1];
+  fanUpdate->nIndCrTop = nIndCrTop;
+  fanUpdate->indCrTop = indCrTop;
+  fanUpdate->paramsCrTop = paramsCrTop;
+  fanUpdate->nIndStTop = nIndStTop;
+  fanUpdate->indStTop = indStTop;
+  fanUpdate->paramsStTop = paramsStTop;
+  fanUpdate->THat = THat;
+  fanUpdate->grads = grads;
+  fanUpdate->path = path;
+  fanUpdate->gradHat = gradHat;
+}
+
+
+void fanUpdate_initPreOpti(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
 		    double grad0[2], double T1, double grad1[2]) {
   // Init a triangle fan before using this information in the optimization
   fanUpdate->triFan = triFan;
@@ -215,9 +251,9 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   thisNeighbor = (size_t)eik_g->mesh2->neighbors[index0].neis_i[0];
   previousNeighbor = index0;
   // go around
-  while( j < 2 and i < nNeis ) {
+  while( j < 2 & i < nNeis ) {
     // either we find two valid edges or we go around all the possible neighbors
-    twoTrianglesFromEdge(eik_g->mesh2, index0, thisNeighbor, possibleTriangles, possibleThirdVertices[2] );
+    twoTrianglesFromEdge(eik_g->mesh2, index0, thisNeighbor, possibleTriangles, possibleThirdVertices );
     if( possibleThirdVertices[0] != previousNeighbor ) {
       // the next neighbor is on index 0
       previousNeighbor = thisNeighbor;
@@ -361,6 +397,271 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   triangleFan_initFromIndices(triFan, eik_g->mesh2, nRegions, index0,
 			      index1, indexHat, listIndicesNodes);
 }
+
+
+void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
+  // creates a JSON object to represent input data from a triangle fan
+  char temp_buffer[2500]; // temporary buffer
+  char num[20]; // temporary char where we are going to store our numbers (hopefully they'll fit)
+  char comma[5], finArr[5], extra[20], sqIn[5], sqFin[5]; // extra things like commas, [, ] ....
+  int i;
+  comma = ", ";
+  finArr = "], ";
+  sqIn = "[";
+  sqFin = "]";
+  // add x0
+  temp_buffer = "{\"x0\": [";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", fanUpdate->triFan->x0[0]); // chartify x0[0]
+  strcat(temp_buffer, num); // concatenate x0[0] to the temporary buffer
+  strcat(temp_buffer, comma);
+  snprintf(num, 50, "%f", fanUpdate->triFan->x0[1]); // chartify x0[1]
+  strcat(temp_buffer, num); // concatenate x0[1] to the temporary buffer
+  strcat(temp_buffer, finArr); // finish "x0" : [x0[0], x0[1]]
+
+  // add T0
+  extra = "\"T0\": ";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", funUpdate->T0); // chartify T0
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, comma);
+
+  // add grad0
+  extra = "\"grad0\": [";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", fanUpdate->grad0[0]); 
+  strcat(temp_buffer, num); 
+  strcat(temp_buffer, comma);
+  snprintf(num, 50, "%f", fanUpdate->grad0[1]);
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, finArr);
+  
+  // add x1
+  extra = "\"x1\": [";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", fanUpdate->triFan->x1[0]); 
+  strcat(temp_buffer, num); 
+  strcat(temp_buffer, comma);
+  snprintf(num, 50, "%f", fanUpdate->triFan->x1[1]);
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, finArr);
+
+  // add T1
+  extra = "\"T1\": ";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", funUpdate->T1); // chartify T1
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, comma);
+
+  // add grad1
+  extra = "\"grad0\": [";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", fanUpdate->grad1[0]); 
+  strcat(temp_buffer, num); 
+  strcat(temp_buffer, comma);
+  snprintf(num, 50, "%f", fanUpdate->grad1[1]);
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, finArr);
+
+  // add xHat
+  extra = "\"xHat\": [";
+  strcat(temp_buffer, extra);
+  snprintf(num, 50, "%f", fanUpdate->triFan->xHat[0]);
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, comma);
+  snprintf(num, 50, "%f", fanUpdate->triFan->xHat[1]); 
+  strcat(temp_buffer, num);
+  strcat(temp_buffer, finArr);
+
+  // use a for loop to add the list of indices
+  extra = "\"listIndices\": [";
+  strcat(temp_buffer, extra);
+  for( i = 0; i<2*fanUpdate->triFan->nRegions + 1; i++){
+    snprintf(num, 50, "%f", fanUpdate->triFan->listIndices[i]); // chartify the i-th index
+    strcat(temp_buffer, num);
+    if( i < 2*fanUpdate->triFan->nRegions){
+      strcat(temp_buffer, comma); // add the comma
+    }
+  }
+  strcat(temp_buffer, finArr);
+
+
+  // use a for loop to add the list of xk
+  extra = "\"listxk\": [";
+  strcat(temp_buffer, extra);
+  for( i = 0; i<fanUpdate->triFan->nRegions + 2; i++){
+    strcat(temp_buffer, sqIn); // add [
+    snprintf(num, 50, "%f", fanUpdate->triFan->listxk[i][0]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, comma);
+    snprintf(num, 50, "%f", fanUpdate->triFan->listxk[i][1]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, sqFin); // add ]
+    if( i <fanUpdate->triFan->nRegions + 1){
+      strcat(temp_buffer, comma); // add the comma
+    }
+  }
+  strcat(temp_buffer, finArr);
+
+
+  // use a for loop to add the list of B0k
+  extra = "\"listB0k\": [";
+  strcat(temp_buffer, extra);
+  for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
+    strcat(temp_buffer, sqIn); // add [
+    snprintf(num, 50, "%f", fanUpdate->triFan->listB0k[i][0]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, comma);
+    snprintf(num, 50, "%f", fanUpdate->triFan->listB0k[i][1]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, sqFin); // add ]
+    if( i <fanUpdate->triFan->nRegions ){
+      strcat(temp_buffer, comma); // add the comma
+    }
+  }
+  strcat(temp_buffer, finArr);
+
+
+  // use a for loop to add the list of Bk
+  extra = "\"listBk\": [";
+  strcat(temp_buffer, extra);
+  for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
+    strcat(temp_buffer, sqIn); // add [
+    snprintf(num, 50, "%f", fanUpdate->triFan->listBk[i][0]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, comma);
+    snprintf(num, 50, "%f", fanUpdate->triFan->listBk[i][1]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, sqFin); // add ]
+    if( i <fanUpdate->triFan->nRegions ){
+      strcat(temp_buffer, comma); // add the comma
+    }
+  }
+  strcat(temp_buffer, finArr);
+
+
+  // use a for loop to add the list of BkBk1
+  extra = "\"listBkBk1\": [";
+  strcat(temp_buffer, extra);
+  for( i = 0; i<2*fanUpdate->triFan->nRegions ; i++){
+    strcat(temp_buffer, sqIn); // add [
+    snprintf(num, 50, "%f", fanUpdate->triFan->listBkBk1[i][0]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, comma);
+    snprintf(num, 50, "%f", fanUpdate->triFan->listBkBk1[i][1]); 
+    strcat(temp_buffer, num);
+    strcat(temp_buffer, sqFin); // add ]
+    if( i <2*fanUpdate->triFan->nRegions -1 ){
+      strcat(temp_buffer, comma); // add the comma
+    }
+  }
+  strcat(temp_buffer, finArr);
+
+
+  // OPTIONS FOR PLOTTING CHANGE THIS ACCORDINGLY
+  extra = "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1 }";
+  strcat(temp_buffer, extra);
+  
+  printf(temp_buffer); // just to see what we get
+
+  // our point should point to temp_buffer[0]
+  input_json = &temp_buffer[0];
+
+  
+}
+
+
+
+void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate){
+  // using pipes and a lot of fancy methos call python from here
+  // and optimize the triangle fan in fanUpdate, save all info
+  int pipefd[2]; // pipe
+  pid_t pid; // proces id
+
+  if (pipe(pipefd) == -1) {
+    printf("\nProblem when opening pipe");
+    exit(EXIT_FAILURE);
+  }
+
+  pid = fork(); // in the child process we execute python, in the parent process we write and read
+  if (pid == -1) {
+    perror("fork");
+    exit(EXIT_FAILURE);
+  }
+
+  if (pid == 0) { // child process
+    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
+      printf("\nProblem with child process");
+      exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[0]); // CLOSE 0
+
+    // execute Python script
+    execlp("python3", "python3", "stepWithPython.py", (char *) NULL);
+  }
+  else { // parent process
+    close(pipefd[1]); // CLOSE 1
+
+    // create JSON object to represent input data
+    char* input_json; //
+    createJSONinput(fanUpdate, input_json); // put everything in the json order we want
+
+    // write input data to pipe
+    if (write(pipefd[0], input_json, strlen(input_json)) == -1) {
+      printf("\nProblem when writting triInfo to run Python\n");
+      exit(EXIT_FAILURE);
+    }
+
+    close(pipefd[0]); // CLOSE 0, we already wrote the input to the python optimizer
+
+    // wait for child process to complete
+    wait(NULL);
+
+    // read output data from pipe
+    int fd = open("output.json", O_RDONLY);
+    if (fd == -1) {
+      printf("\nProblem when opening the output json from Python\n");
+      exit(EXIT_FAILURE);
+    }
+
+    char buffer[1024];
+    ssize_t num_read = read(fd, buffer, sizeof(buffer));
+    if (num_read == -1) {
+      perror("read");
+      exit(EXIT_FAILURE);
+    }
+
+    close(fd); // CLOSE PIPE
+
+    // PROCESS ALL THE INFORMATION FROM THE JSON FILE AND PARSE IT ACCORDINGLY
+
+      // deserialize output data
+      json_object *output_obj = json_tokener_parse(buffer);
+      if (output_obj == NULL) {
+          fprintf(stderr, "Error parsing JSON: %s\n", json_tokener_error_desc(json_tokener_get_error(json_tokener_new())));
+          exit(EXIT_FAILURE);
+      }
+
+      // extract array of doubles from output object
+      json_object *output_array = json_object_object_get(output_obj, "result");
+      if (output_array == NULL || !json_object_is_type(output_array, json_type_array)) {
+          fprintf(stderr, "Error extracting array from JSON output\n");
+          exit(EXIT_FAILURE);
+      }
+      int num_elements = json_object_array_length(output_array);
+      double output_values[num_elements];
+      for (int i = 0; i < num_elements; i++) {
+          json_object *value_obj = json_object_array_get_idx(output_array, i);
+          if (value_obj == NULL || !json_object_is_type(value_obj, json_type_double)) {
+              fprintf(stderr, "Error extracting double value from JSON array\n");
+              exit(EXIT_FAILURE);
+          }
+          output_values[i] = json_object_get_double(value_obj);
+      }
+
+}
+
 
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex) {
