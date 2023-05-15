@@ -430,8 +430,109 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 			      index1, indexHat, listIndicesNodes);
 }
 
+void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
+  int i;
+  FILE *fp = fopen(path, "w");
 
-void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
+  fprintf(fp, "{");
+
+  // write x0
+  fprintf(fp, "\"x0\": [%g, %g], ",
+	  fanUpdate->triFan->x0[0], fanUpdate->triFan->x0[1]);
+
+  // write T0
+  fprintf(fp, "\"T0\": %g, ", fanUpdate->T0 );
+
+  // write grad0
+  fprintf(fp, "\"grad0\": [%g, %g], ",
+	  fanUpdate->grad0[0], fanUpdate->grad0[1]);
+
+
+  // write x1
+  fprintf(fp, "\"x1\": [%g, %g], ",
+	  fanUpdate->triFan->x1[0], fanUpdate->triFan->x1[1]);
+
+  // write T1
+  fprintf(fp, "\"T1\": %g, ", fanUpdate->T1 );
+
+  // write grad1
+  fprintf(fp, "\"grad1\": [%g, %g], ",
+	  fanUpdate->grad1[0], fanUpdate->grad1[1]);
+
+
+  // write xHat
+  fprintf(fp, "\"xHat\": [%g, %g], ",
+	  fanUpdate->triFan->xHat[0], fanUpdate->triFan->xHat[1]);
+
+
+  // use a for loop to add the list of indices
+  fprintf(fp, "\"listIndices\": [");
+  for(i = 0; i<2*fanUpdate->triFan->nRegions + 1; i++){
+    fprintf(fp, "%g", fanUpdate->triFan->listIndices[i]);
+    if( i < 2*fanUpdate->triFan->nRegions ){
+      fprintf(fp, ",");
+    }
+  }
+  fprintf(fp, "],");
+
+
+
+  // use a loop to add the list of xk
+  fprintf(fp, "\"listxk\": [");
+  for(i = 0; i<fanUpdate->triFan->nRegions + 2; i++){
+    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listxk[i][0], fanUpdate->triFan->listxk[i][1]);
+    if( i < fanUpdate->triFan->nRegions + 1){
+      fprintf(fp, ",");
+    }
+  }
+  fprintf(fp, "],");
+
+
+  // use a loop to add the list of B0k
+  fprintf(fp, "\"listB0k\": [");
+  for(i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
+    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listB0k[i][0], fanUpdate->triFan->listB0k[i][1]);
+    if( i < fanUpdate->triFan->nRegions ){
+      fprintf(fp, ",");
+    }
+  }
+  fprintf(fp, "],");
+
+
+  // use a loop to add the list of B0k
+  fprintf(fp, "\"listBk\": [");
+  for(i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
+    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listBk[i][0], fanUpdate->triFan->listBk[i][1]);
+    if( i < fanUpdate->triFan->nRegions ){
+      fprintf(fp, ",");
+    }
+  }
+  fprintf(fp, "],");
+
+
+  // use a loop to add the list of BkBk1
+  fprintf(fp, "\"listBkBk1\": [");
+  for(i = 0; i<2*fanUpdate->triFan->nRegions; i++){
+    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listBkBk1[i][0], fanUpdate->triFan->listBkBk1[i][1]);
+    if( i < 2*fanUpdate->triFan->nRegions-1 ){
+      fprintf(fp, ",");
+    }
+  }
+  fprintf(fp, "],");
+
+
+  // OPTIONS FOR PLOTTING CHANGE THIS ACCORDINGLY
+  fprintf(fp, "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1");
+  
+  
+
+  fprintf(fp, "}");
+
+  fclose(fp);
+}
+
+
+void createJSONinput(fanUpdateS *fanUpdate, char **input_json) {
   // creates a JSON object to represent input data from a triangle fan
   char temp_buffer[2500]; // temporary buffer
   char num[20]; // temporary char where we are going to store our numbers (hopefully they'll fit)
@@ -596,7 +697,7 @@ void createJSONinput(fanUpdateS *fanUpdate, char *input_json) {
   printf("%s",temp_buffer); // just to see what we get
 
   // our point should point to temp_buffer[0]
-  input_json = &temp_buffer[0];
+  *input_json = &temp_buffer[0];
 
   
 }
@@ -616,8 +717,11 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
 
   // get nIndCrTop, nIndStTop, THat
   nIndCrTop = (size_t)json_object_get_double(json_object_object_get(output_obj, "nIndCrTop"));
+  //printf("\nnIndCrTop %zu\n", nIndCrTop);
   nIndStTop = (size_t)json_object_get_double(json_object_object_get(output_obj, "nIndStTop"));
+  //printf("\nnIndStTop %zu\n", nIndStTop);
   THat = json_object_get_double(json_object_object_get(output_obj, "THat"));
+  //printf("\nTHat %g\n", THat);
 
   // now for the lists
   json_object *output_list, *value_arr;
@@ -796,72 +900,32 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
 
 
 
-void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate){
+void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   // using pipes and a lot of fancy methos call python from here
   // and optimize the triangle fan in fanUpdate, save all info
   int pipefd[2]; // pipe
   pid_t pid; // proces id
 
-  if (pipe(pipefd) == -1) {
-    printf("\nProblem when opening pipe");
+
+  // create JSON object to represent input data
+  char* input_json; //
+  createJSONFile(fanUpdate, "update.json");
+  //createJSONinput(fanUpdate, &input_json); // put everything in the json order we want
+  //printf("created json file for input\n");
+
+  execlp("python", "python", "stepWithPython.py", "update.json", NULL);
+  printf("executed python\n");
+
+
+  char buffer[5000];
+  int fd = open("/Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json", O_RDONLY);
+  if( fd == -1){
+    printf("\nProblem when opening the output json from Python\n");
     exit(EXIT_FAILURE);
   }
-
-  pid = fork(); // in the child process we execute python, in the parent process we write and read
-  if (pid == -1) {
-    perror("fork");
-    exit(EXIT_FAILURE);
-  }
-
-  if (pid == 0) { // child process
-    if (dup2(pipefd[1], STDOUT_FILENO) == -1) {
-      printf("\nProblem with child process");
-      exit(EXIT_FAILURE);
-    }
-
-    close(pipefd[0]); // CLOSE 0
-
-    // execute Python script
-    execlp("python3", "python3", "stepWithPython.py", (char *) NULL);
-  }
-  else { // parent process
-    close(pipefd[1]); // CLOSE 1
-
-    // create JSON object to represent input data
-    char* input_json; //
-    createJSONinput(fanUpdate, input_json); // put everything in the json order we want
-
-    // write input data to pipe
-    if (write(pipefd[0], input_json, strlen(input_json)) == -1) {
-      printf("\nProblem when writting triInfo to run Python\n");
-      exit(EXIT_FAILURE);
-    }
-
-    close(pipefd[0]); // CLOSE 0, we already wrote the input to the python optimizer
-
-    // wait for child process to complete
-    wait(NULL);
-
-    // read output data from pipe
-    int fd = open("output.json", O_RDONLY);
-    if (fd == -1) {
-      printf("\nProblem when opening the output json from Python\n");
-      exit(EXIT_FAILURE);
-    }
-
-    char buffer[1024];
-    ssize_t num_read = read(fd, buffer, sizeof(buffer));
-    if (num_read == -1) {
-      perror("read");
-      exit(EXIT_FAILURE);
-    }
-
-    close(fd); // CLOSE PIPE
-
-    // PROCESS ALL THE INFORMATION FROM THE JSON FILE AND PARSE IT ACCORDINGLY
-    json_object *output_obj = json_tokener_parse(buffer);
-    deserializeJSONoutput(fanUpdate, output_obj);
-  }
+  ssize_t num_read = read(fd, buffer, sizeof(buffer));
+  json_object *output_obj = json_tokener_parse(buffer);
+  deserializeJSONoutput(fanUpdate, output_obj);
 
 }
 

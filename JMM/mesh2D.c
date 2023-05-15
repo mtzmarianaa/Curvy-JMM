@@ -729,54 +729,54 @@ void countTrianglesToSave_reduceTriangleFan(triangleFanS *triFan, size_t *triang
 }
 
 
-void informationToSave_reduceTriangleFan(triangleFansS *triFan, size_t nRegions_reduced, size_t *trianglesToSave,
-					 int *listFaces, double *listIndices, int *listEdges, double (*listxk)[2],
-					 double (*listB0k)[2], double (*listBk)[2], double (*listBkBk1)[2]){
-  // given a list of triangles we need to save from an original triFan we compute the reduced elements
-  // of the reduced triangle fan
-  double artificialTan[2];
-  int i, k;
-  k = 0;
-  // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat
-  if( nRegions_reduced == 1){
-    // we  have a one artificial triangle
-    listFaces[0] = -1; // because this is an "artificial" triangle
-    listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same
-    listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1
-    listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat
-    listEdges[2] = -1; // artificial edge
-    listxk[2][0] = triFan->xHat[0];
-    listxk[2][1] = triFan->xHat[1];
-    listB0k[0][0] = triFan->listB0k[0][0];
-    listB0k[0][1] = triFan->listB0k[0][1];
-    listB0k[1][0] = triFan->listB0k[triFan->nRegions][0];
-    listB0k[1][1] = triFan->listB0k[triFan->nRegions][1];
-    listBk[0][0] = triFan->listBk[0][0];
-    listBk[0][1] = triFan->listBk[0][1];
-    listBk[1][0] = triFan->listBk[triFan->nRegions][0];
-    listBk[1][1] = triFan->listBk[triFan->nRegions][1];
-    // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1
-    vec2_subtraction(triFan->xHat, triFan->x0, artificialTan);
-    listBkBk1[0][0] = artificialTan[0];
-    listBkBk1[0][1] = artificialTan[1];
-    listBkBk1[1][0] = artificialTan[0];
-    listBkBk1[1][1] = artificialTan[1];
-  }
-  else{
-    // we need to save more than one triangle
-    for( i = 0; i<triFan->nRegions; i++){
-      // see which triangle we need to save (from trianglesToSave)
-      if(trianglesToSave[i] == 1){
-	// we need to save the i-th triangle
-	listFaces[k] = -1; // because these are all artificial triangles
-	listIndices[k] = triFan->listIndices[i]; // the index of this triangle
+/* void informationToSave_reduceTriangleFan(triangleFansS *triFan, size_t nRegions_reduced, size_t *trianglesToSave, */
+/* 					 int *listFaces, double *listIndices, int *listEdges, double (*listxk)[2], */
+/* 					 double (*listB0k)[2], double (*listBk)[2], double (*listBkBk1)[2]){ */
+/*   // given a list of triangles we need to save from an original triFan we compute the reduced elements */
+/*   // of the reduced triangle fan */
+/*   double artificialTan[2]; */
+/*   int i, k; */
+/*   k = 0; */
+/*   // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat */
+/*   if( nRegions_reduced == 1){ */
+/*     // we  have a one artificial triangle */
+/*     listFaces[0] = -1; // because this is an "artificial" triangle */
+/*     listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same */
+/*     listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1 */
+/*     listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat */
+/*     listEdges[2] = -1; // artificial edge */
+/*     listxk[2][0] = triFan->xHat[0]; */
+/*     listxk[2][1] = triFan->xHat[1]; */
+/*     listB0k[0][0] = triFan->listB0k[0][0]; */
+/*     listB0k[0][1] = triFan->listB0k[0][1]; */
+/*     listB0k[1][0] = triFan->listB0k[triFan->nRegions][0]; */
+/*     listB0k[1][1] = triFan->listB0k[triFan->nRegions][1]; */
+/*     listBk[0][0] = triFan->listBk[0][0]; */
+/*     listBk[0][1] = triFan->listBk[0][1]; */
+/*     listBk[1][0] = triFan->listBk[triFan->nRegions][0]; */
+/*     listBk[1][1] = triFan->listBk[triFan->nRegions][1]; */
+/*     // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1 */
+/*     vec2_subtraction(triFan->xHat, triFan->x0, artificialTan); */
+/*     listBkBk1[0][0] = artificialTan[0]; */
+/*     listBkBk1[0][1] = artificialTan[1]; */
+/*     listBkBk1[1][0] = artificialTan[0]; */
+/*     listBkBk1[1][1] = artificialTan[1]; */
+/*   } */
+/*   else{ */
+/*     // we need to save more than one triangle */
+/*     for( i = 0; i<triFan->nRegions; i++){ */
+/*       // see which triangle we need to save (from trianglesToSave) */
+/*       if(trianglesToSave[i] == 1){ */
+/* 	// we need to save the i-th triangle */
+/* 	listFaces[k] = -1; // because these are all artificial triangles */
+/* 	listIndices[k] = triFan->listIndices[i]; // the index of this triangle */
 	
-      }
-    }
+/*       } */
+/*     } */
  
-  }
+/*   } */
   
-}
+/* } */
 
 void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 		      double x1[2], double xHat[2],
@@ -791,8 +791,9 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
   triFan->x1[1] = x1[1];
   triFan->xHat[0] = xHat[0];
   triFan->xHat[1] = xHat[1];
+  triFan->listIndices = listIndices;
   triFan->listFaces = listFaces;
-  triFan->>listEdges = listEdges;
+  triFan->listEdges = listEdges;
   triFan->listxk = listxk;
   triFan->listB0k = listB0k;
   triFan->listBk = listBk;
@@ -800,81 +801,81 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 }
 
 
-void reduceTriangleFan(triangleFanS *triFan) {
-  // given a triangle fan reduce it in such way that we are only left
-  // with (possible artificial) triangles where at least one of
-  // their edges is a curve edge
-  if( triFan->nRegions == 1){
-    // this triangle fan originally has just one triangle, we can't further reduce it
-    return;
-  }
-  size_t nRegions_reduced, *trianglesToSave;
-  trianglesToSave = malloc(triFan->nRegions*sizeof(size_t));
-  int k, j;
-  nRegions_reduced = 0;
+/* void reduceTriangleFan(triangleFanS *triFan) { */
+/*   // given a triangle fan reduce it in such way that we are only left */
+/*   // with (possible artificial) triangles where at least one of */
+/*   // their edges is a curve edge */
+/*   if( triFan->nRegions == 1){ */
+/*     // this triangle fan originally has just one triangle, we can't further reduce it */
+/*     return; */
+/*   } */
+/*   size_t nRegions_reduced, *trianglesToSave; */
+/*   trianglesToSave = malloc(triFan->nRegions*sizeof(size_t)); */
+/*   int k, j; */
+/*   nRegions_reduced = 0; */
   
-  // use the void previously defined
-  countTrianglesToSave_reduceTriangleFan(triFan, trianglesToSave);
+/*   // use the void previously defined */
+/*   countTrianglesToSave_reduceTriangleFan(triFan, trianglesToSave); */
   
-  // count the number of triangles that are different
-  for( k = 0; k<triFan->nRegions; k++){
-    nRegions_reduced += trianglesToSave[k];
-  }
-  if( nRegions_reduced == 0){
-    nregions_reduced = 1; // we don't have curvy boundaries in this case
-  }
+/*   // count the number of triangles that are different */
+/*   for( k = 0; k<triFan->nRegions; k++){ */
+/*     nRegions_reduced += trianglesToSave[k]; */
+/*   } */
+/*   if( nRegions_reduced == 0){ */
+/*     nregions_reduced = 1; // we don't have curvy boundaries in this case */
+/*   } */
 
-  assert(nRegions_reduced <= triFan->nRegions); // we can't have more triangles than the original triangle
+/*   assert(nRegions_reduced <= triFan->nRegions); // we can't have more triangles than the original triangle */
   
-  // ADD THE INFORMATION FROM THE TRIANGLES WE ARE INTERESTED IN 
-  if( nRegions_reduced == triFan->nRegions){
-    // means that each triangle in the original triangle fan
-    // has at least one curvy edge
-    return;
-  }
-  else{
-    // means that we have to reduce the original triangle fan
-    int *listFaces, *listEdges;
-    double *listIndices, (*listxk)[2], (*listB0k)[2], (*listBk)[2], (*listBkBk1)[2];
-    // malloc everything again
-    listFaces = malloc(nRegions_reduced*sizeof(int));
-    listIndices = malloc((2*nRegions_reduced + 1)*sizeof(double));
-    listEdges = malloc((2*nRegions_reduced + 1)*sizeof(int));
-    listxk = malloc(2*(nRegions_reduced + 2)*sizeof(double));
-    listB0k = malloc(2*(nRegions_reduced + 1)*sizeof(double));
-    listBk = malloc(2*(nRegions_reduced + 1)*sizeof(double));
-    listBkBk1 = malloc(2*(2*nRegions_reduced)*sizeof(double));
-    // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat
-    if( nRegions_reduced == 1){
-      // we  have a one artificial triangle
-      listFaces[0] = -1; // because this is an "artificial" triangle
-      listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same
-      listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1
-      listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat
-      listEdges[2] = -1; // artificial edge
-      listxk[2][0] = triFan->xHat[0];
-      listxk[2][1] = triFan->xHat[1];
-      listB0k[0][0] = triFan->listB0k[0][0];
-      listB0k[0][1] = triFan->listB0k[0][1];
-      listB0k[1][0] = triFan->listB0k[triFan->nRegions][0];
-      listB0k[1][1] = triFan->listB0k[triFan->nRegions][1];
-      listBk[0][0] = triFan->listBk[0][0];
-      listBk[0][1] = triFan->listBk[0][1];
-      listBk[1][0] = triFan->listBk[triFan->nRegions][0];
-      listBk[1][1] = triFan->listBk[triFan->nRegions][1];
-      // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1
-      vec2_subtraction(triFan->xHat, triFan->x0, artificialTan);
-      listBkBk1[0][0] = artificialTan[0];
-      listBkBk1[0][1] = artificialTan[1];
-      listBkBk1[1][0] = artificialTan[0];
-      listBkBk1[1][1] = artificialTan[1];
-    }
-    else{
-      // we need to save more than one triangle
+/*   // ADD THE INFORMATION FROM THE TRIANGLES WE ARE INTERESTED IN  */
+/*   if( nRegions_reduced == triFan->nRegions){ */
+/*     // means that each triangle in the original triangle fan */
+/*     // has at least one curvy edge */
+/*     return; */
+/*   } */
+/*   else{ */
+/*     // means that we have to reduce the original triangle fan */
+/*     int *listFaces, *listEdges; */
+/*     double *listIndices, (*listxk)[2], (*listB0k)[2], (*listBk)[2], (*listBkBk1)[2]; */
+/*     // malloc everything again */
+/*     listFaces = malloc(nRegions_reduced*sizeof(int)); */
+/*     listIndices = malloc((2*nRegions_reduced + 1)*sizeof(double)); */
+/*     listEdges = malloc((2*nRegions_reduced + 1)*sizeof(int)); */
+/*     listxk = malloc(2*(nRegions_reduced + 2)*sizeof(double)); */
+/*     listB0k = malloc(2*(nRegions_reduced + 1)*sizeof(double)); */
+/*     listBk = malloc(2*(nRegions_reduced + 1)*sizeof(double)); */
+/*     listBkBk1 = malloc(2*(2*nRegions_reduced)*sizeof(double)); */
+/*     // if nRegions_reduces = 1 then we just need to save the triangle x0 x1 xHat */
+/*     if( nRegions_reduced == 1){ */
+/*       // we  have a one artificial triangle */
+/*       listFaces[0] = -1; // because this is an "artificial" triangle */
+/*       listIndices[0] = triFan->listIndices[0]; // doesn't really matter which one, they are all the same */
+/*       listEdges[0] = triFan->listEdges[0]; // edge from x0 to x1 */
+/*       listEdges[1] = triFan->listEdges[2*triFan->nRegions]; // edge from x0 to xHat */
+/*       listEdges[2] = -1; // artificial edge */
+/*       listxk[2][0] = triFan->xHat[0]; */
+/*       listxk[2][1] = triFan->xHat[1]; */
+/*       listB0k[0][0] = triFan->listB0k[0][0]; */
+/*       listB0k[0][1] = triFan->listB0k[0][1]; */
+/*       listB0k[1][0] = triFan->listB0k[triFan->nRegions][0]; */
+/*       listB0k[1][1] = triFan->listB0k[triFan->nRegions][1]; */
+/*       listBk[0][0] = triFan->listBk[0][0]; */
+/*       listBk[0][1] = triFan->listBk[0][1]; */
+/*       listBk[1][0] = triFan->listBk[triFan->nRegions][0]; */
+/*       listBk[1][1] = triFan->listBk[triFan->nRegions][1]; */
+/*       // this is the artificial part because BkBk1_0 and BkBk1_1 is just xHat - x1 */
+/*       vec2_subtraction(triFan->xHat, triFan->x0, artificialTan); */
+/*       listBkBk1[0][0] = artificialTan[0]; */
+/*       listBkBk1[0][1] = artificialTan[1]; */
+/*       listBkBk1[1][0] = artificialTan[0]; */
+/*       listBkBk1[1][1] = artificialTan[1]; */
+/*     } */
+/*     else{ */
+/*       // we need to save more than one triangle */
       
-    }
-  }
-}
+/*     } */
+/*   } */
+/* } */
 
 
 void printEverythingTriFan(triangleFanS *triFan) {

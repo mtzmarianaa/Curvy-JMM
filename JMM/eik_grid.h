@@ -93,9 +93,13 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double angleMax) ;
 
-void createJSONinput(fanUpdateS *fanUpdate, char *input_json);
+void createJSONinput(fanUpdateS *fanUpdate, char **input_json);
+
+void createJSONFile(fanUpdateS *fanUpdate, char const *path);
 
 void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj);
+
+void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 
