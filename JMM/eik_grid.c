@@ -731,7 +731,9 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   }
   // for the first triangle
   triangleFanS *currentTriangleFan;
+  triangleFan_alloc(&currentTriangleFan);
   fanUpdateS *currentTriangleFanUpdate;
+  fanUpdate_alloc(&currentTriangleFanUpdate);
   size_t prevTriang, thisTriang;
   prevTriang = firstTriangle;
   thisTriang = firstTriangle;
@@ -801,6 +803,8 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     nRegions ++;
     i ++;
   }
+  triangleFan_dalloc(&currentTriangleFan);
+  fanUpdate_dalloc(&currentTriangleFanUpdate);
 }
 
 
@@ -830,58 +834,74 @@ void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex) {
 }
 
 
-voidd addNeighbors_fromInitializedNear(eik_gridS *eik_g, size_t index0) {
-  // add neighbors from accepted BUT that accepted node was initialized
-  // at the begining of the method, i.e. in initializePointsNear
-  
+void triangleFanUpdate_pointNear(eik_gridS *eik_g, size_t index0, size_t indexStart, double eta) {
+  // update the triangleFanUpdate for those point who were intialized at the
+  // begining of the method, at initializePoitnsNear
+  double x0MinxStart[2], xStart[2], x0[2];
+  xStart[0] = eik_g->mesh2->points[indexStart][0];
+  xStart[1] = eik_g->mesh2->points[indexStart][1];
+  x0[0] = eik_g->mesh2->points[index0][0];
+  x0[1] = eik_g->mesh2->points[index0][1];
+  vec2_subtraction(x0, xStart, x0MinxStart); // for both T0 and grad0
+  double grad0[2], T0;
+  T0 = eta*l2norm(x0MinxStart);
+  grad0[0] = eta*x0MinxStart;
+  grad0[1] = eta*x0MinxStart;
+  // initialize the triangle Fan for the triangle fan update
+  triangleFanS *triFan;
+  triangleFan_alloc(&triFan);
+  triangleFan_init(triFan, 0, xStart, xStart, x0, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  fanUpdate_init(eik_g->fanUpdate[index0], triFan, NULL, 0, NULL, 0, NULL, NULL, NULL,
+		 NULL, NULL, NULL, T0, NULL, NULL, grad0);
+  triangleFan_dalloc(&triFan);
 }
 
 
 
-/* void initializePointsNear(eik_gridS *eik_g, double rBall) { */
-/*   // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL */
-/*   // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the */
-/*   // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that */
-/*   // all those balls belong to the same regions of indices of refraction */
-/*   double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction; */
-/*   int indexStart; */
-/*   for(int j = 0; j<eik_g->nStart; j++){ */
-/*     deleteRoot(eik_g->p_queueG); */
-/*     indexStart = eik_g->start[j]; */
-/*     xStart[0] = eik_g->mesh2->points[ indexStart ][0]; */
-/*     xStart[1] = eik_g->mesh2->points[ indexStart ][1]; */
-/*     for(int i = 0; i<eik_g->mesh2->nPoints; i++){ */
-/*       xCurrent[0] = eik_g->mesh2->points[i][0]; */
-/*       xCurrent[1] = eik_g->mesh2->points[i][1]; */
-/*       vec2_subtraction( xCurrent, xStart, xMinxStart ); */
-/*       normCurrent = l2norm(xMinxStart); */
-/*       if(normCurrent < rBall ){ */
-/*         if( eik_g->current_states[i] == 1 ){ */
-/*           // if it was previously considered as trial we need to delete this from the queue directly */
-/*           delete_findIndex(eik_g->p_queueG, i); */
-/*         } */
-/*         // if this happens, this point is "close enough" to the starting point so that we can initialize it */
-/* 	initialIndexRefraction = minEtaFromTwoPoints(eik_g->mesh2, i, indexStart); */
-/*         eik_g->current_states[i] = 2; // we initialized it directly */
-/*         eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value */
-/*         eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient */
-/*         eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent; */
-/*         addNeighbors_fromAccepted(eik_g, i); // we add its neighbors */
-/*       } */
-/*     } */
-/*   } */
+void initializePointsNear(eik_gridS *eik_g, double rBall) {
+  // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL
+  // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the
+  // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that
+  // all those balls belong to the same regions of indices of refraction
+  double initialEta;
+  size_t indexStart, nei;
+  // initialize the initial index of refraction
+  nei = eik_g->mesh2->neighbors[indexStart].neis_i[0];
+  initialEta = minEtaFromTwoPoints(eik_g->mesh2, indexStart, nei);
+  for(int j = 0; j<eik_g->nStart; j++){
+    deleteRoot(eik_g->p_queueG);
+    indexStart = eik_g->start[j];
+    xStart[0] = eik_g->mesh2->points[ indexStart ][0];
+    xStart[1] = eik_g->mesh2->points[ indexStart ][1];
+    for(int i = 0; i<eik_g->mesh2->nPoints; i++){
+      xCurrent[0] = eik_g->mesh2->points[i][0];
+      xCurrent[1] = eik_g->mesh2->points[i][1];
+      vec2_subtraction( xCurrent, xStart, xMinxStart );
+      normCurrent = l2norm(xMinxStart);
+      if(normCurrent < rBall ){
+        if( eik_g->current_states[i] == 1 ){
+          // if it was previously considered as trial we need to delete this from the queue directly
+          delete_findIndex(eik_g->p_queueG, i);
+        }
+        // if this happens, this point is "close enough" to the starting point so that we can initialize it
+	initialIndexRefraction = minEtaFromTwoPoints(eik_g->mesh2, i, indexStart);
+        eik_g->current_states[i] = 2; // we initialized it directly
+        eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value
+	triangleFanUpdate_pointNear(eik_g, i, indexStart, initialEta); // update its triangle fan update
+        addNeighbors_fromAccepted(eik_g, i); // we add its neighbors
+      }
+    }
+  }
 
-/* } */
+}
 
-
-
-/* void popAddNeighbors(eik_gridS *eik_g) { */
-/*   // int nNeighs; */
-/*   int minIndex = indexRoot(eik_g->p_queueG); */
-/*   deleteRoot(eik_g->p_queueG); // delete the root from the priority queue */
-/*   eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid */
-/*   addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index */
-/* } */
+void popAddNeighbors(eik_gridS *eik_g) {
+  // int nNeighs;
+  int minIndex = indexRoot(eik_g->p_queueG);
+  deleteRoot(eik_g->p_queueG); // delete the root from the priority queue
+  eik_g->current_states[minIndex] = 2; // set the newly accepted index to valid
+  addNeighbors_fromAccepted(eik_g, minIndex); // add neighbors from the recently accepted index
+}
 
 int currentMinIndex(eik_gridS *eik_g) {
   return indexRoot(eik_g->p_queueG);
@@ -903,7 +923,7 @@ void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) {
     fp = fopen(pathFile, "wb");
     
     for (int i=0; i<eik_g->mesh2->nPoints; ++i){
-      fwrite(eik_g->eik_grad[i], sizeof(double), 2, fp);
+      fwrite(eik_g->fanUpdate[i].gradHat, sizeof(double), 2, fp);
     }
 
     fclose(fp);

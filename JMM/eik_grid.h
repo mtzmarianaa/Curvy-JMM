@@ -79,15 +79,11 @@ void printInfoFanUpdate(fanUpdateS *fanUpdate);
 
 void printAllInfoMesh(eik_gridS *eik_g);
 
-//void initializePointsNear(eik_gridS *eik_g, double rBall);
-
 void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int indices2[2], int firstTriangles[2]);
 
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double angleMax) ;
-
-void createJSONinput(fanUpdateS *fanUpdate, char **input_json);
 
 void createJSONFile(fanUpdateS *fanUpdate, char const *path);
 
@@ -100,7 +96,11 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 
-//void popAddNeighbors(eik_gridS *eik_g);
+void triangleFanUpdate_pointNear(eik_gridS *eik_g, size_t index0, size_t indexStart, double eta);
+
+void initializePointsNear(eik_gridS *eik_g, double rBall);
+
+void popAddNeighbors(eik_gridS *eik_g);
 
 int currentMinIndex(eik_gridS *eik_g);
 
