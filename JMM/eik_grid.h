@@ -43,7 +43,6 @@ typedef struct eik_grid {
   size_t nStart; // number of points in start
   mesh2S *mesh2; // NEW MESH struct
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
-  double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   p_queue *p_queueG; // priority queue struct
   size_t *current_states; // 0 far, 1 trial, 2 valid
   fanUpdateS *fanUpdate; // triangle fan of the optimal update associated to each point in the mesh (includes opti params)
@@ -82,12 +81,7 @@ void printAllInfoMesh(eik_gridS *eik_g);
 
 //void initializePointsNear(eik_gridS *eik_g, double rBall);
 
-void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2],
-				double parameterization, double indexRefraction, double grad[2]);
-
-void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]);
-
-void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]);
+void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int indices2[2], int firstTriangles[2]);
 
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
@@ -100,6 +94,9 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path);
 void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj);
 
 void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate);
+
+void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
+		  int indexStop_int, size_t firstTriangle);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 

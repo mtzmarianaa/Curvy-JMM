@@ -669,64 +669,64 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   
 }
 
-void countTrianglesToSave_reduceTriangleFan(triangleFanS *triFan, size_t *trianglesToSave) {
-  // in a triangle fan counts the number of triangles that need to
-  // be saved in a reduction of a triangle fan
-  int k, j;
-  for( k = 0; k<triFan->nRegions; k++ ){
-    trianglesToSave[k] = 0; // initialize everything to zero, assuming we are not going to save any triangle
-  }
-  // CIRCLE AROUND THE TRIANGLE AND COUNT CURVY TRIANGLES
-  double B0k[2], Bk[2], BkBk1_0[2], B0k1[2], Bk1[2], BkBk1_1[2];
-  B0k1[0] = triFan->listB0k[0][0];
-  B0k1[1] = triFan->listB0k[0][1];
-  Bk1[0] = triFan->listBk[0][0];
-  Bk1[1] = triFan->listBk[0][1];
-  for( k = 0; k<triFan->nRegions; k++ ) {
-    j = 2*k;
-    B0k[0] = B0k1[0];
-    B0k[1] = B0k1[1];
-    Bk[0] = Bk1[0];
-    Bk[1] = Bk1[1];
-    B0k1[0] = triFan->listB0k[k+1][0];
-    B0k1[1] = triFan->listB0k[k+1][1];
-    Bk1[0] = triFan->listBk[k+1][0];
-    Bk1[1] = triFan->listBk[k+1][1];
-    BkBk1_0[0] = triFan->listBkBk1[j][0];
-    BkBk1_0[1] = triFan->listBkBk1[j][1];
-    BkBk1_1[0] = triFan->listBkBk1[j+1][0];
-    BkBk1_1[1] = triFan->listBkBk1[j+1][1];
-    // see if any of the internal edges are curve
-    if( l2norm(B0k) != 0 | l2norm(Bk) != 0  ) {
-      // this means that the edge x0 xk of this triangle is curvy
-      trianglesToSave[k] = 1; // we do want to save this to the reduced triangle fan
-      if( k > 0 ) {
-	// if we are not on the first triangle we need to save the previous triangle
-	trianglesToSave[k-1] = 1;
-      }
-    }
-    if( l2norm(B0k) != 0 | l2norm(Bk) != 0 ) {
-      // this means that the edge x0 xk1 of this triangle is curvy
-      trianglesToSave[k] = 1;
-      if( k < triFan->nRegions - 1){
-	// if we are not on the last triangle we also need to save the next triangle
-	trianglesToSave[k+1] = 1;
-      }
-    }
-    // see if any of the top edges are curvy we might need to save both the previous and the next triangle
-    if( l2norm(BkBk1_0) != 0 | l2norm(BkBk1_1) != 0 ) {
-      trianglesToSave[k] = 1;
-      if( k < triFan->nRegions - 1) {
-	// if we are not on the last triangle we also need to save the next triangle
-	trianglesToSave[k+1] = 1;
-      }
-      if(k > 0){
-	// if we are not on the first triangle we need to save the previous triangle
-	trianglesToSave[k-1] = 1;
-      }
-    }
-  }
-}
+/* void countTrianglesToSave_reduceTriangleFan(triangleFanS *triFan, size_t *trianglesToSave) { */
+/*   // in a triangle fan counts the number of triangles that need to */
+/*   // be saved in a reduction of a triangle fan */
+/*   int k, j; */
+/*   for( k = 0; k<triFan->nRegions; k++ ){ */
+/*     trianglesToSave[k] = 0; // initialize everything to zero, assuming we are not going to save any triangle */
+/*   } */
+/*   // CIRCLE AROUND THE TRIANGLE AND COUNT CURVY TRIANGLES */
+/*   double B0k[2], Bk[2], BkBk1_0[2], B0k1[2], Bk1[2], BkBk1_1[2]; */
+/*   B0k1[0] = triFan->listB0k[0][0]; */
+/*   B0k1[1] = triFan->listB0k[0][1]; */
+/*   Bk1[0] = triFan->listBk[0][0]; */
+/*   Bk1[1] = triFan->listBk[0][1]; */
+/*   for( k = 0; k<triFan->nRegions; k++ ) { */
+/*     j = 2*k; */
+/*     B0k[0] = B0k1[0]; */
+/*     B0k[1] = B0k1[1]; */
+/*     Bk[0] = Bk1[0]; */
+/*     Bk[1] = Bk1[1]; */
+/*     B0k1[0] = triFan->listB0k[k+1][0]; */
+/*     B0k1[1] = triFan->listB0k[k+1][1]; */
+/*     Bk1[0] = triFan->listBk[k+1][0]; */
+/*     Bk1[1] = triFan->listBk[k+1][1]; */
+/*     BkBk1_0[0] = triFan->listBkBk1[j][0]; */
+/*     BkBk1_0[1] = triFan->listBkBk1[j][1]; */
+/*     BkBk1_1[0] = triFan->listBkBk1[j+1][0]; */
+/*     BkBk1_1[1] = triFan->listBkBk1[j+1][1]; */
+/*     // see if any of the internal edges are curve */
+/*     if( l2norm(B0k) != 0 | l2norm(Bk) != 0  ) { */
+/*       // this means that the edge x0 xk of this triangle is curvy */
+/*       trianglesToSave[k] = 1; // we do want to save this to the reduced triangle fan */
+/*       if( k > 0 ) { */
+/* 	// if we are not on the first triangle we need to save the previous triangle */
+/* 	trianglesToSave[k-1] = 1; */
+/*       } */
+/*     } */
+/*     if( l2norm(B0k) != 0 | l2norm(Bk) != 0 ) { */
+/*       // this means that the edge x0 xk1 of this triangle is curvy */
+/*       trianglesToSave[k] = 1; */
+/*       if( k < triFan->nRegions - 1){ */
+/* 	// if we are not on the last triangle we also need to save the next triangle */
+/* 	trianglesToSave[k+1] = 1; */
+/*       } */
+/*     } */
+/*     // see if any of the top edges are curvy we might need to save both the previous and the next triangle */
+/*     if( l2norm(BkBk1_0) != 0 | l2norm(BkBk1_1) != 0 ) { */
+/*       trianglesToSave[k] = 1; */
+/*       if( k < triFan->nRegions - 1) { */
+/* 	// if we are not on the last triangle we also need to save the next triangle */
+/* 	trianglesToSave[k+1] = 1; */
+/*       } */
+/*       if(k > 0){ */
+/* 	// if we are not on the first triangle we need to save the previous triangle */
+/* 	trianglesToSave[k-1] = 1; */
+/*       } */
+/*     } */
+/*   } */
+/* } */
 
 
 /* void informationToSave_reduceTriangleFan(triangleFansS *triFan, size_t nRegions_reduced, size_t *trianglesToSave, */

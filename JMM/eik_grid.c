@@ -46,22 +46,21 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   double *eik_vals;
   double (*eik_grad)[2]; // this is a pointer to a list of the gradients of the eikonal
   size_t *current_states;
-  fanUpdateS *fanUpdates;
+  fanUpdateS *fanUpdate;
+  triangleFanS *triFan;
   
   eik_vals = malloc(mesh2->nPoints*sizeof(double)); 
   current_states = malloc(mesh2->nPoints*sizeof(int));
-  eik_grad = malloc(2*mesh2->nPoints*sizeof(double)); // each gradient has two coordinates (for each point)
+  fanUpdate = malloc(mesh2->nPoints*sizeof(fanUpdateS));
   
   for(int i = 0; i<mesh2->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
-    eik_grad[i][0] = 0;
-    eik_grad[i][1] = 0;
+    fanUpdate[i] = fanUpdate; // just allocate the triangle fan update, dont do anything elsey
   }
   
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
-  eik_g->eik_grad = eik_grad;
 
   // we initialize the priority queue, all the elements in start are going to be inserted and their current states set to 1
   // notice that we need to add both the index of the starting points AND their eikonal value (which is 0) to the p_queue struct
@@ -212,59 +211,7 @@ void printAllInfoMesh(eik_gridS *eik_g){
   printEverythingInMesh(eik_g->mesh2);
 }
 
-
-
-/* void initializePointsNear(eik_gridS *eik_g, double rBall) { */
-/*   // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL */
-/*   // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the */
-/*   // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that */
-/*   // all those balls belong to the same regions of indices of refraction */
-/*   double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction; */
-/*   int indexStart; */
-/*   for(int j = 0; j<eik_g->nStart; j++){ */
-/*     deleteRoot(eik_g->p_queueG); */
-/*     indexStart = eik_g->start[j]; */
-/*     xStart[0] = eik_g->mesh2->points[ indexStart ][0]; */
-/*     xStart[1] = eik_g->mesh2->points[ indexStart ][1]; */
-/*     for(int i = 0; i<eik_g->mesh2->nPoints; i++){ */
-/*       xCurrent[0] = eik_g->mesh2->points[i][0]; */
-/*       xCurrent[1] = eik_g->mesh2->points[i][1]; */
-/*       vec2_subtraction( xCurrent, xStart, xMinxStart ); */
-/*       normCurrent = l2norm(xMinxStart); */
-/*       if(normCurrent < rBall ){ */
-/*         if( eik_g->current_states[i] == 1 ){ */
-/*           // if it was previously considered as trial we need to delete this from the queue directly */
-/*           delete_findIndex(eik_g->p_queueG, i); */
-/*         } */
-/*         // if this happens, this point is "close enough" to the starting point so that we can initialize it */
-/* 	initialIndexRefraction = minEtaFromTwoPoints(eik_g->mesh2, i, indexStart); */
-/*         eik_g->current_states[i] = 2; // we initialized it directly */
-/*         eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value */
-/*         eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient */
-/*         eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent; */
-/*         addNeighbors_fromAccepted(eik_g, i); // we add its neighbors */
-/*       } */
-/*     } */
-/*   } */
-
-/* } */
-
-
-void approximateEikonalGradient(double xA[2], double xB[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]) {
-  // given two points in a base with its corresponding parameterization we approximate the gradient of the Eikonal
-  // depending on the type of update performed on xHat xA is x0 and xB could be either x1 or x2
-  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase, direction[2];
-  MinParametrization = 1 - parameterization;
-  scalar_times_2vec( MinParametrization, xA, xBasePart1 );
-  scalar_times_2vec( parameterization, xB, xBasePart2 );
-  vec2_addition( xBasePart1, xBasePart2, xBase );
-  vec2_subtraction(xHat, xBase, direction);
-  normBase = l2norm(direction);
-  grad[0] = indexRefraction*direction[0]/normBase;
-  grad[1] = indexRefraction*direction[1]/normBase;
-}
-
-void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int firstTriangles[2]) {
+void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int indices2[2], int firstTriangles[2]) {
   // given a newly accepted node with index index0 go around its neighbors
   // and find (at most 2) indices index1 such that the edge x0 x1 is on the valid fron
   // notice that indices1 is an int because it's going to have a -1 if we just have one valid edge from x0
@@ -302,6 +249,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
     if( eik_g->current_states[previousNeighbor] == 2 & eik_g->current_states[thisNeighbor] != 2 ){
       // thisNeighbor is part of the valid front
       indices1[j] = (int)previousNeighbor;
+      indices1[j] = (int)thisNeighbor;
       firstTriangles[j] = (int)thisTriangle;
       j ++;
     }
@@ -532,176 +480,6 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
 }
 
 
-void createJSONinput(fanUpdateS *fanUpdate, char **input_json) {
-  // creates a JSON object to represent input data from a triangle fan
-  char temp_buffer[2500]; // temporary buffer
-  char num[20]; // temporary char where we are going to store our numbers (hopefully they'll fit)
-  char comma[5], finArr[5], extra[30], sqIn[5], sqFin[5]; // extra things like commas, [, ] ....
-  int i;
-  strcpy(comma, ", ");
-  strcpy(finArr, "], ");
-  strcpy(sqIn, "[");
-  strcpy(sqFin, "]");
-  // add x0
-  strcpy(temp_buffer, "{\"x0\": [");
-  snprintf(num, 20, "%f", fanUpdate->triFan->x0[0]); // chartify x0[0]
-  strcat(temp_buffer, num); // concatenate x0[0] to the temporary buffer
-  strcat(temp_buffer, comma);
-  snprintf(num, 20, "%f", fanUpdate->triFan->x0[1]); // chartify x0[1]
-  strcat(temp_buffer, num); // concatenate x0[1] to the temporary buffer
-  strcat(temp_buffer, finArr); // finish "x0" : [x0[0], x0[1]]
-
-  // add T0
-  strcpy(extra, "\"T0\": ");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->T0); // chartify T0
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, comma);
-
-  // add grad0
-  strcpy(extra, "\"grad0\": [");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->grad0[0]); 
-  strcat(temp_buffer, num); 
-  strcat(temp_buffer, comma);
-  snprintf(num, 20, "%f", fanUpdate->grad0[1]);
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, finArr);
-  
-  // add x1
-  strcpy(extra, "\"x1\": [");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->triFan->x1[0]); 
-  strcat(temp_buffer, num); 
-  strcat(temp_buffer, comma);
-  snprintf(num, 20, "%f", fanUpdate->triFan->x1[1]);
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, finArr);
-
-  // add T1
-  strcpy(extra,  "\"T1\": ");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->T1); // chartify T1
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, comma);
-
-  // add grad1
-  strcpy(extra, "\"grad0\": [");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->grad1[0]); 
-  strcat(temp_buffer, num); 
-  strcat(temp_buffer, comma);
-  snprintf(num, 20, "%f", fanUpdate->grad1[1]);
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, finArr);
-
-  // add xHat
-  strcpy(extra, "\"xHat\": [");
-  strcat(temp_buffer, extra);
-  snprintf(num, 20, "%f", fanUpdate->triFan->xHat[0]);
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, comma);
-  snprintf(num, 20, "%f", fanUpdate->triFan->xHat[1]); 
-  strcat(temp_buffer, num);
-  strcat(temp_buffer, finArr);
-
-  // use a for loop to add the list of indices
-  strcpy(extra, "\"listIndices\": [");
-  strcat(temp_buffer, extra);
-  for( i = 0; i<2*fanUpdate->triFan->nRegions + 1; i++){
-    snprintf(num, 20, "%f", fanUpdate->triFan->listIndices[i]); // chartify the i-th index
-    strcat(temp_buffer, num);
-    if( i < 2*fanUpdate->triFan->nRegions){
-      strcat(temp_buffer, comma); // add the comma
-    }
-  }
-  strcat(temp_buffer, finArr);
-
-
-  // use a for loop to add the list of xk
-  strcpy(extra, "\"listxk\": [");
-  strcat(temp_buffer, extra);
-  for( i = 0; i<fanUpdate->triFan->nRegions + 2; i++){
-    strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 20, "%f", fanUpdate->triFan->listxk[i][0]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, comma);
-    snprintf(num, 20, "%f", fanUpdate->triFan->listxk[i][1]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, sqFin); // add ]
-    if( i <fanUpdate->triFan->nRegions + 1){
-      strcat(temp_buffer, comma); // add the comma
-    }
-  }
-  strcat(temp_buffer, finArr);
-
-
-  // use a for loop to add the list of B0k
-  strcpy(extra, "\"listB0k\": [");
-  strcat(temp_buffer, extra);
-  for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
-    strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 20, "%f", fanUpdate->triFan->listB0k[i][0]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, comma);
-    snprintf(num, 20, "%f", fanUpdate->triFan->listB0k[i][1]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, sqFin); // add ]
-    if( i <fanUpdate->triFan->nRegions ){
-      strcat(temp_buffer, comma); // add the comma
-    }
-  }
-  strcat(temp_buffer, finArr);
-
-
-  // use a for loop to add the list of Bk
-  strcpy(extra, "\"listBk\": [");
-  strcat(temp_buffer, extra);
-  for( i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
-    strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 20, "%f", fanUpdate->triFan->listBk[i][0]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, comma);
-    snprintf(num, 20, "%f", fanUpdate->triFan->listBk[i][1]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, sqFin); // add ]
-    if( i <fanUpdate->triFan->nRegions ){
-      strcat(temp_buffer, comma); // add the comma
-    }
-  }
-  strcat(temp_buffer, finArr);
-
-
-  // use a for loop to add the list of BkBk1
-  strcpy(extra, "\"listBkBk1\": [");
-  strcat(temp_buffer, extra);
-  for( i = 0; i<2*fanUpdate->triFan->nRegions ; i++){
-    strcat(temp_buffer, sqIn); // add [
-    snprintf(num, 20, "%f", fanUpdate->triFan->listBkBk1[i][0]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, comma);
-    snprintf(num, 20, "%f", fanUpdate->triFan->listBkBk1[i][1]); 
-    strcat(temp_buffer, num);
-    strcat(temp_buffer, sqFin); // add ]
-    if( i <2*fanUpdate->triFan->nRegions -1 ){
-      strcat(temp_buffer, comma); // add the comma
-    }
-  }
-  strcat(temp_buffer, finArr);
-
-
-  // OPTIONS FOR PLOTTING CHANGE THIS ACCORDINGLY
-  strcpy(extra, "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1 }");
-  strcat(temp_buffer, extra);
-  
-  printf("%s",temp_buffer); // just to see what we get
-
-  // our point should point to temp_buffer[0]
-  *input_json = &temp_buffer[0];
-
-  
-}
-
 
 void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
   //given a json_object output from the Python optimizer we deserialize it
@@ -930,13 +708,170 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
 }
 
 
+void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
+		  int indexStop_int, size_t firstTriangle) {
+  // given a starting edge on the valid front update a far/trial
+  // set of triangles until indexStop is reached (going on the direction of firstTriangle)
+  size_t possibleNextTriangles[2], possibleNextIndices[2];
+  int i;
+  double T0, grad0[2], T1, grad1[2];
+  T0 = eik_g->eik_vals[minIndex];
+  grad0[0] = eik_g->fanUpdate[minIndex].gradHat[0];
+  grad0[1] = eik_g->fanUpdate[minIndex].gradHat[1];
+  T1 = eik_g->eik_vals[index1];
+  grad1[0] = eik_g->fanUpdate[index1].gradHat[0];
+  grad1[1] = eik_g->fanUpdate[index1].gradHat[1];
+  size_t indexStop;
+  if(indexStop < 0){
+    // meaning that we dont have an index stop, this is an artificial value
+    indexStop = index0;
+  }
+  else{
+    indexStop = (size_t)indexStop_int;
+  }
+  // for the first triangle
+  triangleFanS *currentTriangleFan;
+  fanUpdateS *currentTriangleFanUpdate;
+  size_t prevTriang, thisTriang;
+  prevTriang = firstTriangle;
+  thisTriang = firstTriangle;
+  size_t *allPossibleIndicesNodes, nRegions; // in here we are going to store all possible
+  // nodes for the triangle fans, the key is to use nRegions to initialize correctly
+  // a specific triangle fan
+  allPossibleIndicesNodes = malloc(eik_g->mesh2->neighbors->len*sizeof(size_t));
+  ///////////////////////////////////////////////////////////
+  // FOR THE FIRST ONE
+  size_t indexHat, prevUpdated;
+  indexHat = index2;
+  prevUpdated = index2;
+  allPossibleIndicesNodes[0] = index0;
+  allPossibleIndicesNodes[1] = index1;
+  allPossibleIndicesNodes[2] = index2;
+  i = 3;
+  nRegions = 1; // because we have one triangle to begin with
+  while(  indexHat != indices2[1] & eik_g->current_states[indexHat] != 2 &
+	  i<eik_g->mesh2->neighbors->len ){
+    // while we are not on the other valid edge and while the current node we are trying
+    // to update is not valid (yet)
+    // initialize currentTriangleFan
+    triangleFan_initFromIndices(currentTriangleFan, eik_g->mesh2,
+				nRegions, index0,
+				index1, indexHat,
+				allPossibleIndicesNodes);
+    // initialize the triangle update
+    fanUpdate_initPreOpti(currentTriangleFanUpdate, currentTriangleFan,
+			  T0, grad0, T1, grad1);
+    //////// OPTIMIZE!
+    optimizeTriangleFan_wPython(currentTriangleFanUpdate);
+    // if we found a good update, update the values
+    if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat ){
+      assert( eik_g->current_states[indexHat] != 2); // no update on valid nodes
+      // meaning we found a better update
+      eik_g->eik_vals[indexHat] = currentTriangleFanUpdate->THat;
+      fanUpdate_init(eik_g->fanUpdate[indexHat], currentTriangleFan,
+		     currentTriangleFanUpdate->params, T0, grad0, T1, grad1,
+		     currentTriangleFanUpdate->nIndCrTop, currentTriangleFanUpdate->indCrTop,
+		     currentTriangleFanUpdate->paramsCrTop, currentTriangleFanUpdate->nIndStTop,
+		     currentTriangleFanUpdate->indStTop, currentTriangleFanUpdate->paramsStTop,
+	             currentTriangleFanUpdate->THat, currentTriangleFan->grads,
+	             currentTriangleFanUpdate->path, currentTriangleFanUpdate->gradHat);
+      if( eik_g->current_states[indexHat] == 1 ){
+	// current state of xHat = trial
+	update(eik_g->p_queueG, currentTriangleFanUpdate->THat, indexHat); // update THat in the queue
+      }
+      else{
+	// current state of xHat = far
+	eik_g->current_states[indexHat] = 1; // set current state of xHat to trial
+	insert(eik_g->p_queueG, currentTriangleFanUpdate->THat, indexHat); // insert THat to the queue
+      }
+    }
+    //////// MARCH TO THE OTHER TRIANGLE
+    prevTriang = thisTriang;
+    twoTrianglesFromEdge(eik_g->mesh2, index0, indexHat, possibleNextTriangles, possibleNextIndices);
+    if( possibleNextTriangles[0] == prevTriang ){
+      // we should march in the possibleNextTriangles[1] direction
+      thisTriang = possibleNextTriangles[1];
+      indexHat = possibleNextIndices[1];
+    }
+    else{
+      thisTriang = possibleNextTriangles[0];
+      indexHat = possibleNextIndices[0];
+    }
+    allPossibleIndicesNodes[i] = indexHat;
+    nRegions ++;
+    i ++;
+  }
+}
+
+
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex) {
   // given a recently accepted node with index minIndex we update its neighbors
   // using triangle fans and up to two valid edges
+  // update from edges on valid front
+  int indices1[2], indices2[2], firstTriangles[2];
+  findEdgesOnValidFront(eik_g, minIndex, indices1, indices2, firstTriangles);
+  // start with indices2[0]
+  size_t index1, index2, firstTriangle;
+  int indexStop_int;
+  index1 = (size_t) indices1[0];
+  index2 = (size_t) indices2[0];
+  firstTriangle = (size_t) firstTriangles[0];
+  indexStop_int = indices1[1];
+  updateOneWay(eik_g, minIndex, index1, index2, indexStop_int, firstTriangle);
+  // now with indices2[1] if doable
+  if( indices2[1] > 0){
+    index1 = (size_t) indices1[1];
+    index2 = (size_t) indices2[1];
+    firstTriangle = (size_t) firstTriangles[1];
+    indexStop_int = indices1[0];
+    updateOneWay(eik_g, minIndex, index1, index2, indexStop_int, firstTriangle);
+  }
 }
 
 
+voidd addNeighbors_fromInitializedNear(eik_gridS *eik_g, size_t index0) {
+  // add neighbors from accepted BUT that accepted node was initialized
+  // at the begining of the method, i.e. in initializePointsNear
+  
+}
+
+
+
+/* void initializePointsNear(eik_gridS *eik_g, double rBall) { */
+/*   // THIS JUST SETS THE CURRENT STATE TO VALID AND ADDS THE TRUE EIKONAL */
+/*   // given a ball of radius rBall around the initial points we initialize all the points inside those balls with the */
+/*   // true value of the eikonal (i.e. the distance times the index of refraction). We are going to assume that */
+/*   // all those balls belong to the same regions of indices of refraction */
+/*   double xMinxStart[2], xStart[2], xCurrent[2], normCurrent, initialIndexRefraction; */
+/*   int indexStart; */
+/*   for(int j = 0; j<eik_g->nStart; j++){ */
+/*     deleteRoot(eik_g->p_queueG); */
+/*     indexStart = eik_g->start[j]; */
+/*     xStart[0] = eik_g->mesh2->points[ indexStart ][0]; */
+/*     xStart[1] = eik_g->mesh2->points[ indexStart ][1]; */
+/*     for(int i = 0; i<eik_g->mesh2->nPoints; i++){ */
+/*       xCurrent[0] = eik_g->mesh2->points[i][0]; */
+/*       xCurrent[1] = eik_g->mesh2->points[i][1]; */
+/*       vec2_subtraction( xCurrent, xStart, xMinxStart ); */
+/*       normCurrent = l2norm(xMinxStart); */
+/*       if(normCurrent < rBall ){ */
+/*         if( eik_g->current_states[i] == 1 ){ */
+/*           // if it was previously considered as trial we need to delete this from the queue directly */
+/*           delete_findIndex(eik_g->p_queueG, i); */
+/*         } */
+/*         // if this happens, this point is "close enough" to the starting point so that we can initialize it */
+/* 	initialIndexRefraction = minEtaFromTwoPoints(eik_g->mesh2, i, indexStart); */
+/*         eik_g->current_states[i] = 2; // we initialized it directly */
+/*         eik_g->eik_vals[i] = initialIndexRefraction*normCurrent; // add their true Eikonal value */
+/*         eik_g->eik_grad[i][0] = initialIndexRefraction*xMinxStart[0]/normCurrent; // update its gradient */
+/*         eik_g->eik_grad[i][1] = initialIndexRefraction*xMinxStart[1]/normCurrent; */
+/*         addNeighbors_fromAccepted(eik_g, i); // we add its neighbors */
+/*       } */
+/*     } */
+/*   } */
+
+/* } */
 
 
 
