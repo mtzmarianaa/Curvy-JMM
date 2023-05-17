@@ -3113,7 +3113,7 @@ class triangleFan:
         :param bool saveIterates: if the iterates should be saved or not
         '''
         self.nRegions = 0
-        self.params = None     # Always length 2*nRegions + 1
+        self.params = []     # Always length 2*nRegions + 1
         self.x0 = None
         self.T0 = None
         self.grad0 = None
@@ -3128,12 +3128,12 @@ class triangleFan:
         self.listBkBk1 = None
         self.listCurvingInwards = None
         self.optionsTop = None
-        self.optiParams = None     # Always length 2*nRegions + 1
+        self.optiParams = []     # Always length 2*nRegions + 1
         self.optiIndCrTop = None     # length nIndCrTop
-        self.optiParamsCrTop = None     # length 2*nIndCrTop
+        self.optiParamsCrTop = []     # length 2*nIndCrTop
         self.nIndCrTop = 0
         self.optiIndStTop = None     # length nIndStTop
-        self.optiParamsStTop = None     # length 2*nIndStTop
+        self.optiParamsStTop = []     # length 2*nIndStTop
         self.nIndStTop = 0
         self.opti_fVal = 10000000
         self.path = None

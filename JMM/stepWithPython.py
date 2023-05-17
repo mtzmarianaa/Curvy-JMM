@@ -17,7 +17,7 @@ dict_out = triFan.outputJSON(triInfo)
 
 
 # serialize output data as JSON and write to stdout
-with open('/Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json', 'w') as f:
+with open('/Users/marianamartinez/Documents/Curvy-JMM/JMM/updateSolve.json', 'w') as f:
     json.dump(dict_out, f)
 
 if(dict_out["plotAfter"] == 1):

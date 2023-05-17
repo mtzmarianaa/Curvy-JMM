@@ -8,8 +8,8 @@
 
 int main(){
 
-    mesh2S *mesh2;
-    mesh2_alloc(&mesh2);
+    eik_gridS *eik_g;
+    eik_grid_alloc(&eik_g);
     const char *pathPoints, *pathFaces, *pathEdges, *pathEdgesInFace, *pathNeighbors;
     const char *pathIncidentFaces, *pathIndices, *pathBoundary;
     
@@ -23,23 +23,55 @@ int main(){
     pathIndices =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Indices.txt";
     pathBoundary =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_BoundaryCurve.txt";
 
+
+    size_t *start, start_int, nStart;
+
+    start_int = 0;
+    start = &start_int;
+    nStart = 1;
+
+
+    eik_grid_initFromFile(eik_g, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+
+    printAllInfoMesh(eik_g);
+
+
+    //printGeneralInfo(eik_g);
+
+
+    // test the initializing points near
+
+    printGeneralInfo(eik_g);
+
+    double rBall = 2.0;
+
+    printf("Initialize Points Near \n\n\n");
+
+    initializePointsNear(eik_g, rBall);
+
+    printGeneralInfo(eik_g);
+
+
+    eik_grid_dealloc(&eik_g);
+
     
-    mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
-			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+    /* mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
+    /* 			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
 
-    printf("GENERAL INFO \n\n");
-    printGeneralInfoMesh(mesh2);
+    /* printf("GENERAL INFO \n\n"); */
+    /* printGeneralInfoMesh(mesh2); */
 
-    printf("\n\n\n\nALL INFO \n\n");
-    printEverythingInMesh(mesh2);
+    /* printf("\n\n\n\nALL INFO \n\n"); */
+    /* printEverythingInMesh(mesh2); */
 
 
-    // test the initializing with a starting point
+    /* // test the initializing with a starting point */
     
 
 
 
-    mesh2_dealloc(&mesh2);
+    /* mesh2_dealloc(&mesh2); */
 
 
     /* // Now we test the triangleFan */

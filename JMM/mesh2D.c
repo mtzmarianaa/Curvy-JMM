@@ -429,9 +429,9 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     edge0 = mesh2->edgesInFace[faceBetweenPoints][0];
     edge1 = mesh2->edgesInFace[faceBetweenPoints][1];
     edge2 = mesh2->edgesInFace[faceBetweenPoints][2];
-    printf("edge0 %zu\n", edge0);
-    printf("edge1 %zu \n", edge1);
-    printf("edge2 %zu \n", edge2);
+    /* printf("edge0 %zu\n", edge0); */
+    /* printf("edge1 %zu \n", edge1); */
+    /* printf("edge2 %zu \n", edge2); */
     // we need to know which edge is which AND IN WHICH DIRECTION THEY ARE SAVED
     // EDGE0
     if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexk) ) {
@@ -605,9 +605,9 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   edge0 = mesh2->edgesInFace[listFaces[nRegions-1]][0];
   edge1 = mesh2->edgesInFace[listFaces[nRegions-1]][1];
   edge2 = mesh2->edgesInFace[listFaces[nRegions-1]][2];
-  printf("\n\nedge0 %zu\n", edge0);
-  printf("edge1 %zu \n", edge1);
-  printf("edge2 %zu \n", edge2);
+  /* printf("\n\nedge0 %zu\n", edge0); */
+  /* printf("edge1 %zu \n", edge1); */
+  /* printf("edge2 %zu \n", edge2); */
   if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexHat)) {
     listEdges[nRegions] = (int)edge0;
     listB0k[nRegions][0] = mesh2->h_i[edge0].B[0][0];

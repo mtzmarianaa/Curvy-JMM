@@ -43,9 +43,9 @@ typedef struct eik_grid {
   size_t nStart; // number of points in start
   mesh2S *mesh2; // NEW MESH struct
   double *eik_vals; // the current Eikonal values for each indexed point in the mesh
+  double (*grads)[2]; // gradient of the eikonal
   p_queue *p_queueG; // priority queue struct
   size_t *current_states; // 0 far, 1 trial, 2 valid
-  fanUpdateS *fanUpdate; // triangle fan of the optimal update associated to each point in the mesh (includes opti params)
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
@@ -83,7 +83,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
 
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
-		size_t indexHat, size_t firstTriangle, double angleMax) ;
+		size_t indexHat, size_t firstTriangle, double *angleMax) ;
 
 void createJSONFile(fanUpdateS *fanUpdate, char const *path);
 
@@ -96,7 +96,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 
-void triangleFanUpdate_pointNear(eik_gridS *eik_g, size_t index0, size_t indexStart, double eta);
+//void triangleFanUpdate_pointNear(eik_gridS *eik_g, size_t index0, size_t indexStart, double eta);
 
 void initializePointsNear(eik_gridS *eik_g, double rBall);
 
