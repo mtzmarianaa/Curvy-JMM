@@ -50,7 +50,7 @@ int main(){
 
     printf("Initialize Points Near \n\n\n");
 
-    initializePointsNear(eik_g, rBall);
+    initializePointsNear(eik_g, rBall);  // there is an error here
 
     printGeneralInfo(eik_g);
 
