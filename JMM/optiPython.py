@@ -3153,7 +3153,7 @@ class triangleFan:
           Set the parameters of this class from a json type of string
           '''
           tol = 1e-12
-          params_dict = json.load(jsonString) # Loading this json type of string
+          params_dict = json.loads(jsonString) # Loading this json type of string
           self.params_dict = params_dict
           self.x0 =  np.array(params_dict["x0"])
           self.T0 = params_dict["T0"]

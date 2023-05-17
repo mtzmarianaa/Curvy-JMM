@@ -66,23 +66,24 @@ int main(){
     eik_grid_dealloc(&eik_g);
 
 
-    mesh2S *mesh2;
-    mesh2_alloc(&mesh2);
+    /* mesh2S *mesh2; */
+    /* mesh2_alloc(&mesh2); */
 
 
-    mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
-			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
-    printf("Points 5 just mesh2  %f  %f\n", mesh2->points[5][0], mesh2->points[5][1]);
+    
+    /* mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
+    /* 			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
+    /* printf("Points 5 just mesh2  %f  %f\n", mesh2->points[5][0], mesh2->points[5][1]); */
+    
+
+    /* printf("GENERAL INFO \n\n"); */
+    /* printGeneralInfoMesh(mesh2); */
+
+    /* printf("\n\n\n\nALL INFO \n\n"); */
+    /* printEverythingInMesh(mesh2); */
 
 
-    printf("GENERAL INFO \n\n");
-    printGeneralInfoMesh(mesh2);
-
-    printf("\n\n\n\nALL INFO \n\n");
-    printEverythingInMesh(mesh2);
-
-
-    mesh2_dealloc(&mesh2);
+    /* mesh2_dealloc(&mesh2); */
 
 
     /* // Now we test the triangleFan */
