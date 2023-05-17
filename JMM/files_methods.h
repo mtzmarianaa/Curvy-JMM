@@ -1,9 +1,11 @@
+#pragma once
+
 /*
 General methods for dealing with txt files, specially ints or doubles separated by commas
 */
-#pragma once
 
-#include <stdio.h>
+#include <stddef.h>
+
 
 void separateARowSize_t(char *line, int nElementsRow, size_t *row);
 
@@ -19,7 +21,7 @@ void readIntColumn(const char *pathFile, int *column);
 
 void readDbColumn(const char *pathFile, double *column);
 
-void saveTimes(double times[5], const char *pathFile);
+void saveTimes(double *times, const char *pathFile);
 
 void read_n2File_double(double *flattenMatrix, char const *pathFile);
 
@@ -30,4 +32,3 @@ void read_n2File_int(int *flattenMatrix, char const *pathFile);
 void read_n3File_int(int *flattenMatrix, char const *pathFile);
 
 void read_n3File_size_t(size_t *flattenMatrix, char const *pathFile);
-

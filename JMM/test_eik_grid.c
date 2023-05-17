@@ -12,16 +12,16 @@ int main(){
     eik_grid_alloc(&eik_g);
     const char *pathPoints, *pathFaces, *pathEdges, *pathEdgesInFace, *pathNeighbors;
     const char *pathIncidentFaces, *pathIndices, *pathBoundary;
-    
-    pathPoints = "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow//H0/H0_MeshPoints.txt";
-    pathFaces =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Faces.txt";
-    pathEdges =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Edges.txt";
-    pathEdgesInFace = "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_EdgesInFace.txt";
-    pathNeighbors =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Neigh.txt";
-    pathIncidentFaces =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_IncidentFaces.txt";
-    pathIndices =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Indices.txt";
-    pathIndices =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_Indices.txt";
-    pathBoundary =  "/Users/marianamartinez/Documents/Curvy-JMM/TestBaseSnow/H0/H0_BoundaryCurve.txt";
+
+    pathPoints = "./H0/H0_MeshPoints.txt";
+    pathFaces = "./H0/H0_Faces.txt";
+    pathEdges = "./H0/H0_Edges.txt";
+    pathEdgesInFace = "./H0/H0_EdgesInFace.txt";
+    pathNeighbors = "./H0/H0_Neigh.txt";
+    pathIncidentFaces = "./H0/H0_IncidentFaces.txt";
+    pathIndices = "./H0/H0_Indices.txt";
+    pathIndices = "./H0/H0_Indices.txt";
+    pathBoundary = "./H0/H0_BoundaryCurve.txt";
 
 
     size_t *start, start_int, nStart;
@@ -54,11 +54,11 @@ int main(){
 
     printGeneralInfo(eik_g);
 
-    size_t testIndex;
-    testIndex = 2521;
+    // size_t testIndex;
+    // testIndex = 2521;
 
     // test findEdgesOnValidFront
-    int indices1[2], indices2[2], firstTriangles[2];
+    // int indices1[2], indices2[2], firstTriangles[2];
 
     //findEdgesOnValidFront(eik_g, testIndex, indices1, indices2, firstTriangles);
 
@@ -68,6 +68,7 @@ int main(){
 
     /* mesh2S *mesh2; */
     /* mesh2_alloc(&mesh2); */
+
 
     
     /* mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
@@ -119,7 +120,7 @@ int main(){
   /* double x0[2], x1[2], xHat[2], *listIndices; */
   /* double (*listxk)[2], (*listBk)[2], (*listB0k)[2], (*listBkBk1)[2]; */
   /* int *listFaces, *listEdges; */
-  
+
   /* triangleFan_alloc(&triFan); */
 
   /* nRegions = 2; */
@@ -138,7 +139,7 @@ int main(){
   /* listIndices[4] = 1.0; */
 
   /* listxk = malloc(8*sizeof(double)); */
-  /* listxk[0][0] =  9.01006524; */
+  /* listxk[0][0] = 9.01006524; */
   /* listxk[0][1] = -4.739905; */
   /* listxk[1][0] = 8.91006524; */
   /* listxk[1][1] = -4.539905; */
@@ -185,7 +186,7 @@ int main(){
   /* listFaces[0] = -1; */
   /* listFaces[1] = -1; */
 
-  
+
 
 
   /* triangleFan_init(triFan, nRegions, x0, x1, xHat, */
@@ -220,8 +221,8 @@ int main(){
   /* ssize_t num_read = read(fd, buffer, sizeof(buffer)); */
   /* json_object *output_obj = json_tokener_parse(buffer); */
   /* deserializeJSONoutput(fanUpdate, output_obj); */
-  
-  
+
+
 
   /* optimizeTriangleFan_wPython(fanUpdate); */
 

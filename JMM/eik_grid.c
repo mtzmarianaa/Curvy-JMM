@@ -47,19 +47,19 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   double *eik_vals;
   double (*grads)[2]; // this is a pointer to a list of the gradients of the eikonal
   size_t *current_states;
-  
-  eik_vals = malloc(mesh2->nPoints*sizeof(double)); 
+
+  eik_vals = malloc(mesh2->nPoints*sizeof(double));
   current_states = malloc(mesh2->nPoints*sizeof(size_t));
   grads = malloc(2*mesh2->nPoints*sizeof(double));
 
-  
+
   for(int i = 0; i<mesh2->nPoints; i++){
     eik_vals[i] = INFINITY; // set them all to infinity
     current_states[i] = 0; // set them all to far
     grads[i][0] = 0;
     grads[i][1] = 0;
   }
-  
+
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
   eik_g->grads = grads;
@@ -210,7 +210,7 @@ void printInfoFanUpdate(fanUpdateS *fanUpdate) {
     printf("  |%fl    %fl|  ", fanUpdate->path[i][0], fanUpdate->path[i][1]);
   }
 
-  
+
 }
 
 void printAllInfoMesh(eik_gridS *eik_g){
@@ -240,7 +240,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   previousNeighbor = index0;
   // go around
   printf("\n\n\nFinding valid edge from index0: %zu\n", index0);
-  while( j < 2 & i < nNeis ) {
+  while( j < 2 && i < nNeis ) {
     // either we find two valid edges or we go around all the possible neighbors
     twoTrianglesFromEdge(eik_g->mesh2, index0, thisNeighbor, possibleTriangles, possibleThirdVertices );
     if( possibleThirdVertices[0] != previousNeighbor ) {
@@ -258,7 +258,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
     printf("PreviousNeighbor: %zu  with current state: %zu\n This Neighbor: %zu  with current state: %zu\n",
 	   previousNeighbor, eik_g->current_states[previousNeighbor], thisNeighbor, eik_g->current_states[thisNeighbor]);
     // after we determined which is the neighbor that we need to cycle next
-    if( eik_g->current_states[previousNeighbor] == 2 & eik_g->current_states[thisNeighbor] != 2 ){
+    if( eik_g->current_states[previousNeighbor] == 2 && eik_g->current_states[thisNeighbor] != 2 ){
       // thisNeighbor is part of the valid front
       indices1[j] = (int)previousNeighbor;
       indices2[j] = (int)thisNeighbor;
@@ -291,7 +291,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   printf("Indices2 found: indices2[0]: %d,   indices2[1]: %d\n", indices2[0], indices2[1]);
   printf("firstTriangles found: firstTriangles[0]: %d,   firstTriangles[1]: %d\n",
 	 firstTriangles[0], firstTriangles[1]);
-  assert( indices1[0] != -1 | indices1[1] != -1);
+  assert( indices1[0] != -1 || indices1[1] != -1);
 }
 
 
@@ -308,21 +308,18 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   // in the direction of the firstTriangle to update indexHat
   double pi;
   pi = acos(-1.0);
-  size_t nRegions, *listFaces, *listEdges, *listIndicesNodes;
-  double x0[2], x1[2], xHat[2];
+  size_t nRegions, *listIndicesNodes;
+  double x0[2], x1[2];
   x0[0] = eik_g->mesh2->points[index0][0];
   x0[1] = eik_g->mesh2->points[index0][1];
   x1[0] = eik_g->mesh2->points[index1][0];
   x1[1] = eik_g->mesh2->points[index1][1];
-  xHat[0] = eik_g->mesh2->points[indexHat][0];
-  xHat[1] = eik_g->mesh2->points[indexHat][1];
   //////////////////////////
   // first we need to count the number of regions
   double etakM1, etak, xk[2], xk1[2], thisAngle, angleRegion;
-  size_t possibleTriangles[2], possibleThirdVertices[2], indexk, indexk1;
-  size_t thisTriangle, prevTriangle;
+  size_t possibleTriangles[2], possibleThirdVertices[2], indexk1;
+  size_t thisTriangle;
   nRegions = 1;
-  indexk = index1;
   indexk1 = index2;
   xk[0] = x1[0];
   xk[1] = x1[1];
@@ -338,16 +335,12 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
     twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
     if( thisTriangle != possibleTriangles[0]){
       // the next triangle is possibleTriangles[0]
-      indexk = indexk1;
       indexk1 = possibleThirdVertices[0];
-      prevTriangle = thisTriangle;
       thisTriangle = possibleTriangles[0];
     }
     else {
       // the next triangle is possibleTriangles[1]
-      indexk = indexk1;
       indexk1 = possibleThirdVertices[1];
-      prevTriangle = thisTriangle;
       thisTriangle = possibleTriangles[1];
     }
     // update
@@ -382,7 +375,6 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   // triangleFan_initFromIndices and for this we only need the list of indices
   listIndicesNodes = malloc((nRegions + 2)*sizeof(size_t));
   int i = 3;
-  indexk = index1;
   indexk1 = index2;
   thisTriangle = firstTriangle;
   listIndicesNodes[0] = index0;
@@ -393,21 +385,17 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
     twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
     if( thisTriangle != possibleTriangles[0] ) {
       // the next triangle is possibleTriangles[0]
-      indexk = indexk1;
       indexk1 = possibleThirdVertices[0];
-      prevTriangle = thisTriangle;
       thisTriangle = possibleTriangles[0];
     }
     else {
       // the next triangle is possibleTriangles[1]
-      indexk = indexk1;
       indexk1 = possibleThirdVertices[1];
-      prevTriangle = thisTriangle;
       thisTriangle = possibleTriangles[1];
     }
     listIndicesNodes[i] = indexk1;
     i ++;
-    
+
   }
   angleMax[0] = angleMax[0]/pi; // for easy comparison
   //////////////////////////
@@ -422,6 +410,7 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   int i;
   FILE *fp = fopen(path, "w");
+
 
   fprintf(fp, "{");
 
@@ -512,8 +501,8 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
 
   // OPTIONS FOR PLOTTING CHANGE THIS ACCORDINGLY
   fprintf(fp, "\"plotBefore\": 1, \"plotAfter\": 1, \"plotOpti\": 1");
-  
-  
+
+
 
   fprintf(fp, "}");
 
@@ -544,7 +533,7 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
 
   // now for the lists
   json_object *output_list, *value_arr;
-  int i, k;
+  int i;
 
   // get CrTop - extract lists of size_t from output object
   size_t *indCrTop;
@@ -730,12 +719,9 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
 
 
   // create JSON object to represent input data
-  char* input_json; //
-  createJSONFile(fanUpdate, "/Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json");
+  createJSONFile(fanUpdate, "update.json");
   //createJSONinput(fanUpdate, &input_json); // put everything in the json order we want
-  //printf("created json file for input\n");
-  /* if( pipe(pipefd) == -1){ */
-  /*   printf("\nProblem opening pipe\n"); */
+  //printf("created json file for input\n")
   /*   exit(EXIT_FAILURE); */
   /* } */
   /* pid = fork(); */
@@ -825,15 +811,14 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   allPossibleIndicesNodes = malloc(eik_g->mesh2->neighbors->len*sizeof(size_t));
   ///////////////////////////////////////////////////////////
   // FOR THE FIRST ONE
-  size_t indexHat, prevUpdated;
+  size_t indexHat;
   indexHat = index2;
-  prevUpdated = index2;
   allPossibleIndicesNodes[0] = index0;
   allPossibleIndicesNodes[1] = index1;
   allPossibleIndicesNodes[2] = index2;
   i = 3;
   nRegions = 1; // because we have one triangle to begin with
-  while(  indexHat != indexStop & eik_g->current_states[indexHat] != 2 &
+  while(  indexHat != indexStop && eik_g->current_states[indexHat] != 2 &&
 	  i<eik_g->mesh2->neighbors->len ){
     // while we are not on the other valid edge and while the current node we are trying
     // to update is not valid (yet)
@@ -1045,14 +1030,10 @@ void saveComputedValues(eik_gridS *eik_g, const char *pathFile) {
 void saveComputedGradients(eik_gridS *eik_g, const char *pathFile) {
     FILE *fp;
     fp = fopen(pathFile, "wb");
-    
+
     for (int i=0; i<eik_g->mesh2->nPoints; ++i){
       fwrite(eik_g->grads[i], sizeof(double), 2, fp);
     }
 
     fclose(fp);
 }
-
-
-
-
