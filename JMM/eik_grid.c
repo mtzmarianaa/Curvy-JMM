@@ -8,6 +8,7 @@ This is the Eikonal grid with different specifications
 #include "priority_queue.h"
 // #include "opti_method.h" // currently using Python for the optimization
 #include "linAlg.h"
+#include "files_methods.h"
 
 
 #include <stdio.h>
@@ -222,7 +223,7 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   // notice that indices1 is an int because it's going to have a -1 if we just have one valid edge from x0
   assert( eik_g->current_states[index0] == 2); // this HAS to be a valid node
   int nNeis, j, i;
-  size_t thisNeighbor, previousNeighbor, thisTriangle;
+  size_t thisNeighbor, previousNeighbor, thisTriangle, firstNeighbor;
   size_t possibleTriangles[2], possibleThirdVertices[2];
   j = 0;
   i = 1;
@@ -234,7 +235,8 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   firstTriangles[1] = -1; // no triangles found yet
   nNeis = eik_g->mesh2->neighbors[index0].len; // get the number of neighbors of index0
   // just start with any neighbor (doesn't really matter which one)
-  thisNeighbor = (size_t)eik_g->mesh2->neighbors[index0].neis_i[0];
+  firstNeighbor = (size_t)eik_g->mesh2->neighbors[index0].neis_i[0];
+  thisNeighbor = firstNeighbor;
   previousNeighbor = index0;
   // go around
   printf("\n\n\nFinding valid edge from index0: %zu\n", index0);
@@ -263,8 +265,26 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
       firstTriangles[j] = (int)thisTriangle;
       j ++;
     }
+    else if( eik_g->current_states[thisNeighbor] == 2 & eik_g->current_states[previousNeighbor] != 2){
+      indices1[j] = (int)thisNeighbor;
+      indices2[j] = (int)previousNeighbor;
+      firstTriangles[j] = (int)thisTriangle;
+      j ++;
+    }
     i++;
   }
+  if( eik_g->current_states[firstNeighbor] == 2 & eik_g->current_states[thisNeighbor] != 2){
+    indices1[j] = (int)firstNeighbor;
+    indices2[j] = (int)thisNeighbor;
+    firstTriangles[j] = (int)faceBetween3Points(eik_g->mesh2, index0, thisNeighbor, firstNeighbor);
+  }
+  else if( eik_g->current_states[firstNeighbor] != 2 & eik_g->current_states[thisNeighbor] == 2){
+    indices1[j] = (int)thisNeighbor;
+    indices2[j] = (int)firstNeighbor;
+    firstTriangles[j] = (int)faceBetween3Points(eik_g->mesh2, index0, thisNeighbor, firstNeighbor);
+  }
+  // what if the first and the last ones are the ones we need to consider?
+  
   // figure out if we actually have at least one neighbor
   printf("Current eik status of index0: %zu\n", eik_g->current_states[index0]);
   printf("Indices1 found: indices1[0]: %d,   indices1[1]: %d\n", indices1[0], indices1[1]);
@@ -695,6 +715,9 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
   fanUpdate->gradHat[0] = gradHat[0];
   fanUpdate->gradHat[1] = gradHat[1];
 
+  // print the fan update just to see what happened here
+  printInfoFanUpdate(fanUpdate);
+
 }
 
 
@@ -711,39 +734,51 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   createJSONFile(fanUpdate, "/Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json");
   //createJSONinput(fanUpdate, &input_json); // put everything in the json order we want
   //printf("created json file for input\n");
-  if( pipe(pipefd) == -1){
-    printf("\nProblem opening pipe\n");
-    exit(EXIT_FAILURE);
-  }
-  pid = fork();
-  if(pid == 0){
-    // we are in the child process
-    execlp("python", "python", "stepWithPython.py", "update.json", NULL);
-    printf("executed python\n");
-  }
-  else{
-    wait(NULL);
-    char buffer[5000];
-    int fd = open("/Users/marianamartinez/Documents/Curvy-JMM/JMM/updateSolve.json", O_RDONLY);
-    if( fd == -1){
-      printf("\nProblem when opening the output json from Python\n");
-      exit(EXIT_FAILURE);
-    }
-    ssize_t num_read = read(fd, buffer, sizeof(buffer));
-    json_object *output_obj = json_tokener_parse(buffer);
-    deserializeJSONoutput(fanUpdate, output_obj);
-  }
-  
-  /* execlp("python", "python", "stepWithPython.py", NULL); */
-  /* printf("executed python\n"); */
-
-
-  /* char buffer[5000]; */
-  /* int fd = open("/Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json", O_RDONLY); */
-  /* if( fd == -1){ */
-  /*   printf("\nProblem when opening the output json from Python\n"); */
+  /* if( pipe(pipefd) == -1){ */
+  /*   printf("\nProblem opening pipe\n"); */
   /*   exit(EXIT_FAILURE); */
   /* } */
+  /* pid = fork(); */
+  /* if(pid == 0){ */
+  /*   // we are in the child process */
+  /*   execlp("python", "python", "stepWithPython.py", "update.json", NULL); */
+  /*   printf("executed python\n"); */
+  /* } */
+  /* else{ */
+  /*   wait(NULL); */
+  /*   char buffer[5000]; */
+  /*   int fd = open("/Users/marianamartinez/Documents/Curvy-JMM/JMM/updateSolve.json", O_RDONLY); */
+  /*   if( fd == -1){ */
+  /*     printf("\nProblem when opening the output json from Python\n"); */
+  /*     exit(EXIT_FAILURE); */
+  /*   } */
+  /*   ssize_t num_read = read(fd, buffer, sizeof(buffer)); */
+  /*   json_object *output_obj = json_tokener_parse(buffer); */
+  /*   deserializeJSONoutput(fanUpdate, output_obj); */
+  /* } */
+  
+  //execlp("python", "python", "stepWithPython.py", NULL);
+  FILE *fp = popen("python3 /Users/marianamartinez/Documents/Curvy-JMM/JMM/stepWithPython.py /Users/marianamartinez/Documents/Curvy-JMM/JMM/update.json", "r");
+  printf("executed python\n");
+  assert(fp != NULL);
+  char buffer[5000];
+  // print what it gets
+  char buf[5000 + 1];
+  printf("reading from pipe:\n");
+  while (fgets(buf, 5000, fp) != NULL){
+    printf("%s", buf);
+  }
+  // try to separate this
+  double output[3];
+  separateARowDb(&buf[0], 3, output);
+  printf("Row in double: %f   %f   %f\n", output[0], output[1], output[2]);
+  // add this information to fanUpdate
+  fanUpdate->THat = output[0];
+  fanUpdate->gradHat[0] = output[1];
+  fanUpdate->gradHat[1] = output[2];
+  /* json_object *output_obj = json_tokener_parse(buf); */
+  /* deserializeJSONoutput(fanUpdate, output_obj); */
+  /* pclose(fp); */
   /* ssize_t num_read = read(fd, buffer, sizeof(buffer)); */
   /* json_object *output_obj = json_tokener_parse(buffer); */
   /* deserializeJSONoutput(fanUpdate, output_obj); */
