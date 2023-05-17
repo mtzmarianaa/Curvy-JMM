@@ -1,11 +1,14 @@
 #include "files_methods.h"
 
+#include "feature_test.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 void separateARowSize_t(char *line, int nElementsRow, size_t *row) {
-    // In this method given a line of text read from a file 
+    // In this method given a line of text read from a file
     // indices of neighbors we separate them and put it in row.
     char *char_part;
     int int_part;
@@ -21,7 +24,7 @@ void separateARowSize_t(char *line, int nElementsRow, size_t *row) {
 }
 
 void separateARowInt(char *line, int nElementsRow, int *row) {
-    // In this method given a line of text read from a file 
+    // In this method given a line of text read from a file
     // indices of neighbors we separate them and put it in row.
     char *char_part;
     int int_part;
@@ -36,10 +39,10 @@ void separateARowInt(char *line, int nElementsRow, int *row) {
     }
 }
 
-void separateARowDb(char *line, int nElementsRow, double row[nElementsRow]) {
-    // In this method given a line of text read from a file 
+void separateARowDb(char *line, int nElementsRow, double *row) {
+    // In this method given a line of text read from a file
     // indices of neighbors we separate them and put it in row.
-    const char sep[2] = ", ";
+    const char *sep = ", ";
     char *token;
     int i;
     token = strtok(line, sep); //first double found in the line
@@ -154,7 +157,7 @@ void readDbColumn(const char *pathFile, double *column) {
 }
 
 
-void saveTimes(double times[1], const char *pathFile){
+void saveTimes(double *times, const char *pathFile){
   FILE *fp;
   fp = fopen(pathFile, "wb");
   fwrite(times, sizeof(double), 1, fp);
@@ -172,8 +175,6 @@ void read_n2File_double(double *flattenMatrix, char const *pathFile) {
     double row[2]; // temporary row
     row[0] = 0;
     row[1] = 0;
-    int nPoints;
-
 
     printf("\ntrying to open to file\n");
     // Check if the file exists under that path
@@ -186,7 +187,7 @@ void read_n2File_double(double *flattenMatrix, char const *pathFile) {
     else{
         printf("\nFile successfully found\n");
     }
-    
+
     // scan such file
     fp = fopen(pathFile, "r");
     while ((read = getline(&line, &len, fp)) != -1) {
@@ -211,7 +212,6 @@ void read_n2File_size_t(size_t *flattenMatrix, char const *pathFile) {
     size_t row[2]; // temporary row
     row[0] = 0;
     row[1] = 0;
-    int nPoints;
 
     printf("\ntrying to open to file\n");
     // Check if the file exists under that path
@@ -249,7 +249,6 @@ void read_n2File_int(int *flattenMatrix, char const *pathFile) {
     int row[2]; // temporary row
     row[0] = 0;
     row[1] = 0;
-    int nPoints;
 
     printf("\ntrying to open to file\n");
     // Check if the file exists under that path
@@ -290,7 +289,6 @@ void read_n3File_int(int *flattenMatrix, char const *pathFile) {
     row[0] = 0;
     row[1] = 0;
     row[2] = 0;
-    int nPoints;
 
     printf("\ntrying to open to file\n");
     // Check if the file exists under that path
@@ -332,7 +330,6 @@ void read_n3File_size_t(size_t *flattenMatrix, char const *pathFile) {
     row[0] = 0;
     row[1] = 0;
     row[2] = 0;
-    int nPoints;
 
     printf("\ntrying to open to file\n");
     // Check if the file exists under that path
@@ -360,5 +357,3 @@ void read_n3File_size_t(size_t *flattenMatrix, char const *pathFile) {
         free(line);
     }
 }
-
-

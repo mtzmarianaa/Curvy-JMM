@@ -1,16 +1,19 @@
+#include "neighbors.h"
+
 /*
 This is the neighbor struct. Since not all nodes have the same amount of neighbors,
 we have to build a struct so that it mimics this "2d array with varying sizes of rows"
 */
 
-#include "neighbors.h"
-#include "files_methods.h"
+#include "feature_test.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <assert.h>
 
+#include "files_methods.h"
 
 void neighborsRSalloc(neighborsRS **neighbors) {
     // memory allocates one thing of type neighborsRS
@@ -30,7 +33,7 @@ void neighborsRSdealloc(neighborsRS **neighbors){
 }
 
 void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
-    // here we read the txt file, which is the output from meshpy and save this to 
+    // here we read the txt file, which is the output from meshpy and save this to
     // our struct neighborsRS called neighbors in this particular case N are the
     // number of lines that the file has
     FILE *fp; // the file were going to read
@@ -57,7 +60,7 @@ void neighbors_init(neighborsRS *neighbors, char const *pathNeighbors, int N) {
     // nPoints = numLinesInFile(pathNeighbors);
     // assert(nPoints == N); //they should match, if not then either the file is wrong or something is off
 
-    
+
     fp = fopen(pathNeighbors, "r");
     // now we read each line and get the indices for each neighbor
     while ((read = getline(&line, &len, fp)) != -1) {
@@ -108,6 +111,3 @@ void printAllNeighbors(neighborsRS *neighbors, int N) {
         printf("\n\n");
     }
 }
-
-
-

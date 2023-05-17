@@ -1,9 +1,10 @@
 
 /* TRIANGLE 2D MESH STRUCTURE
-This is the 2d triangle mesh structure. It assumes that an output from 
+This is the 2d triangle mesh structure. It assumes that an output from
 meshpy is given
 */
 
+#include "feature_test.h"
 #include "mesh2D.h"
 #include "linAlg.h"
 
@@ -11,6 +12,7 @@ meshpy is given
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <math.h>
 
@@ -139,7 +141,7 @@ void boundaryCurve_init_from_meshpy(boundaryCurve *h_i, size_t nEdges, char cons
     printf("\nError with number of edges, i = %d, nEdges = %zu\n", i, nEdges);
     exit(EXIT_FAILURE);
   }
-      
+
 }
 
 void mesh2_init_from_meshpy(mesh2S *mesh2, char const *pathPoints, char const *pathFaces,
@@ -201,7 +203,7 @@ void mesh2_init_from_meshpy(mesh2S *mesh2, char const *pathPoints, char const *p
   neighbors_init(incidentFaces, pathIncidentFaces, nPoints);
   printf("Read indicent faces to points\n");
   mesh2->incidentFaces = incidentFaces;
-  
+
 
   // init the boundary curve struct
   boundaryCurve_init_from_meshpy(h_i, nEdges, pathBoundary);
@@ -249,7 +251,7 @@ void printEverythingInMesh(mesh2S *mesh2) {
   for( i = 0; i < mesh2->nFaces; i++) {
     printf("Face %d,  edges in this face:    %zu   | %zu   | %zu   \n", i, mesh2->edgesInFace[i][0], mesh2->edgesInFace[i][1], mesh2->edgesInFace[i][2] );
   }
-  
+
   printf("\n\n---------------------------------------\n");
   printf("NEIGHBORS\n");
   printf("The neighbors for each indexed point in this mesh are the following: \n");
@@ -270,7 +272,7 @@ void printEverythingInMesh(mesh2S *mesh2) {
     printf("                   tangent to boundary 1:  %lf | %lf\n", mesh2->h_i[i].B[1][0], mesh2->h_i[i].B[1][1] );
   }
 
-  
+
 }
 
 
@@ -372,15 +374,13 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   // from information from eikgrid we set up a triangle fan
   int *listFaces, *listEdges;
   size_t faceBetweenPoints;
-  double x0[2], x1[2], x2[2], xHat[2], *listIndices;
+  double x0[2], x1[2], xHat[2], *listIndices;
   double (*listxk)[2], (*listB0k)[2], (*listBk)[2], (*listBkBk1)[2];
   triFan->nRegions = nRegions;
   x0[0] = mesh2->points[index0][0];
   x0[1] = mesh2->points[index0][1];
   x1[0] = mesh2->points[index1][0];
   x1[1] = mesh2->points[index1][1];
-  x2[0] = mesh2->points[listIndicesNodes[2]][0];
-  x2[1] = mesh2->points[listIndicesNodes[2]][1];
   xHat[0] = mesh2->points[indexHat][0];
   xHat[1] = mesh2->points[indexHat][1];
   listFaces = malloc(nRegions*sizeof(int));
@@ -391,27 +391,21 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   listBk = malloc(2*(nRegions + 1)*sizeof(double));
   listBkBk1 = malloc(2*(2*nRegions)*sizeof(double));
   // start filling the information in
-  double xk[2], xk1[2];
   size_t indexk, indexk1, edge0, edge1, edge2;
-  size_t edge0k, edge0k1, edgekk1, possibleTriangles[2], possibleThirdVertices[2];
+  size_t possibleTriangles[2], possibleThirdVertices[2];
   int j, i;
   for( i = 0; i <(nRegions + 2); i++){
     listxk[i][0] = mesh2->points[listIndicesNodes[i]][0];
     listxk[i][1] = mesh2->points[listIndicesNodes[i]][1];
   }
 
-  
-  
+
+
   for( i = 0; i<nRegions; i++){
     j = 2*i; // useful for the BkBk1
     // iterate
     indexk = listIndicesNodes[i+1];
     indexk1 = listIndicesNodes[i+2];
-    // get the coordinates of xk and xk1
-    xk[0] = mesh2->points[indexk][0];
-    xk[1] = mesh2->points[indexk][1];
-    xk1[0] = mesh2->points[indexk1][0];
-    xk1[1] = mesh2->points[indexk1][1];
     // get the index of the triangle x0 xk xk1
     faceBetweenPoints = faceBetween3Points(mesh2, index0, indexk, indexk1);
     listFaces[i] = (int)faceBetweenPoints; // add this information
@@ -583,16 +577,14 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBkBk1[j][0] = mesh2->h_i[edge2].B[0][0];
       listBkBk1[j][1] = mesh2->h_i[edge2].B[0][1];
     }
-    
 
 
-    
+
+
   }
 
 
   // add information regarding the edge x0 xHat
-  size_t indexHatM1;
-  indexHatM1 = listIndices[nRegions];
   twoTrianglesFromEdge(mesh2, index0, indexHat, possibleTriangles, possibleThirdVertices);
   if( possibleTriangles[0] != listFaces[nRegions - 1] ){
     // this is the triangle we want
@@ -650,7 +642,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     listB0k[nRegions][0] = mesh2->h_i[edge2].B[1][0];
     listB0k[nRegions][1] = mesh2->h_i[edge2].B[1][1];
   }
-  
+
 
   // finally assign everything
   triFan->x0[0] = x0[0];
@@ -666,7 +658,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   triFan->listB0k = listB0k;
   triFan->listBk = listBk;
   triFan->listBkBk1 = listBkBk1;
-  
+
 }
 
 /* void countTrianglesToSave_reduceTriangleFan(triangleFanS *triFan, size_t *trianglesToSave) { */
@@ -770,12 +762,12 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
 /* 	// we need to save the i-th triangle */
 /* 	listFaces[k] = -1; // because these are all artificial triangles */
 /* 	listIndices[k] = triFan->listIndices[i]; // the index of this triangle */
-	
+
 /*       } */
 /*     } */
- 
+
 /*   } */
-  
+
 /* } */
 
 void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
@@ -813,10 +805,10 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 /*   trianglesToSave = malloc(triFan->nRegions*sizeof(size_t)); */
 /*   int k, j; */
 /*   nRegions_reduced = 0; */
-  
+
 /*   // use the void previously defined */
 /*   countTrianglesToSave_reduceTriangleFan(triFan, trianglesToSave); */
-  
+
 /*   // count the number of triangles that are different */
 /*   for( k = 0; k<triFan->nRegions; k++){ */
 /*     nRegions_reduced += trianglesToSave[k]; */
@@ -826,7 +818,7 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 /*   } */
 
 /*   assert(nRegions_reduced <= triFan->nRegions); // we can't have more triangles than the original triangle */
-  
+
 /*   // ADD THE INFORMATION FROM THE TRIANGLES WE ARE INTERESTED IN  */
 /*   if( nRegions_reduced == triFan->nRegions){ */
 /*     // means that each triangle in the original triangle fan */
@@ -872,7 +864,7 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 /*     } */
 /*     else{ */
 /*       // we need to save more than one triangle */
-      
+
 /*     } */
 /*   } */
 /* } */
@@ -890,12 +882,12 @@ void printEverythingTriFan(triangleFanS *triFan) {
   for( i = 0; i<triFan->nRegions; i++){
     printf("%d, ", triFan->listFaces[i]);
   }
-  
+
   printf("\n\nList indices: \n");
   for( i = 0; i<(2*triFan->nRegions + 1); i++){
     printf("%fl, ", triFan->listIndices[i]);
   }
-  
+
   printf("\n\nList Edges: \n");
   for( i = 0; i<(2*triFan->nRegions + 1); i++){
     printf("%d, ", triFan->listEdges[i]);
@@ -920,8 +912,5 @@ void printEverythingTriFan(triangleFanS *triFan) {
   for( i = 0; i<(2*triFan->nRegions); i++){
     printf("(%fl,  %fl) , ", triFan->listBkBk1[i][0], triFan->listBkBk1[i][1] );
   }
-  
+
 }
-
-
-
