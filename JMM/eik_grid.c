@@ -40,7 +40,7 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   // the rest of the parameters, eik_vals, p_queueG, current_states are going to be assigned inside
   eik_g->start = start;
   eik_g->nStart = nStart;
-  eik_g->mesh2 = mesh2;
+  //eik_g->mesh2 = mesh2;
 
   // we first set all the current eik_vals to infinity, set all the current_states to 0 (far)
   double *eik_vals;
@@ -127,6 +127,9 @@ void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char 
   mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
 			 pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
   // and then we can use the previous method
+  eik_g->mesh2 = mesh2;
+  printf("Points 5: %f %f\n", eik_g->mesh2->points[5][0], eik_g->mesh2->points[5][1]);
+  printf("Points 5: %f %f\n", mesh2->points[5][0], mesh2->points[5][1]);
   eik_grid_init( eik_g, start, nStart, mesh2); // voila
 }
 
@@ -264,6 +267,10 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   }
   // figure out if we actually have at least one neighbor
   printf("Current eik status of index0: %zu\n", eik_g->current_states[index0]);
+  printf("Indices1 found: indices1[0]: %d,   indices1[1]: %d\n", indices1[0], indices1[1]);
+  printf("Indices2 found: indices2[0]: %d,   indices2[1]: %d\n", indices2[0], indices2[1]);
+  printf("firstTriangles found: firstTriangles[0]: %d,   firstTriangles[1]: %d\n",
+	 firstTriangles[0], firstTriangles[1]);
   assert( indices1[0] != -1 | indices1[1] != -1);
 }
 

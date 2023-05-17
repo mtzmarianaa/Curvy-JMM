@@ -11,7 +11,7 @@ typedef struct {
   double B[2][2]; // B1 and B2, tangents at the end point of the edge i
 } boundaryCurve;
 
-typedef struct {
+typedef struct mesh2S{
   // Mesh struct in 2D that also captures information
   // of the boundary (which edges form part of a
   // boundary and the boundary tangent at those points)

@@ -34,6 +34,8 @@ int main(){
     eik_grid_initFromFile(eik_g, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
 			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
 
+    printf("Points 5: %f %f\n", eik_g->mesh2->points[5][0], eik_g->mesh2->points[5][1]);
+
     printAllInfoMesh(eik_g);
 
 
@@ -52,26 +54,35 @@ int main(){
 
     printGeneralInfo(eik_g);
 
+    size_t testIndex;
+    testIndex = 2521;
+
+    // test findEdgesOnValidFront
+    int indices1[2], indices2[2], firstTriangles[2];
+
+    //findEdgesOnValidFront(eik_g, testIndex, indices1, indices2, firstTriangles);
+
 
     eik_grid_dealloc(&eik_g);
 
+
+    mesh2S *mesh2;
+    mesh2_alloc(&mesh2);
+
     
-    /* mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
-    /* 			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
-
-    /* printf("GENERAL INFO \n\n"); */
-    /* printGeneralInfoMesh(mesh2); */
-
-    /* printf("\n\n\n\nALL INFO \n\n"); */
-    /* printEverythingInMesh(mesh2); */
-
-
-    /* // test the initializing with a starting point */
+    mesh2_init_from_meshpy(mesh2, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+    printf("Points 5 just mesh2  %f  %f\n", mesh2->points[5][0], mesh2->points[5][1]);
     
 
+    printf("GENERAL INFO \n\n");
+    printGeneralInfoMesh(mesh2);
+
+    printf("\n\n\n\nALL INFO \n\n");
+    printEverythingInMesh(mesh2);
 
 
-    /* mesh2_dealloc(&mesh2); */
+    mesh2_dealloc(&mesh2);
 
 
     /* // Now we test the triangleFan */
