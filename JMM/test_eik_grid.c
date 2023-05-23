@@ -1,17 +1,19 @@
 #include "mesh2D.h"
 #include "eik_grid.h"
+#include "marcher_T2.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 
 
 int main(){
 
-    eik_gridS *eik_g;
-    eik_grid_alloc(&eik_g);
     const char *pathPoints, *pathFaces, *pathEdges, *pathEdgesInFace, *pathNeighbors;
     const char *pathIncidentFaces, *pathIndices, *pathBoundary;
+    const char *pathSaveEiks, *pathSaveGrads, *pathTimes;
+    double rBall = 2.0;
 
     pathPoints = "./H0/H0_MeshPoints.txt";
     pathFaces = "./H0/H0_Faces.txt";
@@ -23,47 +25,91 @@ int main(){
     pathIndices = "./H0/H0_Indices.txt";
     pathBoundary = "./H0/H0_BoundaryCurve.txt";
 
+    pathSaveEiks = "./H0/H0_ComputedValues.bin";
+    pathSaveGrads = "./H0/H0_ComputedGradients.bin";
+    pathTimes = "./H0/H0_Times.bin";
+
+    double time_taken[1], time;
+    clock_t start_t, end_t;
 
     size_t *start, start_int, nStart;
 
     start_int = 0;
     start = &start_int;
     nStart = 1;
+    // now we test the init with just the path to the files
 
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n------------------------------------");
+    printf("\n\n\n TESTING THE UPDATES WITH CUBIC HERMITE INTERPOLATION \n\n\n\n");
 
-    eik_grid_initFromFile(eik_g, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+    eik_gridS *eik_g1;
+    eik_grid_alloc(&eik_g1);
+
+    eik_grid_initFromFile(eik_g1, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
 			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
 
-    printf("Points 5: %f %f\n", eik_g->mesh2->points[5][0], eik_g->mesh2->points[5][1]);
+    // printAllInfoMesh(eik_g1);
 
-    printAllInfoMesh(eik_g);
+    start_t = clock();
+    marcher_T2(eik_g1, rBall);;
+    end_t = clock();
+    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
+    time_taken[0] = time;
+    
 
+    saveComputedValues(eik_g1, pathSaveEiks);
+    saveComputedGradients(eik_g1, pathSaveGrads);
+    saveTimes(time_taken, pathTimes);
 
-    //printGeneralInfo(eik_g);
+    printGeneralInfo(eik_g1);
 
-
-    // test the initializing points near
-
-    printGeneralInfo(eik_g);
-
-    double rBall = 2.0;
-
-    printf("Initialize Points Near \n\n\n");
-
-    initializePointsNear(eik_g, rBall);  // there is an error here
-
-    printGeneralInfo(eik_g);
-
-    // size_t testIndex;
-    // testIndex = 2521;
-
-    // test findEdgesOnValidFront
-    // int indices1[2], indices2[2], firstTriangles[2];
-
-    //findEdgesOnValidFront(eik_g, testIndex, indices1, indices2, firstTriangles);
+    eik_grid_dealloc(&eik_g1);
 
 
-    eik_grid_dealloc(&eik_g);
+
+
+
+    pathPoints = "./H1/H1_MeshPoints.txt";
+    pathFaces = "./H1/H1_Faces.txt";
+    pathEdges = "./H1/H1_Edges.txt";
+    pathEdgesInFace = "./H1/H1_EdgesInFace.txt";
+    pathNeighbors = "./H1/H1_Neigh.txt";
+    pathIncidentFaces = "./H1/H1_IncidentFaces.txt";
+    pathIndices = "./H1/H1_Indices.txt";
+    pathIndices = "./H1/H1_Indices.txt";
+    pathBoundary = "./H1/H1_BoundaryCurve.txt";
+
+    pathSaveEiks = "./H1/H1_ComputedValues.bin";
+    pathSaveGrads = "./H1/H1_ComputedGradients.bin";
+    pathTimes = "./H1/H1_Times.bin";
+
+    eik_gridS *eik_g2;
+    eik_grid_alloc(&eik_g2);
+
+    eik_grid_initFromFile(eik_g2, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+
+    // printAllInfoMesh(eik_g1);
+
+    start_t = clock();
+    marcher_T2(eik_g2, rBall);;
+    end_t = clock();
+    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
+    time_taken[0] = time;
+    
+
+    saveComputedValues(eik_g2, pathSaveEiks);
+    saveComputedGradients(eik_g2, pathSaveGrads);
+    saveTimes(time_taken, pathTimes);
+
+    printGeneralInfo(eik_g2);
+
+    eik_grid_dealloc(&eik_g2);
+
+
+    
 
 
     /* mesh2S *mesh2; */
@@ -75,7 +121,6 @@ int main(){
     /* 			   pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
     /* printf("Points 5 just mesh2  %f  %f\n", mesh2->points[5][0], mesh2->points[5][1]); */
     
-
     /* printf("GENERAL INFO \n\n"); */
     /* printGeneralInfoMesh(mesh2); */
 

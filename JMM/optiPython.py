@@ -2,9 +2,6 @@
 # we test the projected coordinate gradient descent here
 # to make sure it works or it makes sense to try this approach
 
-
-
-
 import pdb # FOR DEBUGGING
 
 import matplotlib.pyplot as plt
@@ -207,10 +204,10 @@ def partial_fObj_recCr(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, 
      secondDer_Bhalves_atReceiver = itt.secondDer_Boundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
      perL_receiver = partial_L_lamk(shTo, rec, B_atShooterTo, B_halves, secondDer_Bhalves_atReceiver, B_atReceiver, secondDer_B_atReceiver)
      etaMin = min(etaInside, etaOutside)
-     if( shFrom == rec ):
+     if( np.all(receiver == shooterFrom) ):
           return etaMin*perL_receiver
      else:
-          return etaInside*np.dot(B_atReceiver, receiver - shooterFrom) + etaMin*perL_receiver
+          return etaInside*np.dot(B_atReceiver, receiver - shooterFrom)/norm(receiver - shooterFrom) + etaMin*perL_receiver
      
 
 
@@ -227,7 +224,7 @@ def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, 
      B_atReceiver = itt.gradientBoundary(recFrom, x0From, B0From, x1From, B1From)
      parL_shooter = partial_L_muk(sh, recFrom, B_atShooter, secondDer_B_atShooter, B_halves, secondDer_Bhalves_atShooter, B_atReceiver)
      etaMin = min(etaInside, etaOutside)
-     if( sh == recTo ):
+     if( np.all( receiverTo == shooter) ):
           return etaMin*parL_shooter
      else:
           return etaInside*np.dot(-B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter) + etaMin*parL_shooter
@@ -247,7 +244,7 @@ def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak,
      B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
      perL_lamk1 = partial_L_lamk(muk1, lamk1, B0k1_muk1, B0k1_halves, secondDer_B0k1halves_lamk1, B0k1_lamk1, secondDer_B0k1_lamk1)
      etaMin = min(etak, etak1)
-     if( muk == lamk1 ):
+     if( np.all(yk1 == zk) ):
           return etaMin*perL_lamk1
      else:
           return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
@@ -2874,8 +2871,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      else:
           indCrTop = [-1]
           paramsCrTop = [0,0]
-     grads = np.zeros((nGrads, 2)) # Initialize
-     path = np.zeros((nGrads, 2)) # Initialize
+     grads = np.zeros((nGrads, 2), dtype=float) # Initialize
+     path = np.zeros((nGrads, 2), dtype=float) # Initialize
      currentCrTop = 0
      currentStTop = 0
      n = len(listxk) - 2
@@ -2914,16 +2911,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           Bsk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
-               grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
+               grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
           path[2, :] = bk
           if( rk != sk ):
-               grads[1, :] = Bsk/norm(Bsk)*etaMinCr # creeping ray from r1 to s1
+               grads[1, :] = (Bsk/norm(Bsk))*etaMinCr # creeping ray from r1 to s1
           if( np.any(yk1 != bk) ):
-               grads[2, :] = (yk1 - bk)/norm(yk1 - bk)*etak # Ray from s1 to lam2
+               grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
           if( lam2 != mu2 ):
-               grads[3, :] = Bmu2/norm(Bmu2)*etaMin # Creeping ray from lam2 to mu2
+               grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentCrTop < len(indCrTop) - 1):
                currentCrTop += 1
@@ -2935,25 +2932,25 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
-               grads[0, :] = (ak - zk)/norm(ak - zk)*etak # Ray from mu1 to r1
+               grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
           path[2, :] = bk
           if( np.any(bk != ak) ):
-               grads[1, :] = (bk - ak)/norm(bk - ak)*etaRegionOutside # Ray from r1 to s1
+               grads[1, :] = ((bk - ak)/norm(bk - ak))*etaRegionOutside # Ray from r1 to s1
           if( np.any( yk1 != bk) ):
-               grads[2, :] = (yk1 - bk)/norm(yk1 - bk)*etak # Ray from s1 to lam2
+               grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
           if( lam2 != mu2 ):
-               grads[3, :] = Bmu2/norm(Bmu2)*etaMin # Creeping ray from lam2 to mu2
+               grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentStTop < len(indStTop) - 1):
                currentStTop += 1
      else:
           # Means that the next point is on h0hk1
           if( np.any(yk1 != zk) ):
-               grads[0, :] = (yk1 - zk)/norm(yk1 - zk)*etak
+               grads[0, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
           if( lam2 != mu2 ):
-               grads[1, :] = Bmu2/norm(Bmu2)*etaMin
+               grads[1, :] = (Bmu2/norm(Bmu2))*etaMin
           path[1, :] = yk1
           currGrad = 2
      # NOW WE CIRCLE AROUND THE TRIANGLE FAN
@@ -2995,16 +2992,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                Bsk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                if( np.any( ak != zk) ):
-                    grads[currGrad, :] = (ak - zk)/norm(ak - zk)*etak
+                    grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
                if( rk != sk ):
-                    grads[currGrad + 1, :] = Bsk/norm(Bsk)*etaMinCr
+                    grads[currGrad + 1, :] = (Bsk/norm(Bsk))*etaMinCr
                path[currGrad + 2, :] = bk
                if( np.any( yk1 != bk) ):
-                    grads[currGrad + 2, :] = (yk1 - bk)/norm(yk1 - bk)*etak
+                    grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
                if( lamk1 != muk1 ):
-                    grads[currGrad + 3, :] = Bmuk1/norm(Bmuk1)*etaMin
+                    grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
                     currentCrTop += 1
@@ -3026,16 +3023,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
                bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                if( np.any( ak != zk) ):
-                    grads[currGrad, :] = (ak - zk)/norm(ak - zk)*etak
+                    grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
                if( rk != sk ):
-                    grads[currGrad + 1, :] = (bk - ak)/norm(bk - ak)*etaRegionOutside
+                    grads[currGrad + 1, :] = ((bk - ak)/norm(bk - ak))*etaRegionOutside
                path[currGrad + 2, :] = bk
                if( np.any( yk1 != bk) ):
-                    grads[currGrad + 2, :] = (yk1 - bk)/norm(yk1 - bk)*etak
+                    grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
                if( lamk1 != muk1 ):
-                    grads[currGrad + 3, :] = Bmuk1/norm(Bmuk1)*etaMin
+                    grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
                     currentCrTop += 1
@@ -3057,9 +3054,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                path[currGrad + 1, :] = yk1
                path[currGrad + 2, :] = zk1
                if( np.any( zk != yk1 ) ):
-                    grads[currGrad, :] = (yk1 - zk)/norm(yk1 - zk)*etak
+                    grads[currGrad, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
                if( abs(lamk1 - muk1) > tol ):
-                    grads[currGrad + 1, :] = Bmuk1/norm(Bmuk1)*etaMin
+                    grads[currGrad + 1, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 2
      return path, grads
      
@@ -3155,25 +3152,44 @@ class triangleFan:
           tol = 1e-12
           params_dict = json.loads(jsonString) # Loading this json type of string
           self.params_dict = params_dict
-          self.x0 =  np.array(params_dict["x0"])
+          self.x0 =  np.array(params_dict["x0"], dtype=float)
           self.T0 = params_dict["T0"]
-          self.grad0 = np.array( params_dict["grad0"] )
-          self.x1 = np.array( params_dict["x1"])
+          self.grad0 = np.array( params_dict["grad0"], dtype=float )
+          self.x1 = np.array( params_dict["x1"], dtype=float)
           self.T1 = params_dict["T1"]
-          self.grad1 = np.array( params_dict["grad1"])
-          self.xHat = np.array( params_dict["xHat"] )
-          self.listIndices = np.array(params_dict["listIndices"])
-          self.listxk = np.array(params_dict["listxk"])
-          self.listB0k = np.array(params_dict["listB0k"])
-          self.listBk = np.array(params_dict["listBk"])
-          self.listBkBk1 = np.array(params_dict["listBkBk1"])
+          self.grad1 = np.array( params_dict["grad1"], dtype=float)
+          self.xHat = np.array( params_dict["xHat"] , dtype=float)
+          self.listIndices = np.array(params_dict["listIndices"], dtype=float)
+          self.listxk = np.array(params_dict["listxk"], dtype=float)
+          self.listB0k = np.array(params_dict["listB0k"], dtype=float)
+          self.listBk = np.array(params_dict["listBk"], dtype=float)
+          self.listBkBk1 = np.array(params_dict["listBkBk1"], dtype=float)
           self.plotBefore = bool(params_dict["plotBefore"])
           self.plotAfter = bool(params_dict["plotAfter"])
           self.plotOpti = bool(params_dict["plotOpti"])
           self.nRegions = len(self.listxk) - 2
           self.params = np.ones((2*self.nRegions + 1))
-          # Then we need to put the B0k, Bk in the desired format
+          # First we need to change the B0k, Bk, BkBk1 if they are zero (i.e. they are NOT on the boundary)
           n = self.nRegions
+          for k in range(n+1):
+               B0k = self.listB0k[k]
+               Bk = self.listBk[k]
+               if( norm(B0k) == 0 or norm(Bk) == 0 ):
+                    x0 = self.x0
+                    xk = self.listxk[k + 1]
+                    xkMinx0 = xk - x0
+                    self.listB0k[k] = xkMinx0
+                    self.listBk[k] = xkMinx0
+          for k in range(n):
+               BkBk1_0 = self.listBkBk1[2*k]
+               BkBk1_1 = self.listBkBk1[2*k + 1]
+               if( norm(BkBk1_0) == 0 or norm(BkBk1_1) == 0):
+                    xk = self.listxk[k+1]
+                    xk1 = self.listxk[k+2]
+                    xk1Minxk = xk1 - xk
+                    self.listBkBk1[2*k] = xk1Minxk
+                    self.listBkBk1[2*k + 1] = xk1Minxk
+          # Then we need to put the B0k, Bk in the desired format
           for k in range(n+1):
                B0k = self.listB0k[k]
                Bk = self.listBk[k]
@@ -3181,6 +3197,7 @@ class triangleFan:
                if( np.dot(B0k, xk - self.x0) < 0 ):
                     self.listB0k[k] = -B0k
                     self.listBk[k] = -Bk
+          # After modified, set listB0k, listBk, listBkBk1
           # Now for BkBk1, also compute the list curving inwards
           self.listCurvingInwards = []
           for k in range(n):
@@ -3317,7 +3334,7 @@ class triangleFan:
                                                      self.optiIndStTop, self.optiParamsStTop)
           gradLast = self.grads[-1]
           k = len(self.grads) - 1
-          while( norm(gradLast) == 0 and k > 0):
+          while( norm(gradLast) == 0 and k > -1):
                gradLast = self.grads[k]
                k = k -1
           self.lastGrad = gradLast

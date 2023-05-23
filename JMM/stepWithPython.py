@@ -14,6 +14,10 @@ with open(Path(sys.argv[1])) as f:
     triInfo = f.readline()
     print(triInfo)
     dict_out = triFan.outputJSON(triInfo)
+    # try:
+    #     dict_out = triFan.outputJSON(triInfo)
+    # except:
+    #     import ipdb; ipdb.set_trace()
     print(dict_out["THat"], ", ", dict_out["gradHat"][0], ", ", dict_out["gradHat"][1])
     #str_out = json.dumps(dict_out)
     #print(str_out)

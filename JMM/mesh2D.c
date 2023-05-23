@@ -280,45 +280,48 @@ void printEverythingInMesh(mesh2S *mesh2) {
 // notice that given a point we can define two triangle fans
 
 void twoTrianglesFromEdge(mesh2S *mesh2, size_t index0, size_t index1,
-			  size_t possibleTriangles[2], size_t possibleThirdVertices[2] ) {
+			  int possibleTriangles[2], size_t possibleThirdVertices[2] ) {
   // given a triangle mesh and two indices indices defining two nodes in the mesh,
   // output the two adjacent triangles to that edge and the two other possible third vertices
   size_t j, currentTriangle;
+  possibleTriangles[0] = -1;
+  possibleTriangles[1] = -1;
   j = 0;
   for( int i = 0; i<mesh2->incidentFaces[index0].len; i++ ){
     // circle around all the incident faces to the node associated with index0
     currentTriangle = mesh2->incidentFaces[index0].neis_i[i]; // current incident face to x0
-    if( (mesh2->faces[currentTriangle][0] == index0) & (mesh2->faces[currentTriangle][1] == index1) ) {
+    if( (mesh2->faces[currentTriangle][0] == index0) && (mesh2->faces[currentTriangle][1] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][2];
       j ++;
     }
-    else if( (mesh2->faces[currentTriangle][1] == index0) & (mesh2->faces[currentTriangle][0] == index1) ) {
+    else if( (mesh2->faces[currentTriangle][1] == index0) && (mesh2->faces[currentTriangle][0] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][2];
       j ++ ;
     }
-    else if( (mesh2->faces[currentTriangle][0] == index0) & (mesh2->faces[currentTriangle][2] == index1) ) {
+    else if( (mesh2->faces[currentTriangle][0] == index0) && (mesh2->faces[currentTriangle][2] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][1];
       j ++;
     }
-    else if( (mesh2->faces[currentTriangle][2] == index0) & (mesh2->faces[currentTriangle][0] == index1) ) {
+    else if( (mesh2->faces[currentTriangle][2] == index0) && (mesh2->faces[currentTriangle][0] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][1];
       j ++;
     }
-    else if( (mesh2->faces[currentTriangle][1] == index0) & (mesh2->faces[currentTriangle][2] == index1) ) {
+    else if( (mesh2->faces[currentTriangle][1] == index0) && (mesh2->faces[currentTriangle][2] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][0];
       j ++;
     }
-    else if( (mesh2->faces[currentTriangle][2] == index0) & (mesh2->faces[currentTriangle][1] == index1) ) {
+    else if( (mesh2->faces[currentTriangle][2] == index0) && (mesh2->faces[currentTriangle][1] == index1) ) {
       possibleTriangles[j] = currentTriangle;
       possibleThirdVertices[j] = mesh2->faces[currentTriangle][0];
       j ++;
     }
   }
+  
   if( j == 0 ){
     printf("\n\nCant find incident faces\n\n");
     assert(j != 0);
@@ -329,31 +332,46 @@ void twoTrianglesFromEdge(mesh2S *mesh2, size_t index0, size_t index1,
 double minEtaFromTwoPoints(mesh2S *mesh2, size_t index0, size_t index1) {
   size_t possibleTriangles[2], possibleThirdVertices[2];
   // using the function defined before
-  twoTrianglesFromEdge(mesh2, index0, index1, possibleTriangles, possibleThirdVertices);
+  int posTri[2];
+  twoTrianglesFromEdge(mesh2, index0, index1, posTri, possibleThirdVertices);
   // compare the etas
   double eta0, eta1;
-  eta0 = mesh2->eta[possibleTriangles[0]];
-  eta1 = mesh2->eta[possibleTriangles[1]];
-  if( eta0 < eta1 ){
-    return eta0;
+  if( posTri[0] != -1 && posTri[1] != -1){
+    possibleTriangles[0] = (size_t)posTri[0];
+    possibleTriangles[1] = (size_t)posTri[1];
+    eta0 = mesh2->eta[possibleTriangles[0]];
+    eta1 = mesh2->eta[possibleTriangles[1]];
+    if( eta0 < eta1 ){
+      return eta0;
+    }
+    else {
+      return eta1;
+    }
   }
-  else {
-    return eta1;
+  else if( posTri[0] != -1){
+    possibleTriangles[0] = (size_t)posTri[0];
+    possibleTriangles[1] = (size_t)posTri[0];
+    return mesh2->eta[possibleTriangles[0]];
+  }
+  else{
+    possibleTriangles[0] = (size_t)posTri[1];
+    possibleTriangles[1] = (size_t)posTri[1];
+    return mesh2->eta[possibleTriangles[1]];
   }
 }
 
-size_t faceBetween3Points(mesh2S *mesh2, size_t index0, size_t index1, size_t index2) {
+int faceBetween3Points(mesh2S *mesh2, size_t index0, size_t index1, size_t index2) {
   // given 3 points that share a face it outputs the index of such face found
   // if there is no such face it outputs -1
-  size_t faceIndex;
-  int faceFound;
+  int faceIndex;
+  int faceFound; // flag to see if we have found a face or if we shoud continue
   faceFound = -1; // because we haven't found the desired face yet
   size_t currentFace;
   for( int i = 0; i<mesh2->incidentFaces[index0].len; i++) {
     currentFace = mesh2->incidentFaces[index0].neis_i[i];
-    if( (mesh2->faces[currentFace][0] == index1) | (mesh2->faces[currentFace][1] == index1) | (mesh2->faces[currentFace][2] == index1) ) {
+    if( (mesh2->faces[currentFace][0] == index1) || (mesh2->faces[currentFace][1] == index1) || (mesh2->faces[currentFace][2] == index1) ) {
       // index0 and index1 share a face/triangle
-      if( (mesh2->faces[currentFace][0] == index2) | (mesh2->faces[currentFace][1] == index2) | (mesh2->faces[currentFace][2] == index2) ){
+      if( (mesh2->faces[currentFace][0] == index2) || (mesh2->faces[currentFace][1] == index2) || (mesh2->faces[currentFace][2] == index2) ){
 	// index0, index1, index2 share this face/triangle
 	faceIndex = currentFace;
 	faceFound = 0; // because we've found a face
@@ -362,8 +380,8 @@ size_t faceBetween3Points(mesh2S *mesh2, size_t index0, size_t index1, size_t in
     }
   }
   if( faceFound == -1 ){
+    faceIndex = -1;
     printf("\n\nIndex0: %zu, Index1: %zu, Index2: %zu   DONT SHARE A FACE\n\n", index0, index1, index2);
-    assert(faceFound != 1);
   }
   return faceIndex;
 }
@@ -392,13 +410,13 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   listBkBk1 = malloc(2*(2*nRegions)*sizeof(double));
   // start filling the information in
   size_t indexk, indexk1, edge0, edge1, edge2;
-  size_t possibleTriangles[2], possibleThirdVertices[2];
+  size_t possibleThirdVertices[2];
+  int possibleTriangles[2];
   int j, i;
   for( i = 0; i <(nRegions + 2); i++){
     listxk[i][0] = mesh2->points[listIndicesNodes[i]][0];
     listxk[i][1] = mesh2->points[listIndicesNodes[i]][1];
   }
-
 
 
   for( i = 0; i<nRegions; i++){
@@ -413,11 +431,17 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     // We need to add the index of refraction of the triangle on the outside
     twoTrianglesFromEdge(mesh2, indexk, indexk1, possibleTriangles, possibleThirdVertices);
     // we don't want faceBetweenPoints, we want the other one
-    if( possibleTriangles[0] != faceBetweenPoints){
+    if( (size_t)possibleTriangles[0] != faceBetweenPoints && possibleTriangles[0] != -1){
       listIndices[nRegions + i+1] = mesh2->eta[possibleTriangles[0]];
     }
-    else{
+    else if (possibleTriangles[1] != -1){
+      printf("Inside triangleFan_initFromIndices, possibleTriangles[1]: %d\n", possibleTriangles[1]);
       listIndices[nRegions + i+1] = mesh2->eta[possibleTriangles[1]];
+    }
+    else{
+      // we are on the side of the box we are solving the problem in
+      printf("Inside triangleFan_initFromIndices, possibleTriangles[1] == -1 and possibleTriangles[0] == -1, index: %lu\n", nRegions + i + 1);
+      listIndices[nRegions + i + 1] = mesh2->eta[faceBetweenPoints];
     }
     // get the 3 that make up this triangle
     edge0 = mesh2->edgesInFace[faceBetweenPoints][0];
@@ -428,7 +452,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     /* printf("edge2 %zu \n", edge2); */
     // we need to know which edge is which AND IN WHICH DIRECTION THEY ARE SAVED
     // EDGE0
-    if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexk) ) {
+    if( (mesh2->edges[edge0][0] == index0) && (mesh2->edges[edge0][1] == indexk) ) {
       // we are in the x0 xk edge
       listEdges[i] = (int)edge0;
       listB0k[i][0] = mesh2->h_i[edge0].B[0][0];
@@ -436,7 +460,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge0].B[1][0];
       listBk[i][1] = mesh2->h_i[edge0].B[1][1];
     }
-    else if( (mesh2->edges[edge0][1] == index0) & (mesh2->edges[edge0][0] == indexk) ) {
+    else if( (mesh2->edges[edge0][1] == index0) && (mesh2->edges[edge0][0] == indexk) ) {
       // we are in the xk x0 edge
       listEdges[i] = (int)edge0;
       listB0k[i][0] = mesh2->h_i[edge0].B[1][0];
@@ -444,7 +468,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge0].B[0][0];
       listBk[i][1] = mesh2->h_i[edge0].B[0][1];
     }
-    else if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexk1) ) {
+    else if( (mesh2->edges[edge0][0] == index0) && (mesh2->edges[edge0][1] == indexk1) ) {
       // we are in the x0 xk1 edge
       listEdges[i+1] = (int)edge0;
       listB0k[i+1][0] = mesh2->h_i[edge0].B[0][0];
@@ -452,7 +476,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge0].B[1][0];
       listBk[i+1][1] = mesh2->h_i[edge0].B[1][1];
     }
-    else if( (mesh2->edges[edge0][1] == index0) & (mesh2->edges[edge0][0] == indexk1) ) {
+    else if( (mesh2->edges[edge0][1] == index0) && (mesh2->edges[edge0][0] == indexk1) ) {
       // we are in the xk1 x0 edge
       listEdges[i+1] = (int)edge0;
       listB0k[i+1][0] = mesh2->h_i[edge0].B[1][0];
@@ -460,7 +484,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge0].B[0][0];
       listBk[i+1][1] = mesh2->h_i[edge0].B[0][1];
     }
-    else if( (mesh2->edges[edge0][1] == indexk) & (mesh2->edges[edge0][0] == indexk1) ) {
+    else if( (mesh2->edges[edge0][1] == indexk) && (mesh2->edges[edge0][0] == indexk1) ) {
       // we are in the xk xk1 edge
       listEdges[nRegions + i + 1] = (int)edge0;
       listBkBk1[j][0] = mesh2->h_i[edge0].B[1][0];
@@ -468,7 +492,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBkBk1[j+1][0] = mesh2->h_i[edge0].B[0][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge0].B[0][1];
     }
-    else if( (mesh2->edges[edge0][0] == indexk) & (mesh2->edges[edge0][1] == indexk1) ) {
+    else if( (mesh2->edges[edge0][0] == indexk) && (mesh2->edges[edge0][1] == indexk1) ) {
       // we are in the xk1 xk edge
       listEdges[nRegions + i + 1] = (int)edge0;
       listBkBk1[j+1][0] = mesh2->h_i[edge0].B[1][0];
@@ -478,7 +502,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
 
     // EDGE1
-    if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexk) ) {
+    if( (mesh2->edges[edge1][0] == index0) && (mesh2->edges[edge1][1] == indexk) ) {
       // we are in the x0 xk edge
       listEdges[i] = (int)edge1;
       listB0k[i][0] = mesh2->h_i[edge1].B[0][0];
@@ -486,7 +510,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge1].B[1][0];
       listBk[i][1] = mesh2->h_i[edge1].B[1][1];
     }
-    else if( (mesh2->edges[edge1][1] == index0) & (mesh2->edges[edge1][0] == indexk) ) {
+    else if( (mesh2->edges[edge1][1] == index0) && (mesh2->edges[edge1][0] == indexk) ) {
       // we are in the xk x0 edge
       listEdges[i] = (int)edge1;
       listB0k[i][0] = mesh2->h_i[edge1].B[1][0];
@@ -494,7 +518,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge1].B[0][0];
       listBk[i][1] = mesh2->h_i[edge1].B[0][1];
     }
-    else if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexk1) ) {
+    else if( (mesh2->edges[edge1][0] == index0) && (mesh2->edges[edge1][1] == indexk1) ) {
       // we are in the x0 xk1 edge
       listEdges[i+1] = (int)edge1;
       listB0k[i+1][0] = mesh2->h_i[edge1].B[0][0];
@@ -502,7 +526,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge1].B[1][0];
       listBk[i+1][1] = mesh2->h_i[edge1].B[1][1];
     }
-    else if( (mesh2->edges[edge1][1] == index0) & (mesh2->edges[edge1][0] == indexk1) ) {
+    else if( (mesh2->edges[edge1][1] == index0) && (mesh2->edges[edge1][0] == indexk1) ) {
       // we are in the xk1 x0 edge
       listEdges[i+1] = (int)edge1;
       listB0k[i+1][0] = mesh2->h_i[edge1].B[1][0];
@@ -510,7 +534,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge1].B[0][0];
       listBk[i+1][1] = mesh2->h_i[edge1].B[0][1];
     }
-    else if( (mesh2->edges[edge1][1] == indexk) & (mesh2->edges[edge1][0] == indexk1) ) {
+    else if( (mesh2->edges[edge1][1] == indexk) && (mesh2->edges[edge1][0] == indexk1) ) {
       // we are in the xk xk1 edge
       listEdges[nRegions + i + 1] = (int)edge1;
       listBkBk1[j][0] = mesh2->h_i[edge1].B[1][0];
@@ -518,7 +542,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBkBk1[j+1][0] = mesh2->h_i[edge1].B[0][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge1].B[0][1];
     }
-    else if( (mesh2->edges[edge1][0] == indexk) & (mesh2->edges[edge1][1] == indexk1) ) {
+    else if( (mesh2->edges[edge1][0] == indexk) && (mesh2->edges[edge1][1] == indexk1) ) {
       // we are in the xk1 xk edge
       listEdges[nRegions + i + 1] = (int)edge1;
       listBkBk1[j+1][0] = mesh2->h_i[edge1].B[1][0];
@@ -529,7 +553,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
 
 
     // EDGE2
-    if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexk) ) {
+    if( (mesh2->edges[edge2][0] == index0) && (mesh2->edges[edge2][1] == indexk) ) {
       // we are in the x0 xk edge
       listEdges[i] = (int)edge2;
       listB0k[i][0] = mesh2->h_i[edge2].B[0][0];
@@ -537,7 +561,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge2].B[1][0];
       listBk[i][1] = mesh2->h_i[edge2].B[1][1];
     }
-    else if( (mesh2->edges[edge2][1] == index0) & (mesh2->edges[edge2][0] == indexk) ) {
+    else if( (mesh2->edges[edge2][1] == index0) && (mesh2->edges[edge2][0] == indexk) ) {
       // we are in the xk x0 edge
       listEdges[i] = (int)edge2;
       listB0k[i][0] = mesh2->h_i[edge2].B[1][0];
@@ -545,7 +569,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i][0] = mesh2->h_i[edge2].B[0][0];
       listBk[i][1] = mesh2->h_i[edge2].B[0][1];
     }
-    else if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexk1) ) {
+    else if( (mesh2->edges[edge2][0] == index0) && (mesh2->edges[edge2][1] == indexk1) ) {
       // we are in the x0 xk1 edge
       listEdges[i+1] = (int)edge2;
       listB0k[i+1][0] = mesh2->h_i[edge2].B[0][0];
@@ -553,7 +577,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge2].B[1][0];
       listBk[i+1][1] = mesh2->h_i[edge2].B[1][1];
     }
-    else if( (mesh2->edges[edge2][1] == index0) & (mesh2->edges[edge2][0] == indexk1) ) {
+    else if( (mesh2->edges[edge2][1] == index0) && (mesh2->edges[edge2][0] == indexk1) ) {
       // we are in the xk1 x0 edge
       listEdges[i+1] = (int)edge2;
       listB0k[i+1][0] = mesh2->h_i[edge2].B[1][0];
@@ -561,7 +585,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBk[i+1][0] = mesh2->h_i[edge2].B[0][0];
       listBk[i+1][1] = mesh2->h_i[edge2].B[0][1];
     }
-    else if( (mesh2->edges[edge2][1] == indexk) & (mesh2->edges[edge2][0] == indexk1) ) {
+    else if( (mesh2->edges[edge2][1] == indexk) && (mesh2->edges[edge2][0] == indexk1) ) {
       // we are in the xk xk1 edge
       listEdges[nRegions + i + 1] = (int)edge2;
       listBkBk1[j][0] = mesh2->h_i[edge2].B[1][0];
@@ -569,7 +593,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listBkBk1[j+1][0] = mesh2->h_i[edge2].B[0][0];
       listBkBk1[j+1][1] = mesh2->h_i[edge2].B[0][1];
     }
-    else if( (mesh2->edges[edge2][0] == indexk) & (mesh2->edges[edge2][1] == indexk1) ) {
+    else if( (mesh2->edges[edge2][0] == indexk) && (mesh2->edges[edge2][1] == indexk1) ) {
       // we are in the xk1 xk edge
       listEdges[nRegions + i + 1] = (int)edge2;
       listBkBk1[j+1][0] = mesh2->h_i[edge2].B[1][0];
@@ -579,19 +603,21 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     }
 
 
-
-
   }
 
 
   // add information regarding the edge x0 xHat
   twoTrianglesFromEdge(mesh2, index0, indexHat, possibleTriangles, possibleThirdVertices);
-  if( possibleTriangles[0] != listFaces[nRegions - 1] ){
+  if( possibleTriangles[0] != listFaces[nRegions - 1] && possibleTriangles[0] != -1 ){
     // this is the triangle we want
     listIndices[nRegions] = mesh2->eta[possibleTriangles[0]];
   }
-  else{
+  else if (possibleTriangles[1] != listFaces[nRegions - 1] && possibleTriangles[1] != -1) {
     listIndices[nRegions] = mesh2->eta[possibleTriangles[1]];
+  }
+  else {
+    printf("Inside triangleFan_initFromIndices, the edge x0 xHat is on the border of square, setting it to %fl\n", listIndices[nRegions - 1]);
+    listIndices[nRegions] = listIndices[nRegions - 1];
   }
   // for the edges
   edge0 = mesh2->edgesInFace[listFaces[nRegions-1]][0];
@@ -600,42 +626,42 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
   /* printf("\n\nedge0 %zu\n", edge0); */
   /* printf("edge1 %zu \n", edge1); */
   /* printf("edge2 %zu \n", edge2); */
-  if( (mesh2->edges[edge0][0] == index0) & (mesh2->edges[edge0][1] == indexHat)) {
+  if( (mesh2->edges[edge0][0] == index0) && (mesh2->edges[edge0][1] == indexHat)) {
     listEdges[nRegions] = (int)edge0;
     listB0k[nRegions][0] = mesh2->h_i[edge0].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge0].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge0].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge0].B[1][1];
   }
-  else if( (mesh2->edges[edge0][0] == indexHat) & (mesh2->edges[edge0][1] == index0)) {
+  else if( (mesh2->edges[edge0][0] == indexHat) && (mesh2->edges[edge0][1] == index0)) {
     listEdges[nRegions] = (int)edge0;
     listBk[nRegions][0] = mesh2->h_i[edge0].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge0].B[0][1];
     listB0k[nRegions][0] = mesh2->h_i[edge0].B[1][0];
     listB0k[nRegions][1] = mesh2->h_i[edge0].B[1][1];
   }
-  if( (mesh2->edges[edge1][0] == index0) & (mesh2->edges[edge1][1] == indexHat)) {
+  if( (mesh2->edges[edge1][0] == index0) && (mesh2->edges[edge1][1] == indexHat)) {
     listEdges[nRegions] = (int)edge1;
     listB0k[nRegions][0] = mesh2->h_i[edge1].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge1].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge1].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge1].B[1][1];
   }
-  else if( (mesh2->edges[edge1][0] == indexHat) & (mesh2->edges[edge1][1] == index0)) {
+  else if( (mesh2->edges[edge1][0] == indexHat) && (mesh2->edges[edge1][1] == index0)) {
     listEdges[nRegions] = (int)edge1;
     listBk[nRegions][0] = mesh2->h_i[edge1].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge1].B[0][1];
     listB0k[nRegions][0] = mesh2->h_i[edge1].B[1][0];
     listB0k[nRegions][1] = mesh2->h_i[edge1].B[1][1];
   }
-  if( (mesh2->edges[edge2][0] == index0) & (mesh2->edges[edge2][1] == indexHat)) {
+  if( (mesh2->edges[edge2][0] == index0) && (mesh2->edges[edge2][1] == indexHat)) {
     listEdges[nRegions] = (int)edge2;
     listB0k[nRegions][0] = mesh2->h_i[edge2].B[0][0];
     listB0k[nRegions][1] = mesh2->h_i[edge2].B[0][1];
     listBk[nRegions][0] = mesh2->h_i[edge2].B[1][0];
     listBk[nRegions][1] = mesh2->h_i[edge2].B[1][1];
   }
-  else if( (mesh2->edges[edge2][0] == indexHat) & (mesh2->edges[edge2][1] == index0)) {
+  else if( (mesh2->edges[edge2][0] == indexHat) && (mesh2->edges[edge2][1] == index0)) {
     listEdges[nRegions] = (int)edge2;
     listBk[nRegions][0] = mesh2->h_i[edge2].B[0][0];
     listBk[nRegions][1] = mesh2->h_i[edge2].B[0][1];
