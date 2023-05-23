@@ -13,13 +13,14 @@ from scipy.optimize import root_scalar # to project back blocks [mu_k, lambda_k+
 import colorcet as cc
 import matplotlib.colors as clr
 import json
-
+from numba import njit, types, int32, float64, boolean
+from numba.experimental import jitclass
 
 colormap2 = "cet_linear_worb_100_25_c53_r"
 colormap2_r = "cet_linear_worb_100_25_c53"
 
 
-
+#@njit
 def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
      '''
      arclength along a boundary from xLam to xMu
@@ -29,6 +30,8 @@ def arclengthSimpson(mu, lam, xFrom, Bfrom, xTo, Bto):
      B_mid = itt.gradientBoundary((mu + lam)/2, xFrom, Bfrom, xTo, Bto)
      return (norm(Bmu) + 4*norm(B_mid) + norm(Blam))*(abs(mu - lam)/6)
 
+
+#@njit
 def hermite_interpolationT(param, x0, T0, grad0, x1, T1, grad1):
     '''
     Hermite interpolation of the eikonal
@@ -36,6 +39,8 @@ def hermite_interpolationT(param, x0, T0, grad0, x1, T1, grad1):
     sumGrads = (param**3 - 2*param**2 + param)*grad0 + (param**3 - param**2)*grad1
     return (2*param**3 - 3*param**2 + 1)*T0 + (-2*param**3 + 3*param**2)*T1 + np.dot(x1 - x0, sumGrads)
 
+
+#@njit
 def der_hermite_interpolationT(param, x0, T0, grad0, x1, T1, grad1):
     '''
     derivative with respecto to param of the Hermite interpolation of the eikonal
@@ -44,114 +49,88 @@ def der_hermite_interpolationT(param, x0, T0, grad0, x1, T1, grad1):
     return (6*param**2 - 6*param)*T0 + (-6*param**2 + 6*param)*T1 + np.dot(x1 - x0, sumGrads)
 
 
+
+#@njit
+def secondDer_Boundary(param, xFrom, Bfrom, xTo, Bto):
+     '''
+     d2B/dparam2
+     '''
+     return 6*(2*xFrom + Bfrom - 2*xTo + Bto)*param + 2*(-3*xFrom - 2*Bfrom + 3*xTo - Bto)
+
+#@njit
+def gradientBoundary(param, xFrom, Bfrom, xTo, Bto):
+     '''
+     Tangent to the boundary (interpolated using Hermite)
+     '''
+     return 3*(2*xFrom + Bfrom - 2*xTo + Bto)*param**2 + 2*(-3*xFrom - 2*Bfrom + 3*xTo - Bto)*param + Bfrom
+
+#@njit
+def hermite_boundary(param, xFrom, Bfrom, xTo, Bto):
+     '''
+     Hermite interpolation of the boundary
+     '''
+     return (2*xFrom + Bfrom - 2*xTo + Bto)*param**3 + (-3*xFrom - 2*Bfrom + 3*xTo - Bto)*param**2 + Bfrom*param + xFrom
+
+
+
 ####### Projections
 
 ## Finding lamk1Min and lamk1Max given muk
-
+#@njit
 def t1(lam, x0, xk1, B0k1, Bk1, zk, Bk_mu):
     '''
     This function is useful to solve for lamk1Min
     given muk
     '''
-    yk1 = itt.hermite_boundary(lam, x0, B0k1, xk1, Bk1)
+    yk1 = hermite_boundary(lam, x0, B0k1, xk1, Bk1)
     return Bk_mu[0]*(yk1[1] - zk[1]) - Bk_mu[1]*(yk1[0] - zk[0])
 
+#@njit
 def t2(lam, x0, xk1, B0k1, Bk1, zk):
     '''
     This function is useful to solve for lamk1Max
     given muk
     '''
-    yk1 = itt.hermite_boundary(lam, x0, B0k1, xk1, Bk1)
-    Bk_lam = itt.gradientBoundary(lam , x0, B0k1, xk1, Bk1)
+    yk1 = hermite_boundary(lam, x0, B0k1, xk1, Bk1)
+    Bk_lam = gradientBoundary(lam , x0, B0k1, xk1, Bk1)
     return Bk_lam[0]*(yk1[1] - zk[1]) - Bk_lam[1]*(yk1[0] - zk[0])
 
 ## Find mukMin and mukMAx given lamk1
-
+#@njit
 def t3(mu, x0, xk, B0k, Bk, yk1):
      '''
      This function is useful to solve for mukMax
      given lamk1
      '''
-     zk = itt.hermite_boundary(mu, x0, B0k, xk, Bk)
-     Bk_mu = itt.gradientBoundary(mu, x0, B0k, xk, Bk)
+     zk = hermite_boundary(mu, x0, B0k, xk, Bk)
+     Bk_mu = gradientBoundary(mu, x0, B0k, xk, Bk)
      return Bk_mu[0]*(yk1[1] - zk[1]) - Bk_mu[1]*(yk1[0] - zk[0])
      
-
+#@njit
 def t4(mu, x0, xk, B0k, Bk, yk1, Bk_lam):
      '''
      This function is useful to solve for mukMin
      given lamk1
      '''
-     zk = itt.hermite_boundary(mu, x0, B0k, xk, Bk)
+     zk = hermite_boundary(mu, x0, B0k, xk, Bk)
      return Bk_lam[0]*(yk1[1] - zk[1]) - Bk_lam[1]*(yk1[0] - zk[0])
 
+#@njit
 def findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, pointFrom):
      '''
      Find a_tan
      '''
-     a_tan = itt.hermite_boundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     BkM1Bk_tan = itt.gradientBoundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     a_tan = hermite_boundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     BkM1Bk_tan = gradientBoundary(r, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
      N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
      return np.dot(N_tan, a_tan - pointFrom)
-
-
-# Find a root finding method
-
-def fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
-    '''
-    Objective function of an update without the tops on a triangle fan
-    params = [mu1, lam2, mu2, lam3, mu3, ..., lambda_n, mu_n, lambda_n1] # length 2n
-    listIndices = [eta1, eta2, ..., eta_n, eta_n1]       # length n+1
-    listxk = [x0, x1, x2, ..., xn, xn1]                  # length n+2
-    listB0k = [B01, B02, B03, ..., B0n, B0n1]            # length n+1
-    listBk = [B1, B2, B3, ..., Bn, Bn1]                  # length n+1
-    '''
-    n = len(listxk) - 2
-    muk = params[0]
-    etak = listIndices[0]
-    Bk = listBk[0]
-    B0k = listB0k[0]
-    zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
-    sum = hermite_interpolationT(muk, x0, T0, grad0, x1, T1, grad1)
-    for i in range(1, n):
-        k = 2*i -1 # starts in k = 1, all the way to k = 2n-3
-        mukPrev = muk
-        muk = params[k+1] # starts in mu2 ends in mu_n
-        lamk = params[k] # starts in lam2 ends in lamn
-        etaPrev = etak
-        etak = listIndices[i]
-        etaMin = min(etaPrev, etak)
-        Bk = listBk[i]
-        B0k = listB0k[i]
-        xk = listxk[i+1]
-        zkPrev = zk
-        zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-        yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-        sum += etaPrev*norm(yk - zkPrev) + etaMin*arclengthSimpson(muk, lamk, x0, B0k, xk, Bk)
-    # now we need to add the last segment
-    mukPrev = muk
-    lamk = params[2*n-1] # last one
-    etaPrev = etak
-    etak = listIndices[n]
-    etaMin = min(etak, etaPrev)
-    Bk = listBk[n]
-    B0k = listB0k[n]
-    xk = listxk[n+1]
-    zkPrev = zk
-    yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-    sum += etaPrev*norm(yk - zkPrev) + etaMin*arclengthSimpson(lamk, 1, x0, B0k, xk, Bk)
-    return sum
-
-
 
 
 ##########
 ## THESE ARE THE AUXILIARY FUNCTIONS FOR THE BLOCK COORDINATE PROJECTED GRADIENT DESCENT
 
-
-
           
-
+#@njit
 def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B0khalves_muk, B0k_lamk):
      '''
      partial of the approximation of the arc length with respect to muk
@@ -166,6 +145,7 @@ def partial_L_muk(muk, lamk, B0k_muk, secondDer_B0k_muk, B0k_halves, secondDer_B
           secondPart = (abs(muk - lamk)/6)*(np.dot(secondDer_B0k_muk, B0k_muk)/normB0k_muk + 2*np.dot(secondDer_B0khalves_muk, B0k_halves)/normB0k_halves)
           return firstPart + secondPart
 
+#@njit
 def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k_lamk, secondDer_B0k_lamk):
      '''
      partial of the approximation of the arc length with respect to lamk
@@ -180,7 +160,7 @@ def partial_L_lamk(muk, lamk, B0k_muk, B0k_halves, secondDer_B0khalves_lamk, B0k
           secondPart = (abs(muk - lamk)/6)*(2*np.dot(secondDer_B0khalves_lamk, B0k_halves)/normB0k_halves + np.dot(secondDer_B0k_lamk, B0k_lamk)/normB0k_lamk )
      return firstPart + secondPart
      
-
+#@njit
 def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
      der_hermite_inter = der_hermite_interpolationT(mu1, x0, T0, grad0, x1, T1, grad1)
      if( norm(y2 - z1) < 1e-8 ):
@@ -188,19 +168,19 @@ def partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B01_mu, y2, z1):
      else:
           return der_hermite_inter - np.dot(B01_mu, y2 - z1)/norm(y2 - z1)
 
-
+#@njit
 def partial_fObj_recCr(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
      Partial of the objective function with respect to a receiver that creeps to a shooter
      (originally the receiver is lamk, the shooter where it comes from is mukM1 and the shooter
      to where it creeps is muk)
      '''
-     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
-     receiver = itt.hermite_boundary(rec, x0To, B0To, x1To, B1To)
-     B_atShooterTo = itt.gradientBoundary(shTo, x0To, B0To, x1To, B1To)
-     B_atReceiver = itt.gradientBoundary(rec, x0To, B0To, x1To, B1To)
+     shooterFrom = hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     receiver = hermite_boundary(rec, x0To, B0To, x1To, B1To)
+     B_atShooterTo = gradientBoundary(shTo, x0To, B0To, x1To, B1To)
+     B_atReceiver = gradientBoundary(rec, x0To, B0To, x1To, B1To)
      secondDer_B_atReceiver = itt.secondDer_Boundary(rec, x0To, B0To, x1To, B1To)
-     B_halves = itt.gradientBoundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
+     B_halves = gradientBoundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
      secondDer_Bhalves_atReceiver = itt.secondDer_Boundary( (shTo + rec)/2, x0To, B0To, x1To, B1To)
      perL_receiver = partial_L_lamk(shTo, rec, B_atShooterTo, B_halves, secondDer_Bhalves_atReceiver, B_atReceiver, secondDer_B_atReceiver)
      etaMin = min(etaInside, etaOutside)
@@ -210,18 +190,18 @@ def partial_fObj_recCr(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, 
           return etaInside*np.dot(B_atReceiver, receiver - shooterFrom)/norm(receiver - shooterFrom) + etaMin*perL_receiver
      
 
-
+#@njit
 def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
      Partial of the objective function with respect to a shooter that comes from a creeping ray from a receiver
      '''
-     shooter = itt.hermite_boundary(sh, x0From, B0From, x1From, B1From)
-     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
-     B_atShooter = itt.gradientBoundary(sh, x0From, B0From, x1From, B1From)
+     shooter = hermite_boundary(sh, x0From, B0From, x1From, B1From)
+     receiverTo = hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     B_atShooter = gradientBoundary(sh, x0From, B0From, x1From, B1From)
      secondDer_B_atShooter = itt.secondDer_Boundary(sh, x0From, B0From, x1From, B1From)
-     B_halves = itt.gradientBoundary( (sh + recFrom)/2, x0From, B0From, x1From, B1From)
+     B_halves = gradientBoundary( (sh + recFrom)/2, x0From, B0From, x1From, B1From)
      secondDer_Bhalves_atShooter = itt.secondDer_Boundary( (sh + recFrom)/2, x0From, B0From, x1From, B1From)
-     B_atReceiver = itt.gradientBoundary(recFrom, x0From, B0From, x1From, B1From)
+     B_atReceiver = gradientBoundary(recFrom, x0From, B0From, x1From, B1From)
      parL_shooter = partial_L_muk(sh, recFrom, B_atShooter, secondDer_B_atShooter, B_halves, secondDer_Bhalves_atShooter, B_atReceiver)
      etaMin = min(etaInside, etaOutside)
      if( np.all( receiverTo == shooter) ):
@@ -230,18 +210,18 @@ def partial_fObj_shCr(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, 
           return etaInside*np.dot(-B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter) + etaMin*parL_shooter
 
 
-
+#@njit
 def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak, etak1):
      '''
      Partial of the objective function of the "next" receiver that creeps to a shooter
      '''
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-     B0k1_muk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_muk1 = gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
      secondDer_B0k1_lamk1 = itt.secondDer_Boundary(lamk1, x0, B0k1, xk1, Bk1)
-     B0k1_halves = itt.gradientBoundary( (muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
+     B0k1_halves = gradientBoundary( (muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
      secondDer_B0k1halves_lamk1 = itt.secondDer_Boundary((muk1 + lamk1)/2, x0, B0k1, xk1, Bk1)
-     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
      perL_lamk1 = partial_L_lamk(muk1, lamk1, B0k1_muk1, B0k1_halves, secondDer_B0k1halves_lamk1, B0k1_lamk1, secondDer_B0k1_lamk1)
      etaMin = min(etak, etak1)
      if( np.all(yk1 == zk) ):
@@ -249,16 +229,16 @@ def partial_fObj_recCr1(muk, muk1, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, etak,
      else:
           return etak*np.dot(B0k1_lamk1, yk1 - zk)/norm(yk1 - zk) + etaMin*perL_lamk1
 
-
+#@njit
 def partial_fObj_recSt(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
      Partial of the objective function (generalized) with respect to a RECEIVER that shoots directly (with
      a straight line) to a shooter (thinking about ak and bk)
      '''
-     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
-     receiver = itt.hermite_boundary(rec, x0To, B0To, x1To, B1To)
-     shooterTo = itt.hermite_boundary(shTo, x0To, B0To, x1To, B1To)
-     B_atReceiver = itt.gradientBoundary(rec, x0To, B0To, x1To, B1To)
+     shooterFrom = hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     receiver = hermite_boundary(rec, x0To, B0To, x1To, B1To)
+     shooterTo = hermite_boundary(shTo, x0To, B0To, x1To, B1To)
+     B_atReceiver = gradientBoundary(rec, x0To, B0To, x1To, B1To)
      if( rec == 0 and shTo == 0 and shFrom == 0):
           return 0
      elif( np.all(shooterTo == receiver) and np.any(receiver != shooterFrom) ):
@@ -268,16 +248,16 @@ def partial_fObj_recSt(shFrom, shTo, rec, x0From, B0From, x1From, B1From, x0To, 
      else:
           return etaOutside*np.dot(B_atReceiver, receiver - shooterFrom)/norm( receiver - shooterFrom) + etaInside*np.dot(- B_atReceiver, shooterTo - receiver)/norm(shooterTo - receiver)
 
-
+#@njit
 def partial_fObj_shSt(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, B0To, x1To, B1To, etaInside, etaOutside):
      '''
      Partial of the objective function (generalized) with respect to a SHOOTER that comes from a straight ray
      from a receiver and shoots in a straight line to another receiver
      '''
-     receiverFrom = itt.hermite_boundary(recFrom, x0From, B0From, x1From, B1From)
-     shooter = itt.hermite_boundary(sh, x0From, B0From, x1From, B1From)
-     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
-     B_atShooter = itt.gradientBoundary(sh, x0From, B0From, x1From, B1From)
+     receiverFrom = hermite_boundary(recFrom, x0From, B0From, x1From, B1From)
+     shooter = hermite_boundary(sh, x0From, B0From, x1From, B1From)
+     receiverTo = hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     B_atShooter = gradientBoundary(sh, x0From, B0From, x1From, B1From)
      if( sh == 0 and recFrom == 0 and recTo == 0 ):
           return 0
      elif( np.all(receiverTo == shooter) and np.any(shooter != receiverFrom) ):
@@ -287,7 +267,7 @@ def partial_fObj_shSt(sh, recFrom, recTo, x0From, B0From, x1From, B1From, x0To, 
      else:
           return etaOutside*np.dot( B_atShooter, shooter - receiverFrom)/norm(shooter - receiverFrom) + etaInside*np.dot( -B_atShooter, receiverTo - shooter)/norm(receiverTo - shooter)
 
-
+#@njit
 def partial_fObj_collapsedShooter(shFrom, sh, recTo, x0From, B0From, x1From, B1From, x0This, B0This, x1This, B1This, x0To, B0To, x1To, B1To, etaPrev, etaNext):
      '''
      Partial of the objective function (generalized) with respect to a "COLLAPSED SHOOTER" (one where both
@@ -295,10 +275,10 @@ def partial_fObj_collapsedShooter(shFrom, sh, recTo, x0From, B0From, x1From, B1F
      straight ray from a shooter on another edge and shoots in a straight line to another receiver
      in another edge (we are dealing with 3 edges here)
      '''
-     shooterFrom = itt.hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
-     collapsedShooter = itt.hermite_boundary(sh, x0This, B0This, x1This, B1This)
-     B_collapsedShooter = itt.gradientBoundary(sh, x0This, B0This, x1This, B1This)
-     receiverTo = itt.hermite_boundary(recTo, x0To, B0To, x1To, B1To)
+     shooterFrom = hermite_boundary(shFrom, x0From, B0From, x1From, B1From)
+     collapsedShooter = hermite_boundary(sh, x0This, B0This, x1This, B1This)
+     B_collapsedShooter = gradientBoundary(sh, x0This, B0This, x1This, B1This)
+     receiverTo = hermite_boundary(recTo, x0To, B0To, x1To, B1To)
      if( np.all(shooterFrom == collapsedShooter) and  np.all( receiverTo == collapsedShooter) ):
           return 0
      elif( np.all(shooterFrom == collapsedShooter) and np.any(receiverTo != collapsedShooter) ):
@@ -308,16 +288,16 @@ def partial_fObj_collapsedShooter(shFrom, sh, recTo, x0From, B0From, x1From, B1F
      else:
           return etaPrev*np.dot( B_collapsedShooter, collapsedShooter - shooterFrom)/norm(collapsedShooter - shooterFrom) + etaNext*np.dot( -B_collapsedShooter, receiverTo - collapsedShooter)/norm( receiverTo - collapsedShooter)
 
-
+#@njit
 def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     '''
     Project back lamk1 given muk
     '''
     lamk1 = project_box(lamk1)
-    zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-    yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-    B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
-    B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+    zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+    yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+    B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
+    B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
     
     Nk_muk = np.array([-B0k_muk[1], B0k_muk[0]])
     Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
@@ -343,8 +323,8 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
         # Find the root of tMin
         rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
         lamk1 = rootMin.root
-        yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-        B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+        yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+        B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
         Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
         if( np.dot( Nk1_lamk1, x0 - xk) < 0):
              Nk1_lamk1 = -Nk1_lamk1
@@ -364,15 +344,16 @@ def project_lamk1Givenmuk(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
     lamk1 = project_box(lamk1) # Such that 0<=lamk1 <=1
     return lamk1
 
+#@njit
 def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      '''
      Project back muk given lamk1
      '''
      muk = project_box(muk)
-     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
      
      # Compute the normals
      N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
@@ -396,8 +377,8 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMin.root
-          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+          B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           if( np.dot( N0k_muk, xk1 - x0) < 0):
                N0k_muk = -N0k_muk
@@ -414,7 +395,7 @@ def project_mukGivenlamk1(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1):
      muk = project_box(muk)
      return muk
 
-     
+#@njit     
 def project_ontoLine(d):
      '''
      Projection of a vector d along the line x=y
@@ -422,6 +403,7 @@ def project_ontoLine(d):
      projector = 0.5*np.array([ [1,1], [1,1]])
      return projector@d
 
+#@njit
 def close_to_identity(lamk, muk):
      '''
      Computes the distance of the vector [lamk, muk]
@@ -432,7 +414,7 @@ def close_to_identity(lamk, muk):
      return norm(p - proj)
 
 
-
+#@njit
 def backTrClose_block_noTops(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Backtracking to find the next block [lamk, muk]
@@ -472,6 +454,7 @@ def backTrClose_block_noTops(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, 
      elif( f_test_proj <= f_test ):
           return params_test_proj[k], params_test_proj[k+1]
 
+#@njit
 def backTr_block_noTops(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
      '''
      Backtracking to find the next block [lamk, muk]
@@ -521,9 +504,9 @@ def forwardPassUpdate_noTops(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1
      B0k1 = listB0k[1]
      xk1 = listxk[2]
      Bk1 = listBk[1]
-     B0k_muk = itt.gradientBoundary(mu1, x0, B0k, xk, Bk)
-     yk1 = itt.hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
-     zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
+     B0k_muk = gradientBoundary(mu1, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
+     zk = hermite_boundary(mu1, x0, B0k, xk, Bk)
      # Compute direction for muk
      dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
      alpha = backTr_coord_noTops(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
@@ -596,7 +579,7 @@ def forwardPassUpdate_noTops(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1
      
 
 
-
+#@njit
 def project_box(param):
      if(param < 0):
           param = 0
@@ -631,7 +614,7 @@ def backTr_coord_noTops(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat
           alpha = 0
      return alpha
 
-
+#@njit
 def get_sk(muk, lamk):
      if(muk > lamk):
           sk = 1
@@ -639,83 +622,6 @@ def get_sk(muk, lamk):
           sk = -1
      return sk
 
-
-def gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk):
-     '''
-     Gradient of the objective function TY
-     '''
-     n = len(listxk) - 2
-     gradient = np.zeros((2*n + 1))
-     muk = params[0]
-     lamk1 = params[1]
-     muk1 = params[2]
-     B01_mu = itt.gradientBoundary(muk, x0, listB0k[0], listxk[1], listBk[0])
-     yk1 = itt.hermite_boundary(lamk1, x0, listB0k[1], listxk[2], listBk[1])
-     zk = itt.hermite_boundary(muk, x0, listB0k[0], listxk[1], listBk[0])
-     gradient[0] = partial_fObj_mu1(params[0], x0, T0, grad0, x1, T1, grad1, B01_mu, yk1, zk)
-     gradient[1] = partial_fObj_recCr1(muk, muk1, lamk1, x0, listB0k[0], listxk[1], listBk[0], listB0k[1], listxk[2], listBk[1], listIndices[1], listIndices[0])
-     for j in range(1,n):
-          k = 2*j
-          etakM1 = listIndices[j-1]
-          etak = listIndices[j]
-          etak1 = listIndices[j+1]
-          lamk = params[k-1]
-          muk = params[k]
-          lamk1 = params[k+1]
-          muk1 = params[k+2]
-          gradient[k] = partial_fObj_shCr(muk, lamk, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], x0, listB0k[j+1], listxk[j+2], listBk[j+1], etak, etakM1)
-          gradient[k+1] = partial_fObj_recCr1(muk, muk1, lamk1, x0, listB0k[j], listxk[j+1], listBk[j], listB0k[j+1], listxk[j+2], listBk[j+1], etak1, etak)
-     gradient[2*n] = 0
-     return gradient
-
-
-
-def blockCoordinateGradient(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, maxIter, tol, theta_gamma = 1, plotSteps = True, saveIterates = False):
-     '''
-     Block coordinate subgradient descent (modified) for an update in a triangle fan without
-     tops. Inspired by gradient sampling but in this case we know where our (geometric)
-     singularities are and thus we don't need to calculate explicitly the convex hull
-     '''
-     params = np.copy(params0)
-     params = np.append(params, [1])
-     #print(" Initial params: \n", params)
-     # Initialize the useful things
-     listObjVals = []
-     listGrads = []
-     listChangefObj = []
-     listIterates = []
-     listGradIterations = []
-     nRegions = len(listxk) -2
-     gammas = 0.05*np.ones((nRegions - 1)) # Might be an array of length 0, it's fine
-     gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-     norm_gradk = norm(gradk)
-     fVal = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-     listGrads.append(norm_gradk)
-     listObjVals.append(fVal)
-     iter = 0
-     change_fVal = 1
-     while( abs(change_fVal) > tol and iter < maxIter):
-          # Start with a forward pass
-          params, gammas = forwardPassUpdate_noTops(params, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-          gradk = gradient_TY(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-          norm_gradk = norm(gradk)
-          fVal_prev = fVal
-          fVal = fObj_noTops(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk)
-          change_fVal = fVal_prev - fVal
-          listGrads.append(norm_gradk)
-          listObjVals.append(fVal)
-          listChangefObj.append( change_fVal )
-          iter += 1
-          if plotSteps:
-               itt.plotFann(x0, listB0k, listxk, listBk, params = params)
-          if saveIterates:
-               listIterates.append( params )
-               listGradIterations.append( gradk)
-     if saveIterates:
-          return params, listObjVals, listGrads, listChangefObj, listIterates, listGradIterations
-     else:
-          return params, listObjVals, listGrads, listChangefObj
-     
 
 
 def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk,
@@ -869,6 +775,7 @@ def plotResults(x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listB0k, listxk
 ######################################################
 # Optimization for a generalized triangle fan i.e. the tops of the triangle fan are curved parametric curves
 
+#@njit
 def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk, listB0k, listBk, listBkBk1,
                      indCrTop = None, paramsCrTop = None, indStTop = None, paramsStTop = None):
      '''
@@ -889,7 +796,7 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
      etak = listIndices[0]
      Bk = listBk[0]
      B0k = listB0k[0]
-     zk = itt.hermite_boundary(muk, x0, B0k, x1, Bk)
+     zk = hermite_boundary(muk, x0, B0k, x1, Bk)
      sum = hermite_interpolationT(muk, x0, T0, grad0, x1, T1, grad1)
      for j in range(1, n+1):
           # j goes from 1 to n
@@ -910,8 +817,8 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
           etaMin = min(etakPrev, etak)
           # Compute the points
           zkPrev = zk
-          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+          yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
           # Then we need to know if we have points on the triangle top
           # See if there are points on the triangle top and if they are associated with a creeping ray
           if( nTop == indCrTop[currentCrTop] ):
@@ -922,8 +829,8 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
                etaMinCr = min(etaRegionOutside, etakPrev)
                rk = paramsCrTop[2*currentCrTop]
                sk = paramsCrTop[2*currentCrTop + 1]
-               ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
                sum += etakPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
                sum += etaMinCr*arclengthSimpson(rk, sk, xkM1, BkBk1_0, xk, BkBk1_1) # creeps from ak to bk
                sum += etakPrev*norm( yk - bk ) # shoots from bk to yk
@@ -939,8 +846,8 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
                etaRegionOutside = listIndices[n + j]
                rk = paramsStTop[2*currentStTop]
                sk = paramsStTop[2*currentStTop + 1]
-               ak = itt.hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
                sum += etakPrev*norm( ak - zkPrev ) # shoots from zkPrev to ak
                sum += etaRegionOutside*norm( bk - ak )  # shoots from ak to bk
                sum += etakPrev*norm( yk - bk ) # shoots from bk to yk
@@ -961,7 +868,7 @@ def fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, li
 
 
 # Project back lamk given mukM1 when there is no creeping or shooting through the side edge
-
+#@njit
 def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1):
      '''
      Project back lamk given mukM1 when there is no creeping or shooting though the side edge xkxk1
@@ -970,16 +877,16 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      (otherwise we don't need to project back like this, we would just need a box projection)
      '''
      lamk = project_box(lamk) # Very first step in every projection method in here
-     zkM1 = itt.hermite_boundary(mukM1, x0, B0kM1, xkM1, BkM1)
-     yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-     B0kM1_mukM1 = itt.gradientBoundary(mukM1, x0, B0kM1, xkM1, BkM1)
-     B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+     zkM1 = hermite_boundary(mukM1, x0, B0kM1, xkM1, BkM1)
+     yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+     B0kM1_mukM1 = gradientBoundary(mukM1, x0, B0kM1, xkM1, BkM1)
+     B0k_lamk = gradientBoundary(lamk, x0, B0k, xk, Bk)
      # We need to find a_tan = hkM1hk(r_tan)
      rPass = lambda r: findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, zkM1)
      rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
      r_tan = rootTan.root
-     a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     a_tan = hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     BkM1Bk_tan = gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
 
      # The normals - depends on the position of x0 and xk  with respect to xkM1
      NkM1_mukM1 = np.array([-B0kM1_mukM1[1], B0kM1_mukM1[0]])
@@ -1004,8 +911,8 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
           tMin = lambda lam: t1(lam, x0, xk, B0k, Bk, zkM1, B0kM1_mukM1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMin.root
-          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-          B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+          yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+          B0k_lamk = gradientBoundary(lamk, x0, B0k, xk, Bk)
           Nk_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
           if( np.dot(Nk_lamk, x0 - xkM1) < 0):
                Nk_lamk = -Nk_lamk
@@ -1019,8 +926,8 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
           rPass = lambda r: findRtan(r, xkM1, xk, BkM1Bk_0, BkM1Bk_1, zkM1)
           rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
           r_tan = rootTan.root
-          a_tan = itt.hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-          BkM1Bk_tan = itt.gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+          a_tan = hermite_boundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+          BkM1Bk_tan = gradientBoundary(r_tan, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
           N_tan = np.array([-BkM1Bk_tan[1], BkM1Bk_tan[0]])
           if( np.dot(NkM1Nk_0, x0 - xk) < 0):
                N_tan = -N_tan
@@ -1034,7 +941,7 @@ def project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, 
      return lamk
 
 # Project back muk given lamk1 when there is no creeping or shooting through the side edge
-
+#@njit
 def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1):
      '''
      Project back muk given lamk1 when there is no creeping or shooting through the side
@@ -1044,16 +951,16 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
      projection)
      '''
      muk = project_box(muk)
-     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
      # We need to find a_tan = hkhk1(r_tan)
      rPass = lambda r: findRtan(r, xk, xk1, BkBk1_0, BkBk1_1, yk1)
      rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
      r_tan = rootTan.root
-     a_tan = itt.hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
-     BkBk1_tan = itt.gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+     a_tan = hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+     BkBk1_tan = gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
 
      # Compute the normals
      N0k1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
@@ -1078,8 +985,8 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, bracket = [0,1])
           muk = rootMin.root
-          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-          B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+          B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
           N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
           if( np.dot( N0k_muk, xk1 - x0) < 0):
                N0k_muk = -N0k_muk
@@ -1093,8 +1000,8 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
           rPass = lambda r: findRtan(r, xk, xk1, BkBk1_0, BkBk1_1, yk1)
           rootTan = root_scalar(rPass, method = "secant", x0 = 0.4, x1 = 0.5)
           r_tan = rootTan.root
-          a_tan = itt.hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
-          BkBk1_tan = itt.gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+          a_tan = hermite_boundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
+          BkBk1_tan = gradientBoundary(r_tan, xk, BkBk1_0, xk1, BkBk1_1)
           N_tan = np.array([-BkBk1_tan[1], BkBk1_tan[0]])
           if( np.dot(NkNk1_0, x0 - xk) < 0):
                N_tan = -N_tan
@@ -1108,17 +1015,17 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
      muk = project_box(muk)
      return muk
 
-
+#@njit
 def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
      '''
      Project back rk on the side boundary hkhk1 given muk on the bottom
      boundary h0hk.
      '''
      rk = project_box(rk)
-     ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
-     BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+     B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
+     BkBk1_rk = gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
 
      # Compute the normals
      N0k_muk = np.array([-B0k_muk[1], B0k_muk[0]])
@@ -1139,8 +1046,8 @@ def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
           tMin = lambda r: t1(r, xk, xk1, BkBk1_0, BkBk1_1, zk, B0k_muk)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           rk = rootMin.root
-          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-          BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          BkBk1_rk = gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
           if( np.dot(NkNk1_0, x0 - xk) < 0):
                NkNk1_rk = -NkNk1_rk
@@ -1152,16 +1059,17 @@ def project_rkGivenmuk(rk, muk, x0, B0k, xk, Bk, xk1, Bk1, BkBk1_0, BkBk1_1):
      rk = project_box(rk)
      return rk
 
+#@njit
 def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
      '''
      Project back sk on the side boundary hkhk1 given lamk1 on the top
      boundary h0hk1
      '''
      sk = project_box(sk)
-     bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-     yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-     B0k1_lamk1 = itt.gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
-     BkBk1_sk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+     bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+     yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+     B0k1_lamk1 = gradientBoundary(lamk1, x0, B0k1, xk1, Bk1)
+     BkBk1_sk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
 
      # Compute the normals
      Nk1_lamk1 = np.array([-B0k1_lamk1[1], B0k1_lamk1[0]])
@@ -1182,8 +1090,8 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
           tMin = lambda s: t4(s, xk, xk1, BkBk1_0, BkBk1_1, yk1, B0k1_lamk1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           sk = rootMin.root
-          bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-          BkBk1_sk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          BkBk1_sk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           NkNk1_sk = np.array([-BkBk1_sk[1], BkBk1_sk[0]])
           if( np.dot( NkNk1_0, x0 - xk) < 0  ):
                NkNk1_sk = -NkNk1_sk
@@ -1195,7 +1103,7 @@ def project_skGivenlamk1(sk, lamk1, x0, B0k1, xk1, Bk1, xk, BkBk1_0, BkBk1_1):
      sk = project_box(sk)
      return sk
 
-
+#@njit
 def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      '''
      Project back muk given rk for an update that includes points on the side
@@ -1203,10 +1111,10 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      '''
      #breakpoint()
      muk = project_box(muk)
-     ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
-     BkBk1_rk = itt.gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-     B0k_muk = itt.gradientBoundary(muk, x0, B0k, xk, Bk)
+     ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+     BkBk1_rk = gradientBoundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+     B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
      NkNk1_0 = np.array([-BkBk1_0[1], BkBk1_1[0]])
      # Compute the normals
      NkNk1_rk = np.array([-BkBk1_rk[1], BkBk1_rk[0]])
@@ -1224,7 +1132,7 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
           tMin = lambda mu: t2(mu, x0, xk, B0k, Bk, ak)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMin.root
-          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
           dotTestMax = np.dot(NkNk1_rk, zk - ak)
      if(dotTestMax < 0 ):
           tMax = lambda mu: t1(mu, x0, xk, B0k, Bk, ak, BkBk1_rk)
@@ -1233,16 +1141,17 @@ def project_mukGivenrk(muk, rk, x0, B0k, xk, Bk, BkBk1_0, xk1, BkBk1_1):
      muk = project_box(muk)
      return muk
 
+#@njit
 def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1):
      '''
      Project back lamk given sk for an update that includes points on the side
      boundary hkM1hk
      '''
      lamk = project_box(lamk)
-     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-     BkM1Bk_skM1 = itt.gradientBoundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
-     B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+     bkM1 = hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+     BkM1Bk_skM1 = gradientBoundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1)
+     B0k_lamk = gradientBoundary(lamk, x0, B0k, xk, Bk)
 
      # Compute the normals
      NkM1Nk_skM1 = np.array([-BkM1Bk_skM1[1], BkM1Bk_skM1[0]])
@@ -1262,8 +1171,8 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
           tMin = lambda lam: t2(lam, x0, xk, B0k, Bk, bkM1)
           rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           lamk = rootMin.root
-          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-          B0k_lamk = itt.gradientBoundary(lamk, x0, B0k, xk, Bk)
+          yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+          B0k_lamk = gradientBoundary(lamk, x0, B0k, xk, Bk)
           N0k_lamk = np.array([-B0k_lamk[1], B0k_lamk[0]])
           if( np.dot( N0k_lamk, x0 - xkM1) < 0):
                N0k_lamk = -N0k_lamk
@@ -1280,7 +1189,7 @@ def project_lamkGivenskM1(lamk, skM1, x0, B0k, xk, Bk, BkM1Bk_0, xkM1, BkM1Bk_1)
 
 ############ TWO BY TWO PROJECTIONS
 
-
+#@njit
 def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, k, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
@@ -1316,7 +1225,7 @@ def projections_muk_lamk1(muk_candidate, lamk1_candidate, muk_free, lamk1_free, 
      else:
           return muk_free, lamk1_candidate
 
-
+#@njit
 def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
@@ -1360,7 +1269,7 @@ def projections_muk_rkCr(muk_candidate, rk_candidate, muk_free, rk_free, k, kCrT
      else:
           return muk_free, rk_candidate
 
-
+#@njit
 def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
@@ -1404,7 +1313,7 @@ def projections_muk_rkSt(muk_candidate, rk_candidate, muk_free, rk_free, k, kStT
      else:
           return muk_free, rk_candidate
 
-
+#@njit
 def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kCrTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
@@ -1452,7 +1361,7 @@ def projections_skCr_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
      else:
           return sk_free, lamk1_candidate
 
-
+#@njit
 def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k, kStTop, params, x0,
                           T0, grad0, x1, T1, grad1, xHat, listIndices,
                           listxk, listB0k, listBk, listBkBk1,
@@ -1511,7 +1420,7 @@ def projections_skSt_lamk1(sk_candidate, lamk1_candidate, sk_free, lamk1_free, k
 ###################################
 # General backtracking (mainly just for mu1)
 
-
+#@njit
 def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat,
                  listIndices, listxk, listB0k, listBk, listBkBk1,
                  indCrTop, paramsCrTop, indStTop, paramsStTop):
@@ -1555,7 +1464,7 @@ def backTr_coord(alpha0, k, d, params, x0, T0, grad0, x1, T1, grad1, xHat,
 ###################################
 # Backtracking for updates close to the identity
 
-
+#@njit
 def backTrClose_block0k(alpha0, k, dlamk, dmuk, dCollapsed,
                         params, x0, T0, grad0, x1, T1, grad1, xHat,
                         listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1633,6 +1542,7 @@ def backTrClose_block0k(alpha0, k, dlamk, dmuk, dCollapsed,
      else:
           return params_collapsed[k], params_collapsed[k+1]
 
+#@njit
 def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, dCollapsed,
                            params, x0, T0, grad0, x1, T1, grad1, xHat,
                            listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1710,7 +1620,7 @@ def backTrClose_blockCrTop(alpha0, kCrTop, drk, dsk, dCollapsed,
      else:
           return paramsCrTop_collapsed[kCrTop], paramsCrTop_collapsed[kCrTop + 1]
 
-
+#@njit
 def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, dCollapsed,
                            params, x0, T0, grad0, x1, T1, grad1, xHat,
                            listIndices, listxk, listB0k, listBk, listBkBk1,
@@ -1790,7 +1700,7 @@ def backTrClose_blockStTop(alpha0, kStTop, drk, dsk, dCollapsed,
 ###################################
 # Backtracking for updates far from the identity
 
-
+#@njit
 def backTr_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                    listIndices, listxk, listB0k, listBk, listBkBk1,
                    indCrTop, paramsCrTop, indStTop, paramsStTop):
@@ -1870,6 +1780,7 @@ def backTr_block0k(alpha0, k, dlamk, dmuk, params, x0, T0, grad0, x1, T1, grad1,
      else:
           return params_test[k], params_test[k+1]
 
+#@njit
 def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
                       indCrTop, paramsCrTop, indStTop, paramsStTop):
@@ -1951,6 +1862,7 @@ def backTr_blockCrTop(alpha0, kCrTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
           return paramsCrTop_test[kCrTop], paramsCrTop_test[kCrTop+1]
 
 
+#@njit
 def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
                       indCrTop, paramsCrTop, indStTop, paramsStTop):
@@ -2034,7 +1946,7 @@ def backTr_blockStTop(alpha0, kStTop, drk, dsk, params, x0, T0, grad0, x1, T1, g
 # Auxiliary functions for the forward pass update
 
 
-
+#@njit
 def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
                     grad0, x1, T1, grad1, xHat, listIndices, listxk,
                     listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
@@ -2070,8 +1982,8 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      kCrTop = 2*currentCrTop
      rkM1 = paramsCrTop[kCrTop]
      skM1 = paramsCrTop[kCrTop + 1]
-     akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+     akM1 = hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+     bkM1 = hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
      # Compute directions
      drkM1 = partial_fObj_recCr(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
      gradCrTop[kCrTop] = drkM1
@@ -2247,6 +2159,7 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      return currentCrTop, params, paramsCrTop, gradParams, gradCrTop
 
 
+#@njit
 def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
                     grad0, x1, T1, grad1, xHat, listIndices, listxk,
                     listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
@@ -2283,8 +2196,8 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      kStTop = 2*currentStTop
      rkM1 = paramsStTop[kStTop]
      skM1 = paramsStTop[kStTop + 1]
-     akM1 = itt.hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
-     bkM1 = itt.hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
+     akM1 = hermite_boundary(rkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # receiver from mukM1
+     bkM1 = hermite_boundary(skM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1) # shooter to lamk
      # Compute directions
      drkM1 = partial_fObj_recSt(mukM1, skM1, rkM1, x0, B0kM1, xkM1, BkM1, xkM1, BkM1Bk_0, xk, BkM1Bk_1, etakPrev, etaRegionOutside)
      gradStTop[kStTop] = drkM1
@@ -2456,6 +2369,7 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      return currentStTop, params, paramsStTop, gradParams, gradStTop
 
 
+#@njit
 def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamma, x0, T0,
                     grad0, x1, T1, grad1, xHat, listIndices, listxk,
                     listB0k, listBk, listBkBk1, indCrTop, paramsCrTop,
@@ -2479,7 +2393,7 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      if( j < n ):
           xk1 = listxk[j+2] # Because otherwise this is not defined
           B0k1 = listB0k[j+1]
-          Bk = listBk[j+1]
+          Bk1 = listBk[j+1]
      BkM1 = listBk[j-1]
      Bk = listBk[j]
      etakPrev = listIndices[j-1] # index of refraction from previous triangle
@@ -2638,7 +2552,7 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
      return params, paramsCrTop, paramsStTop, gradParams
      
 
-
+#@njit
 def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                       listIndices, listxk, listB0k, listBk, listBkBk1,
                       indCrTop, paramsCrTop0, indStTop, paramsStTop0, listCurvingInwards):
@@ -2686,11 +2600,11 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      B0k1 = listB0k[1]
      xk1 = listxk[2]
      Bk1 = listBk[1]
-     B0k_muk = itt.gradientBoundary(mu1, x0, B0k, xk, Bk)
+     B0k_muk = gradientBoundary(mu1, x0, B0k, xk, Bk)
      BkBk1_0 = listBkBk1[0]
      BkBk1_1 = listBkBk1[1]
-     yk1 = itt.hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
-     zk = itt.hermite_boundary(mu1, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lam2, x0, B0k1, xk1, Bk1)
+     zk = hermite_boundary(mu1, x0, B0k, xk, Bk)
      # Compute direction for muk
      if( indCrTop[0] != 1 and indStTop[0] != 1):
           dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, yk1, zk)
@@ -2699,7 +2613,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                rk = paramsCrTop[0]
           else:
                rk = paramsStTop[0]
-          ak = itt.hermite_boundary( rk, xk, BkBk1_0, xk1, BkBk1_1)
+          ak = hermite_boundary( rk, xk, BkBk1_0, xk1, BkBk1_1)
           #breakpoint()      ##############################################################################
           dmuk = partial_fObj_mu1(mu1, x0, T0, grad0, x1, T1, grad1, B0k_muk, ak, zk)
      alpha = backTr_coord(2, 0, dmuk, params, x0, T0, grad0, x1, T1, grad1, xHat,
@@ -2790,7 +2704,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
      return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop
 
 
-
+#@njit
 def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                         listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0,
                                         indStTop, paramsStTop0, listCurvingInwards, theta_gamma = 1,
@@ -2852,7 +2766,7 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      return paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk, listObjVals, listGradNorms, listChangefObj, listChangeParams
           
 
-
+#@njit
 def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop):
      '''
      Compute the gradient of the eikonal, straight rights
@@ -2882,7 +2796,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      B0k = listB0k[0]
      x0 = listxk[0]
      xk = listxk[1]
-     zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+     zk = hermite_boundary(muk, x0, B0k, xk, Bk)
      path[0, :] = zk
      BkBk1_0 = listBkBk1[0]
      BkBk1_1 = listBkBk1[1]
@@ -2893,9 +2807,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      xk1 = listxk[2]
      etak1 = listIndices[1]
      etaMin = min(etak, etak1)
-     yk1 = itt.hermite_boundary(lam2, x0, B0k, xk1, Bk)
-     zk1 = itt.hermite_boundary(mu2, x0, B0k, xk1, Bk)
-     Bmu2 = itt.gradientBoundary(mu2, x0, B0k, xk, Bk)
+     yk1 = hermite_boundary(lam2, x0, B0k, xk1, Bk)
+     zk1 = hermite_boundary(mu2, x0, B0k, xk1, Bk)
+     Bmu2 = gradientBoundary(mu2, x0, B0k, xk, Bk)
      # We need to know where it goes
      nTop = 1
      if( nTop == indCrTop[currentCrTop]  ):
@@ -2907,9 +2821,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           xk1 = listxk[2]
           rk = paramsCrTop[2*currentCrTop]
           sk = paramsCrTop[2*currentCrTop + 1]
-          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-          bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-          Bsk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          Bsk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
                grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
@@ -2929,8 +2843,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           x2 = listxk[2]
           rk = paramsStTop[2*currentStTop]
           sk = paramsStTop[2*currentStTop + 1]
-          ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-          bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+          ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+          bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           if( np.any(ak != zk) ):
                grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
@@ -2965,8 +2879,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           xk = listxk[j+1]
           Bk = listBk[j]
           etak = listIndices[j]
-          yk = itt.hermite_boundary(lamk, x0, B0k, xk, Bk)
-          zk = itt.hermite_boundary(muk, x0, B0k, xk, Bk)
+          yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
           path[currGrad, :] = zk
           # We need to know where the path goes next
           if( nTop == indCrTop[currentCrTop]  ):
@@ -2977,8 +2891,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                muk1 = params[k+3]
                B0k1 = listB0k[j+1]
                Bk1 = listBk[j+1]
-               yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-               Bmuk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+               yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+               Bmuk1 = gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
                etak1 = listIndices[j+1]
                etaMin =  min(etak, etak1)
                BkBk1_0 = listBkBk1[k]
@@ -2988,9 +2902,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                etaMinCr = min(etaRegionOutside, etak)
                rk = paramsCrTop[2*currentCrTop]
                sk = paramsCrTop[2*currentCrTop + 1]
-               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-               Bsk = itt.gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+               bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               Bsk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                if( np.any( ak != zk) ):
                     grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
@@ -3010,8 +2924,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                muk1 = params[k+3]
                B0k1 = listB0k[j+1]
                Bk1 = listBk[j+1]
-               yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-               Bmuk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+               yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+               Bmuk1 = gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
                etak1 = listIndices[j+1]
                etaMin =  min(etak, etak1)
                BkBk1_0 = listBkBk1[k]
@@ -3020,8 +2934,8 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                etaRegionOutside = listIndices[n+j+1]
                rk = paramsCrTop[2*currentCrTop]
                sk = paramsCrTop[2*currentCrTop + 1]
-               ak = itt.hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
-               bk = itt.hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
+               ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
+               bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                if( np.any( ak != zk) ):
                     grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
@@ -3043,9 +2957,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                xk1 = listxk[j+2]
                B0k1 = listB0k[j+1]
                Bk1 = listBk[j+1]
-               yk1 = itt.hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
-               zk1 = itt.hermite_boundary(muk1, x0, B0k1, xk1, Bk1)
-               Bmuk1 = itt.gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
+               yk1 = hermite_boundary(lamk1, x0, B0k1, xk1, Bk1)
+               zk1 = hermite_boundary(muk1, x0, B0k1, xk1, Bk1)
+               Bmuk1 = gradientBoundary(muk1, x0, B0k1, xk1, Bk1)
                etak1 = listIndices[j+1]
                etaMin =  min(etak, etak1)
                BkBk1_0 = listBkBk1[k]
@@ -3066,12 +2980,52 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
 # and know which cases to solve for
 
 
+triInf = [
+     ('nRegions', int32),
+     ('params', float64[:]),
+     ('x0', float64[:]),
+     ('T0', float64),
+     ('grad0', float64[:]),
+     ('x1', float64[:]),
+     ('T1', float64),
+     ('grad1', float64[:]),
+     ('xHat', float64[:]),
+     ('listIndices', float64[:] ),
+     ('listxk', float64[:, :] ),
+     ('listB0k', float64[:, :] ),
+     ('listBk', float64[:, :] ),
+     ('listBkBk1', float64[:, :] ),
+     ('listCurvingInwards', int32[:] ),
+     ('optionsTop', int32[:, :]),
+     ('optiParams', float64[:]),
+     ('optiIndCrTop', int32[:]),
+     ('optiParamsCrTop', float64[:]),
+     ('nIndCrTop', int32),
+     ('optiIndStTop', int32[:]),
+     ('optiParamsStTop', float64[:]),
+     ('nIndStTop', int32),
+     ('opti_fVal', float64),
+     ('path', float64[:, :]),
+     ('grads', float64[:, :]),
+     ('lastGrad', float64[:]),
+     ('plotBefore', int32),
+     ('plotAfter', int32),
+     ('plotOpti', int32),
+     ('maxIter', int32),
+     ('tol', float64),
+     ('plotSteps', boolean),
+     ('saveIterates', boolean)
+     ]
+
+
+
+#@jitclass(triInf)
 class triangleFan:
      '''
      Triangle fan class. In here we can dump a json file
      type of string and decode it to get what we want.
      '''
-     def __init__(self):
+     def __init__(self, nRegions):
         '''
         OPTIMIZER ON A TRIANGLE FAN
         :param int nRegions: number of triangles in the triangle fan
@@ -3144,6 +3098,41 @@ class triangleFan:
         self.plotSteps = False
         self.saveIterates = False
         self.params_dict = None # dictionary for reading with json
+        # self.nRegions = nRegions
+        # self.params = np.empty((2*nRegions + 1), dtype = np.float64)     # Always length 2*nRegions + 1
+        # self.x0 = np.empty((2), dtype = np.float64)
+        # self.T0 = 100000
+        # self.grad0 = np.empty((2), dtype = np.float64)
+        # self.x1 = np.empty((2), dtype = np.float64)
+        # self.T1 = 100000
+        # self.grad1 = np.empty((2), dtype = np.float64)
+        # self.xHat = np.empty((2), dtype = np.float64)
+        # self.listIndices = np.empty((2*nRegions + 1), dtype = np.float64)
+        # self.listxk = np.empty((nRegions + 2, 2), dtype = np.float64)
+        # self.listB0k = np.empty((nRegions + 1, 2), dtype = np.float64)
+        # self.listBk = np.empty((nRegions + 1, 2), dtype = np.float64)
+        # self.listBkBk1 = np.empty((2*nRegions, 2), dtype = np.float64)
+        # self.listCurvingInwards = np.empty((nRegions), dtype = np.int32)
+        # self.optionsTop = np.empty((0, 0), dtype = np.int32)
+        # self.optiParams = np.empty((2*nRegions + 1), dtype = np.float64)     # Always length 2*nRegions + 1
+        # self.optiIndCrTop = np.empty((0), dtype = np.int32)     # length nIndCrTop
+        # self.optiParamsCrTop = np.empty((0), dtype = np.float64)     # length 2*nIndCrTop
+        # self.nIndCrTop = 0
+        # self.optiIndStTop = np.empty((0), dtype = np.int32)     # length nIndStTop
+        # self.optiParamsStTop = np.empty((0), dtype = np.float64)     # length 2*nIndStTop
+        # self.nIndStTop = 0
+        # self.opti_fVal = 10000000
+        # self.path = np.empty((0,2), dtype = np.float64)
+        # self.grads = np.empty((0,2), dtype = np.float64)
+        # self.lastGrad = np.empty((2), dtype = np.float64)
+        # self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
+        # self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
+        # self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
+        # self.maxIter = 30
+        # self.tol = 1e-12
+        # self.plotSteps = False
+        # self.saveIterates = False
+        #self.params_dict = None # dictionary for reading with json
 
      def initFromJSON(self, jsonString):
           '''
@@ -3199,7 +3188,7 @@ class triangleFan:
                     self.listBk[k] = -Bk
           # After modified, set listB0k, listBk, listBkBk1
           # Now for BkBk1, also compute the list curving inwards
-          self.listCurvingInwards = []
+          listCurvingInwards = []
           for k in range(n):
                j = 2*k
                self.params[j] = 0.4
@@ -3214,9 +3203,10 @@ class triangleFan:
                BkM1Bk = self.listBkBk1[j]
                if( np.dot(BkM1Bk, xk - self.x0) > 0 ):
                     # Meang that it is curving inwards
-                    self.listCurvingInwards.append(1)
+                    listCurvingInwards.append(1)
                else:
-                    self.listCurvingInwards.append(0)
+                    listCurvingInwards.append(0)
+          self.listCurvingInwards = np.array(listCurvingInwards)
           # Now we need to know which optimization problems to consider
           # 0: no points on the top Edge, 1: Cr, 2: St
           options = []
@@ -3262,7 +3252,7 @@ class triangleFan:
                     optionsTop[:, k] = 0
                     optionsTop[:, k] = 0
           self.optionsTop = np.unique(optionsTop, axis = 0)
-     
+          
      def optimize(self):
           # After loading all of the information from the json type of string we can do different types
           # of optimization

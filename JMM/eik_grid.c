@@ -984,7 +984,7 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
       }
     }
   }
-  printGeneralInfo(eik_g);
+  //printGeneralInfo(eik_g);
   // now we initialize the trial nodes
   size_t nNeis, flag;
   for( i = 0; i<eik_g->mesh2->nPoints; i++) {
