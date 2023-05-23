@@ -4,3 +4,6 @@ GTAGS
 *~
 *.pyc
 *.o
+*.bin
+*.txt
+*.json
