@@ -284,7 +284,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     # LEVEL SETS OF EXACT SOLUTION  + EXACT GRADIENTS
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
     im2_6 = plt.contourf(xi, yi, true_solGrid, cmap = colormap2, levels = 30 )
-    plt.contour(xi, yi, zi_lin, colors = ["white"], levels = 30)
+    plt.contour(xi, yi, true_solGrid, colors = ["white"], levels = 30)
     plt.quiver(eik_coords[:, 0], eik_coords[:, 1], true_grads[:, 0], true_grads[:, 1])
     plt.title("Level sets and exact gradients")
     plt.colorbar(im2_6)
@@ -336,7 +336,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     # ERRORS IN GRADIENTS
     vmaxGrad = np.max(abs(point_errors_grads))
     fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
-    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap1, vmin = 0, vmax = 1)
+    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_grads, cmap = colormap1, vmin = 0, vmax = vmaxGrad)
     plt.colorbar(im2_11)
     plt.title("Angle error in gradients")
     ax = plt.gca()
@@ -357,7 +357,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_xlim([-18,18])
     ax.set_ylim([-18,24])
     if (saveFigures):
-        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrors.png', dpi=my_dpi * 10)
+        plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrorsTri.png', dpi=my_dpi * 10)
 
     if(show):
         plt.show()
@@ -373,9 +373,9 @@ def plotEverthing_H(H, saveFigures = True):
     path_information = path_general + H + "/" + H 
     path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
     xi, yi = np.meshgrid(np.linspace(-18, 18, nx_default), np.linspace(-18, 24, ny_default))
-    eik_vals = np.fromfile(path_information + "_ComputedValues.bin")
+    eik_vals = np.fromfile(path_information + "_ComputedValuesFast.bin")
     eik_coords = np.genfromtxt(path_information + "_MeshPoints.txt", delimiter=",")
-    eik_grads = np.fromfile(path_information + "_ComputedGradients.bin")
+    eik_grads = np.fromfile(path_information + "_ComputedGradientsFast.bin")
     eik_grads = eik_grads.reshape(len(eik_coords), 2)
     triangles_points = np.genfromtxt(path_information + "_Faces.txt", delimiter=",")
     true_sol = None

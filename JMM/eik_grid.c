@@ -6,7 +6,7 @@ This is the Eikonal grid with different specifications
 
 #include "eik_grid.h"
 #include "priority_queue.h"
-// #include "opti_method.h" // currently using Python for the optimization
+#include "opti_method.h" // currently using Python and C for the optimization
 #include "linAlg.h"
 #include "files_methods.h"
 
@@ -409,6 +409,101 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 			      index1, indexHat, listIndicesNodes);
 }
 
+
+void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]) {
+  // given two points in a base with its corresponding parameterization we approximate the gradient of the Eikonal
+  double MinParametrization, xBasePart1[2], xBasePart2[2], xBase[2], normBase, direction[2];
+  MinParametrization = 1 - parameterization;
+  scalar_times_2vec( MinParametrization, x0, xBasePart1 );
+  scalar_times_2vec( parameterization, x1, xBasePart2 );
+  vec2_addition( xBasePart1, xBasePart2, xBase );
+  vec2_subtraction(xHat, xBase, direction);
+  normBase = l2norm(direction);
+  grad[0] = indexRefraction*direction[0]/normBase;
+  grad[1] = indexRefraction*direction[1]/normBase;
+}
+
+
+void simple_Update(double x0[2], double x1[2], double xHat[2],
+		   double T0, double T1, double grad0[2],
+		   double grad1[2], double indexRef, double *That2,
+		   double *lambda, double grad[2]) {
+  // this is a simple two point update, meaning that there are no change in regions considered
+  // uses optimization to find xLam, which is on the line defined from x0 to x1 parametrized by lambda
+
+  // first we find the optimal lambda
+  double tol, lambda0, lambda1;
+  int maxIter;
+  tol = 0.00001;
+  maxIter = 30;
+  lambda0 = 0;
+  lambda1 = 1;
+
+  *lambda = secantCubic_2D(lambda0, lambda1, T0, T1,
+			   grad0, grad1,
+			   x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
+  // compute the approximation to That2
+  *That2 = eikApproxCubic(T0, T1, grad0, grad1,
+			  *lambda, x0, x1, xHat, indexRef);
+
+  
+  // and we also approximate the eikonal gradient
+  approximateEikonalGradient(x0, x1, xHat, *lambda, indexRef, grad);
+}
+
+void fanUpdate_fromSimple(fanUpdateS *fanUpdate) {
+  // update a triangle fan using a simple update (not python, just C and the secant method)
+  size_t nIndCrTop, *indCrTop, nIndStTop, *indStTop;
+  double *paramsCrTop, *paramsStTop, (*grads)[2], (*path)[2];
+  double lambda, grad[2], That2, indexRef, *params;
+  // initialize useless things in this context
+  paramsCrTop = malloc(2*sizeof(double));
+  paramsStTop = malloc(2*sizeof(double));
+  indCrTop = malloc(sizeof(size_t));
+  indStTop = malloc(sizeof(size_t));
+  grads = malloc(2*sizeof(double));
+  path = malloc(4*sizeof(double));
+  params = malloc(sizeof(double));
+  nIndCrTop = 0;
+  nIndStTop = 0;
+  paramsCrTop[0] = -1;
+  paramsCrTop[1] = -1;
+  paramsStTop[0] = -1;
+  paramsStTop[1] = -1;
+  indCrTop[0] = 0;
+  indStTop[0] = 0;
+  indexRef = fanUpdate->triFan->listIndices[0];
+  // optimize!
+  simple_Update(fanUpdate->triFan->x0, fanUpdate->triFan->x1,
+		fanUpdate->triFan->xHat,
+		fanUpdate->T0, fanUpdate->T1,
+		fanUpdate->grad0, fanUpdate->grad1,
+		indexRef, &That2, &lambda, grad);
+  // save everything to fanUpdate
+  grads[0][0] = grad[0];
+  grads[0][1] = grad[1];
+  path[0][0] = (1-lambda)*fanUpdate->triFan->x0[0] + lambda*fanUpdate->triFan->x1[0];
+  path[0][1] = (1-lambda)*fanUpdate->triFan->x0[1] + lambda*fanUpdate->triFan->x1[1];
+  path[1][0] = fanUpdate->triFan->xHat[0];
+  path[1][1] = fanUpdate->triFan->xHat[1];
+  params[0] = lambda;
+  fanUpdate->nIndCrTop = nIndCrTop;
+  fanUpdate->indCrTop = indCrTop;
+  fanUpdate->paramsCrTop = paramsCrTop;
+  fanUpdate->nIndStTop = nIndStTop;
+  fanUpdate->indStTop = indStTop;
+  fanUpdate->paramsStTop = paramsStTop;
+  fanUpdate->THat = That2;
+  fanUpdate->grads = grads;
+  fanUpdate->path = path;
+  fanUpdate->gradHat[0] = grad[0];
+  fanUpdate->gradHat[1] = grad[1];
+  fanUpdate->params = params;
+  
+}
+
+
+
 void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   int i;
   FILE *fp = fopen(path, "w");
@@ -721,30 +816,7 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   char path[1024 + 1];
   sprintf(path, "updates/update%d.json", updateNumber);
   createJSONFile(fanUpdate, path);
-  //createJSONinput(fanUpdate, &input_json); // put everything in the json order we want
-  //printf("created json file for input\n")
-  /*   exit(EXIT_FAILURE); */
-  /* } */
-  /* pid = fork(); */
-  /* if(pid == 0){ */
-  /*   // we are in the child process */
-  /*   execlp("python", "python", "stepWithPython.py", "update.json", NULL); */
-  /*   printf("executed python\n"); */
-  /* } */
-  /* else{ */
-  /*   wait(NULL); */
-  /*   char buffer[5000]; */
-  /*   int fd = open("/Users/marianamartinez/Documents/Curvy-JMM/JMM/updateSolve.json", O_RDONLY); */
-  /*   if( fd == -1){ */
-  /*     printf("\nProblem when opening the output json from Python\n"); */
-  /*     exit(EXIT_FAILURE); */
-  /*   } */
-  /*   ssize_t num_read = read(fd, buffer, sizeof(buffer)); */
-  /*   json_object *output_obj = json_tokener_parse(buffer); */
-  /*   deserializeJSONoutput(fanUpdate, output_obj); */
-  /* } */
   
-  //execlp("python", "python", "stepWithPython.py", NULL);
   char args[1024 + 1];
   sprintf(args, "python3 ./stepWithPython.py updates/update%d.json", updateNumber);
   printf("\nDoing update %d\n\n", updateNumber);
@@ -778,7 +850,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
   // given a starting edge on the valid front update a far/trial
   // set of triangles until indexStop is reached (going on the direction of firstTriangle)
-  size_t possibleNextIndices[2];
+  size_t possibleNextIndices[2], allSameIndices;
   int possibleNextTriangles[2];
   int i;
   double T0, grad0[2], T1, grad1[2], *angleMax;
@@ -838,8 +910,20 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     fanUpdate_initPreOpti(currentTriangleFanUpdate, currentTriangleFan,
 			  T0, grad0, T1, grad1);
     currentTriangleFanUpdate->THat = eik_g->eik_vals[indexHat];
-    //////// OPTIMIZE!
-    optimizeTriangleFan_wPython(currentTriangleFanUpdate);
+    /////////////////// OPTIMIZE!
+    allSameIndices = allSameTriangles(currentTriangleFan); // see if all the indices in this fan are the same
+    if( allSameIndices == 0){
+      // there are different indices of refraction in this triangle fan, we need the
+      // complicated optimization technique
+      printf("\nOptimization using Python\n\n");
+      optimizeTriangleFan_wPython(currentTriangleFanUpdate);
+    }
+    else{
+      // all the indices of refraction in this triangle fan are the same
+      // there is no need to use python, this is a simple update done with C
+      printf("\nSimple optimization using C\n\n");
+      fanUpdate_fromSimple(currentTriangleFanUpdate);
+    }
     printf("THat found: %f\n", currentTriangleFanUpdate->THat);
     // if we found a good update, update the values
     if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat ){

@@ -896,6 +896,25 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 /* } */
 
 
+
+size_t allSameTriangles(triangleFanS *triFan) {
+  // 0 if the triangle fan has different indices of refraction,
+  // 1 if the triangle fan has all the same indices of refraction
+  int i;
+  size_t allSame = 1;
+  size_t nInd = 2*triFan->nRegions + 1;
+  double testIndex = triFan->listIndices[0]; // first one
+  for (i = 1; i < nInd; i ++){
+    // go around all the indices of refraction
+    if( triFan->listIndices[i] != testIndex ){
+      // we've found a different index of refraction to the first one
+      return 0; // get out of the function return 0
+    }
+  }
+  return allSame;
+}
+
+
 void printEverythingTriFan(triangleFanS *triFan) {
   // we want to print all the information regarding a triangle fan
   int i;

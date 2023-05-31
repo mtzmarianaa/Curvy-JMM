@@ -85,6 +85,15 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
 		size_t indexHat, size_t firstTriangle, double *angleMax) ;
 
+void approximateEikonalGradient(double x0[2], double x1[2], double xHat[2], double parameterization, double indexRefraction, double grad[2]);
+
+void simple_Update(double x0[2], double x1[2], double xHat[2],
+		   double T0, double T1, double grad0[2],
+		   double grad1[2], double indexRef, double *That2,
+		   double *lambda, double grad[2]);
+
+void fanUpdate_fromSimple(fanUpdateS *fanUpdate);
+
 void createJSONFile(fanUpdateS *fanUpdate, char const *path);
 
 void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj);

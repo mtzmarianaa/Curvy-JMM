@@ -2422,7 +2422,7 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                dmuk_collapsed = partial_fObj_collapsedShooter(mukM1, muk, rk, x0, BkM1, xkM1, BkM1,
                                                               x0, B0k, xk, Bk,
                                                               xk, BkBk1_0, xk1, BkBk1_1, etakPrev, etak) 
-               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed,
+               lamk, muk = backTrClose_block0k(1, k, dlamk, dmuk, dmuk_collapsed, params,
                                                x0, T0, grad0, x1, T1, grad1, xHat,
                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                indCrTop, paramsCrTop, indStTop, paramsStTop)
@@ -2734,10 +2734,10 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
      iter = 0
      change_fVal = 1
      normChangeP = 1
-     while( abs(change_fVal) > tol and iter < maxIter and normChangeP > tol):
+     while( change_fVal > tol and iter < maxIter and normChangeP > tol):
           paramskM1, paramsCrTopkM1, paramsStTopkM1 = paramsk, paramsCrTopk, paramsStTopk
           # Forward pass
-          paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = forwardPassUpdate(paramsk, gammas,
+          paramsTest, paramsCrTopTest, paramsStTopTest, gradParamsTest, gradCrTopTest, gradStTopTest = forwardPassUpdate(paramsk, gammas,
                                                                                                  theta_gamma, x0,
                                                                                                  T0, grad0, x1,
                                                                                                  T1, grad1, xHat,
@@ -2747,18 +2747,22 @@ def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, x
                                                                                                  indStTop, paramsStTopk,
                                                                                                  listCurvingInwards)
           # Update lists
-          fk = fObj_generalized(paramsk, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+          fk = fObj_generalized(paramsTest, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                 listxk, listB0k, listBk, listBkBk1,
-                                indCrTop = indCrTop, paramsCrTop = paramsCrTopk,
-                                indStTop = indStTop, paramsStTop = paramsStTopk)
-          gradk = sqrt( norm(gradParamsk)**2 + norm(gradCrTopk)**2 + norm(gradStTopk)**2)
-          normChangeP = sqrt( norm( paramskM1 - paramsk)**2 + norm( paramsCrTopkM1 - paramsCrTopk)**2 + norm(paramsStTopkM1 - paramsStTopk)**2 )
-          listChangeParams.append(normChangeP)
+                                indCrTop = indCrTop, paramsCrTop = paramsCrTopTest,
+                                indStTop = indStTop, paramsStTop = paramsStTopTest)
           listObjVals.append(fk)
-          listGradNorms.append(gradk)
           if( iter > 0):
                change_fVal = listObjVals[-2] - fk
+               if( change_fVal > 0):
+                    paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = paramsTest, paramsCrTopTest, paramsStTopTest, gradParamsTest, gradCrTopTest, gradStTopTest
+                    gradk = sqrt( norm(gradParamsk)**2 + norm(gradCrTopk)**2 + norm(gradStTopk)**2)
+                    normChangeP = sqrt( norm( paramskM1 - paramsk)**2 + norm( paramsCrTopkM1 - paramsCrTopk)**2 + norm(paramsStTopkM1 - paramsStTopk)**2 )
+                    listChangeParams.append(normChangeP)
+                    listGradNorms.append(gradk)
                listChangefObj.append(change_fVal)
+          else:
+               paramsk, paramsCrTopk, paramsStTopk, gradParamsk, gradCrTopk, gradStTopk = paramsTest, paramsCrTopTest, paramsStTopTest, gradParamsTest, gradCrTopTest, gradStTopTest
           if( plotSteps):
                itt.plotFann(x0, listB0k, listxk, listBk, params = paramsk, listBkBk1 = listBkBk1, indStTop = indStTop, paramsStTop = paramsStTopk, indCrTop = indCrTop, paramsCrTop = paramsCrTopk)
                plt.title("Triangle fan after " + str(iter) + " iterations")
@@ -2774,13 +2778,13 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      tol = 1e-10
      nGrads = len(params)  #  Number of gradients we need to compute
      # Set indStTop if indCrTop is given
-     if(paramsStTop is not None):
+     if(paramsStTop is not None and indStTop[0] != -1):
           nGrads += 2*len(indStTop)
      else:
           indStTop = [-1]
           paramsStTop = [0,0]
      # Set indCrTop if indStTop is given
-     if(paramsCrTop is not None):
+     if(paramsCrTop is not None and indCrTop[0] != -1):
           nGrads += 2*len(indCrTop)
      else:
           indCrTop = [-1]
@@ -2833,7 +2837,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           if( np.any(yk1 != bk) ):
                grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
-          if( lam2 != mu2 ):
+          if( abs(lam2 - mu2) > 0.1 ):
                grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentCrTop < len(indCrTop) - 1):
@@ -2854,7 +2858,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           if( np.any( yk1 != bk) ):
                grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
-          if( lam2 != mu2 ):
+          if( abs(lam2 - mu2) > 0.1 ):
                grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentStTop < len(indStTop) - 1):
@@ -2863,7 +2867,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           # Means that the next point is on h0hk1
           if( np.any(yk1 != zk) ):
                grads[0, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
-          if( lam2 != mu2 ):
+          if( abs(lam2 - mu2) > 0.1 ):
                grads[1, :] = (Bmu2/norm(Bmu2))*etaMin
           path[1, :] = yk1
           currGrad = 2
@@ -2914,7 +2918,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                if( np.any( yk1 != bk) ):
                     grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
-               if( lamk1 != muk1 ):
+               if( abs(lamk1 - muk1) > 0.1 ):
                     grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
@@ -2945,7 +2949,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                if( np.any( yk1 != bk) ):
                     grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
-               if( lamk1 != muk1 ):
+               if( abs(lamk1 - muk1) > 0.1 ):
                     grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
@@ -2969,7 +2973,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                path[currGrad + 2, :] = zk1
                if( np.any( zk != yk1 ) ):
                     grads[currGrad, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
-               if( abs(lamk1 - muk1) > tol ):
+               if( abs(lamk1 - muk1) > 0.1 ):
                     grads[currGrad + 1, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 2
      return path, grads
@@ -3019,7 +3023,6 @@ triInf = [
 
 
 
-#@jitclass(triInf)
 class triangleFan:
      '''
      Triangle fan class. In here we can dump a json file
@@ -3093,46 +3096,11 @@ class triangleFan:
         self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
         self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
         self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
-        self.maxIter = 30
+        self.maxIter = 40
         self.tol = 1e-12
         self.plotSteps = False
         self.saveIterates = False
         self.params_dict = None # dictionary for reading with json
-        # self.nRegions = nRegions
-        # self.params = np.empty((2*nRegions + 1), dtype = np.float64)     # Always length 2*nRegions + 1
-        # self.x0 = np.empty((2), dtype = np.float64)
-        # self.T0 = 100000
-        # self.grad0 = np.empty((2), dtype = np.float64)
-        # self.x1 = np.empty((2), dtype = np.float64)
-        # self.T1 = 100000
-        # self.grad1 = np.empty((2), dtype = np.float64)
-        # self.xHat = np.empty((2), dtype = np.float64)
-        # self.listIndices = np.empty((2*nRegions + 1), dtype = np.float64)
-        # self.listxk = np.empty((nRegions + 2, 2), dtype = np.float64)
-        # self.listB0k = np.empty((nRegions + 1, 2), dtype = np.float64)
-        # self.listBk = np.empty((nRegions + 1, 2), dtype = np.float64)
-        # self.listBkBk1 = np.empty((2*nRegions, 2), dtype = np.float64)
-        # self.listCurvingInwards = np.empty((nRegions), dtype = np.int32)
-        # self.optionsTop = np.empty((0, 0), dtype = np.int32)
-        # self.optiParams = np.empty((2*nRegions + 1), dtype = np.float64)     # Always length 2*nRegions + 1
-        # self.optiIndCrTop = np.empty((0), dtype = np.int32)     # length nIndCrTop
-        # self.optiParamsCrTop = np.empty((0), dtype = np.float64)     # length 2*nIndCrTop
-        # self.nIndCrTop = 0
-        # self.optiIndStTop = np.empty((0), dtype = np.int32)     # length nIndStTop
-        # self.optiParamsStTop = np.empty((0), dtype = np.float64)     # length 2*nIndStTop
-        # self.nIndStTop = 0
-        # self.opti_fVal = 10000000
-        # self.path = np.empty((0,2), dtype = np.float64)
-        # self.grads = np.empty((0,2), dtype = np.float64)
-        # self.lastGrad = np.empty((2), dtype = np.float64)
-        # self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
-        # self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
-        # self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
-        # self.maxIter = 30
-        # self.tol = 1e-12
-        # self.plotSteps = False
-        # self.saveIterates = False
-        #self.params_dict = None # dictionary for reading with json
 
      def initFromJSON(self, jsonString):
           '''

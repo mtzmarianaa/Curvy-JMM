@@ -93,7 +93,9 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 		      double (*listB0k)[2], double (*listBk)[2],
 		      double (*listBkBk1)[2]);
 
+size_t allSameTriangles(triangleFanS *triFan);
 
 void printEverythingTriFan(triangleFanS *triFan);
+
 
 

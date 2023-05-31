@@ -15,19 +15,19 @@ int main(){
     const char *pathSaveEiks, *pathSaveGrads, *pathTimes;
     double rBall = 2.0;
 
-    pathPoints = "./H0/H0_MeshPoints.txt";
-    pathFaces = "./H0/H0_Faces.txt";
-    pathEdges = "./H0/H0_Edges.txt";
-    pathEdgesInFace = "./H0/H0_EdgesInFace.txt";
-    pathNeighbors = "./H0/H0_Neigh.txt";
-    pathIncidentFaces = "./H0/H0_IncidentFaces.txt";
-    pathIndices = "./H0/H0_Indices.txt";
-    pathIndices = "./H0/H0_Indices.txt";
-    pathBoundary = "./H0/H0_BoundaryCurve.txt";
+    pathPoints = "./H6/H6_MeshPoints.txt";
+    pathFaces = "./H6/H6_Faces.txt";
+    pathEdges = "./H6/H6_Edges.txt";
+    pathEdgesInFace = "./H6/H6_EdgesInFace.txt";
+    pathNeighbors = "./H6/H6_Neigh.txt";
+    pathIncidentFaces = "./H6/H6_IncidentFaces.txt";
+    pathIndices = "./H6/H6_Indices.txt";
+    pathIndices = "./H6/H6_Indices.txt";
+    pathBoundary = "./H6/H6_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H0/H0_ComputedValues.bin";
-    pathSaveGrads = "./H0/H0_ComputedGradients.bin";
-    pathTimes = "./H0/H0_Times.bin";
+    pathSaveEiks = "./H6/H6_ComputedValuesFast.bin";
+    pathSaveGrads = "./H6/H6_ComputedGradientsFast.bin";
+    pathTimes = "./H6/H6_TimesFast.bin";
 
     double time_taken[1], time;
     clock_t start_t, end_t;
@@ -71,19 +71,19 @@ int main(){
 
 
 
-    pathPoints = "./H1/H1_MeshPoints.txt";
-    pathFaces = "./H1/H1_Faces.txt";
-    pathEdges = "./H1/H1_Edges.txt";
-    pathEdgesInFace = "./H1/H1_EdgesInFace.txt";
-    pathNeighbors = "./H1/H1_Neigh.txt";
-    pathIncidentFaces = "./H1/H1_IncidentFaces.txt";
-    pathIndices = "./H1/H1_Indices.txt";
-    pathIndices = "./H1/H1_Indices.txt";
-    pathBoundary = "./H1/H1_BoundaryCurve.txt";
+    pathPoints = "./H7/H7_MeshPoints.txt";
+    pathFaces = "./H7/H7_Faces.txt";
+    pathEdges = "./H7/H7_Edges.txt";
+    pathEdgesInFace = "./H7/H7_EdgesInFace.txt";
+    pathNeighbors = "./H7/H7_Neigh.txt";
+    pathIncidentFaces = "./H7/H7_IncidentFaces.txt";
+    pathIndices = "./H7/H7_Indices.txt";
+    pathIndices = "./H7/H7_Indices.txt";
+    pathBoundary = "./H7/H7_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H1/H1_ComputedValues.bin";
-    pathSaveGrads = "./H1/H1_ComputedGradients.bin";
-    pathTimes = "./H1/H1_Times.bin";
+    pathSaveEiks = "./H7/H7_ComputedValues.bin";
+    pathSaveGrads = "./H7/H7_ComputedGradients.bin";
+    pathTimes = "./H7/H7_Times.bin";
 
     eik_gridS *eik_g2;
     eik_grid_alloc(&eik_g2);
@@ -109,11 +109,49 @@ int main(){
     eik_grid_dealloc(&eik_g2);
 
 
+   
+
+
+
+
+
+    pathPoints = "./H8/H8_MeshPoints.txt";
+    pathFaces = "./H8/H8_Faces.txt";
+    pathEdges = "./H8/H8_Edges.txt";
+    pathEdgesInFace = "./H8/H8_EdgesInFace.txt";
+    pathNeighbors = "./H8/H8_Neigh.txt";
+    pathIncidentFaces = "./H8/H8_IncidentFaces.txt";
+    pathIndices = "./H8/H8_Indices.txt";
+    pathIndices = "./H8/H8_Indices.txt";
+    pathBoundary = "./H8/H8_BoundaryCurve.txt";
+
+    pathSaveEiks = "./H8/H8_ComputedValues.bin";
+    pathSaveGrads = "./H8/H8_ComputedGradients.bin";
+    pathTimes = "./H8/H8_Times.bin";
+
+    eik_gridS *eik_g3;
+    eik_grid_alloc(&eik_g3);
+
+    eik_grid_initFromFile(eik_g3, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
+			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+
+    // printAllInfoMesh(eik_g1);
+
+    start_t = clock();
+    marcher_T2(eik_g3, rBall);;
+    end_t = clock();
+    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
+    time_taken[0] = time;
     
 
+    saveComputedValues(eik_g3, pathSaveEiks);
+    saveComputedGradients(eik_g3, pathSaveGrads);
+    saveTimes(time_taken, pathTimes);
 
-    /* mesh2S *mesh2; */
-    /* mesh2_alloc(&mesh2); */
+    printGeneralInfo(eik_g3);
+
+    eik_grid_dealloc(&eik_g3);
+
 
 
     
