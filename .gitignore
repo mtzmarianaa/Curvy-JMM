@@ -7,3 +7,6 @@ GTAGS
 *.bin
 *.txt
 *.json
+*.icloud
+*.pyc
+*.DS_Store
