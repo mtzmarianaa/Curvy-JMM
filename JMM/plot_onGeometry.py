@@ -158,7 +158,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
         
     # For the errors we need to get the range so that white is plotted exactly in the middle (error = 0)
     vMaxAbs = np.amax(errorsAbs_inter)
-        
+    print("Errors mean: ", norm(point_errors_eik)/norm(true_sol))
     # Now we have all the date (either it was given or we computed it here)
     # We can now plot
 

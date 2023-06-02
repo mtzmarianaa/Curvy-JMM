@@ -2130,6 +2130,8 @@ def updateFromCrTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
           else:
                # We have to worry about the side edge
+               BkBk1_0 = listBkBk1[k+1]
+               BkBk1_1 = listBkBk1[k+2]
                muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
                lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
           muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
@@ -2340,6 +2342,8 @@ def updateFromStTop(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                lamk1_projected = project_lamk1Givenmuk(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1)
           else:
                # We have to worry about the side edge
+               BkBk1_0 = listBkBk1[k+1]
+               BkBk1_1 = listBkBk1[k+2]
                muk_projected = project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
                lamk1_projected = project_lamkGivenmuk1_noCr(muk_free, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk1_0, BkBk1_1)
           muk, lamk1 = projections_muk_lamk1(muk_projected, lamk_projected, muk_free, lamk1,
@@ -2502,6 +2506,8 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
           else:
                # There is a problem with hkM1k
+               BkBk1_0 = listBkBk1[k+1]
+               BkBk1_1 = listBkBk1[k+2]
                lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
                mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
           lamk_free = project_box(lamk)
@@ -2539,8 +2545,10 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                # There is no problem with hkM1k
                lamk_projected = project_lamk1Givenmuk(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
                mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
-          else:
+          elif( listCurvingInwards[j-1] == 1):
                # There is a problem with hkM1k
+               BkBk1_0 = listBkBk1[k+1]
+               BkBk1_1 = listBkBk1[k+2]
                lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
                mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
           mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
@@ -2776,6 +2784,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      Compute the gradient of the eikonal, straight rights
      '''
      tol = 1e-10
+     tolGrads = norm(listxk[0] - listxk[1])*0.0001
      nGrads = len(params)  #  Number of gradients we need to compute
      # Set indStTop if indCrTop is given
      if(paramsStTop is not None and indStTop[0] != -1):
@@ -2828,16 +2837,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
           Bsk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-          if( np.any(ak != zk) ):
+          if( norm(ak - zk)>tolGrads ):
                grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
           path[2, :] = bk
-          if( rk != sk ):
+          if( abs(rk - sk) > 0.01 ):
                grads[1, :] = (Bsk/norm(Bsk))*etaMinCr # creeping ray from r1 to s1
-          if( np.any(yk1 != bk) ):
+          if( norm(yk1 - bk)>tolGrads ):
                grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
-          if( abs(lam2 - mu2) > 0.1 ):
+          if( abs(lam2 - mu2) > 0.01 ):
                grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentCrTop < len(indCrTop) - 1):
@@ -2849,25 +2858,25 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           sk = paramsStTop[2*currentStTop + 1]
           ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-          if( np.any(ak != zk) ):
+          if( abs(rk - sk) > 0.01 ):
                grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
           path[2, :] = bk
-          if( np.any(bk != ak) ):
+          if( abs(rk - sk) > 0.01 ):
                grads[1, :] = ((bk - ak)/norm(bk - ak))*etaRegionOutside # Ray from r1 to s1
-          if( np.any( yk1 != bk) ):
+          if( norm( yk1 - bk)>tolGrads ):
                grads[2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak # Ray from s1 to lam2
           path[3, :] = yk1
-          if( abs(lam2 - mu2) > 0.1 ):
+          if( abs(lam2 - mu2) > 0.01 ):
                grads[3, :] = (Bmu2/norm(Bmu2))*etaMin # Creeping ray from lam2 to mu2
           currGrad = 4
           if( currentStTop < len(indStTop) - 1):
                currentStTop += 1
      else:
           # Means that the next point is on h0hk1
-          if( np.any(yk1 != zk) ):
+          if( norm(yk1 - zk) > tolGrads ):
                grads[0, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
-          if( abs(lam2 - mu2) > 0.1 ):
+          if( abs(lam2 - mu2) > 0.01 ):
                grads[1, :] = (Bmu2/norm(Bmu2))*etaMin
           path[1, :] = yk1
           currGrad = 2
@@ -2909,16 +2918,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
                bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
                Bsk = gradientBoundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-               if( np.any( ak != zk) ):
+               if( norm( ak - zk) > tolGrads ):
                     grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
-               if( rk != sk ):
+               if( abs(rk - sk) > 0.01 ):
                     grads[currGrad + 1, :] = (Bsk/norm(Bsk))*etaMinCr
                path[currGrad + 2, :] = bk
-               if( np.any( yk1 != bk) ):
+               if( norm( yk1 - bk)>tolGrads ):
                     grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
-               if( abs(lamk1 - muk1) > 0.1 ):
+               if( abs(lamk1 - muk1) > 0.01 ):
                     grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
@@ -2940,16 +2949,16 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                sk = paramsCrTop[2*currentCrTop + 1]
                ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
                bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-               if( np.any( ak != zk) ):
+               if( norm( ak - zk) > tolGrads ):
                     grads[currGrad, :] = ((ak - zk)/norm(ak - zk))*etak
                path[currGrad + 1, :] = ak
-               if( rk != sk ):
+               if( abs(rk - sk) > 0.01 ):
                     grads[currGrad + 1, :] = ((bk - ak)/norm(bk - ak))*etaRegionOutside
                path[currGrad + 2, :] = bk
-               if( np.any( yk1 != bk) ):
+               if( norm( yk1 - bk) > tolGrads ):
                     grads[currGrad + 2, :] = ((yk1 - bk)/norm(yk1 - bk))*etak
                path[currGrad + 3, :] = yk1
-               if( abs(lamk1 - muk1) > 0.1 ):
+               if( abs(lamk1 - muk1) > 0.01 ):
                     grads[currGrad + 3, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 4
                if( currentCrTop < len(indCrTop) - 1):
@@ -2971,9 +2980,9 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
                xk1 = listxk[j+2]
                path[currGrad + 1, :] = yk1
                path[currGrad + 2, :] = zk1
-               if( np.any( zk != yk1 ) ):
+               if( norm( zk - yk1 ) > tolGrads ):
                     grads[currGrad, :] = ((yk1 - zk)/norm(yk1 - zk))*etak
-               if( abs(lamk1 - muk1) > 0.1 ):
+               if( abs(lamk1 - muk1) > 0.01 ):
                     grads[currGrad + 1, :] = (Bmuk1/norm(Bmuk1))*etaMin
                currGrad += 2
      return path, grads

@@ -21,11 +21,11 @@ colormap2_r = "cet_linear_worb_100_25_c53"
 
 plt.ion()
 
-h = 0.001
+h = 0.005
 h_string = str(h)
 eta1 = 1.0
 eta2 = 1.45
-currentH = "H7"
+currentH = "H9"
 path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
 path_info = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
 
