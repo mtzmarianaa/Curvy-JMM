@@ -37,7 +37,7 @@ path_trueSol = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
 
 # The different triangulations to consider
 
-Hs = ["H0", "H1", "H2", "H4", "H5", "H6"]
+Hs = ["H0", "H1", "H2", "H4"]
 
 
 # Colors

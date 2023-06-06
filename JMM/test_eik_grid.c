@@ -14,21 +14,6 @@ int main(){
     const char *pathIncidentFaces, *pathIndices, *pathBoundary;
     const char *pathSaveEiks, *pathSaveGrads, *pathTimes;
     double rBall = 2.0;
-
-    pathPoints = "./H5/H5_MeshPoints.txt";
-    pathFaces = "./H5/H5_Faces.txt";
-    pathEdges = "./H5/H5_Edges.txt";
-    pathEdgesInFace = "./H5/H5_EdgesInFace.txt";
-    pathNeighbors = "./H5/H5_Neigh.txt";
-    pathIncidentFaces = "./H5/H5_IncidentFaces.txt";
-    pathIndices = "./H5/H5_Indices.txt";
-    pathIndices = "./H5/H5_Indices.txt";
-    pathBoundary = "./H5/H5_BoundaryCurve.txt";
-
-    pathSaveEiks = "./H5/H5_ComputedValuesFast.bin";
-    pathSaveGrads = "./H5/H5_ComputedGradientsFast.bin";
-    pathTimes = "./H5/H5_TimesFast.bin";
-
     double time_taken[1], time;
     clock_t start_t, end_t;
 
@@ -37,53 +22,68 @@ int main(){
     start_int = 0;
     start = &start_int;
     nStart = 1;
-    // now we test the init with just the path to the files
 
-    printf("\n------------------------------------");
-    printf("\n------------------------------------");
-    printf("\n------------------------------------");
-    printf("\n\n\n TESTING THE UPDATES WITH CUBIC HERMITE INTERPOLATION \n\n\n\n");
+    /* pathPoints = "./H0/H0_MeshPoints.txt"; */
+    /* pathFaces = "./H0/H0_Faces.txt"; */
+    /* pathEdges = "./H0/H0_Edges.txt"; */
+    /* pathEdgesInFace = "./H0/H0_EdgesInFace.txt"; */
+    /* pathNeighbors = "./H0/H0_Neigh.txt"; */
+    /* pathIncidentFaces = "./H0/H0_IncidentFaces.txt"; */
+    /* pathIndices = "./H0/H0_Indices.txt"; */
+    /* pathIndices = "./H0/H0_Indices.txt"; */
+    /* pathBoundary = "./H0/H0_BoundaryCurve.txt"; */
 
-    eik_gridS *eik_g1;
-    eik_grid_alloc(&eik_g1);
+    /* pathSaveEiks = "./H0/H0_ComputedValuesFast.bin"; */
+    /* pathSaveGrads = "./H0/H0_ComputedGradientsFast.bin"; */
+    /* pathTimes = "./H0/H0_TimesFast.bin"; */
 
-    eik_grid_initFromFile(eik_g1, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace,
-			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary);
+    /* // now we test the init with just the path to the files */
 
-    // printAllInfoMesh(eik_g1);
+    /* printf("\n------------------------------------"); */
+    /* printf("\n------------------------------------"); */
+    /* printf("\n------------------------------------"); */
+    /* printf("\n\n\n TESTING THE UPDATES WITH CUBIC HERMITE INTERPOLATION \n\n\n\n"); */
 
-    start_t = clock();
-    marcher_T2(eik_g1, rBall);;
-    end_t = clock();
-    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
-    time_taken[0] = time;
+    /* eik_gridS *eik_g1; */
+    /* eik_grid_alloc(&eik_g1); */
+
+    /* eik_grid_initFromFile(eik_g1, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
+    /* 			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
+
+    /* // printAllInfoMesh(eik_g1); */
+
+    /* start_t = clock(); */
+    /* marcher_T2(eik_g1, rBall);; */
+    /* end_t = clock(); */
+    /* time = (double)(end_t - start_t)/ CLOCKS_PER_SEC; */
+    /* time_taken[0] = time; */
     
 
-    saveComputedValues(eik_g1, pathSaveEiks);
-    saveComputedGradients(eik_g1, pathSaveGrads);
-    saveTimes(time_taken, pathTimes);
+    /* saveComputedValues(eik_g1, pathSaveEiks); */
+    /* saveComputedGradients(eik_g1, pathSaveGrads); */
+    /* saveTimes(time_taken, pathTimes); */
 
-    printGeneralInfo(eik_g1);
+    /* printGeneralInfo(eik_g1); */
 
-    eik_grid_dealloc(&eik_g1);
-
-
+    /* eik_grid_dealloc(&eik_g1); */
 
 
 
-    pathPoints = "./H6/H6_MeshPoints.txt";
-    pathFaces = "./H6/H6_Faces.txt";
-    pathEdges = "./H6/H6_Edges.txt";
-    pathEdgesInFace = "./H6/H6_EdgesInFace.txt";
-    pathNeighbors = "./H6/H6_Neigh.txt";
-    pathIncidentFaces = "./H6/H6_IncidentFaces.txt";
-    pathIndices = "./H6/H6_Indices.txt";
-    pathIndices = "./H6/H6_Indices.txt";
-    pathBoundary = "./H6/H6_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H6/H6_ComputedValues.bin";
-    pathSaveGrads = "./H6/H6_ComputedGradients.bin";
-    pathTimes = "./H6/H6_Times.bin";
+
+    pathPoints = "./H1/H1_MeshPoints.txt";
+    pathFaces = "./H1/H1_Faces.txt";
+    pathEdges = "./H1/H1_Edges.txt";
+    pathEdgesInFace = "./H1/H1_EdgesInFace.txt";
+    pathNeighbors = "./H1/H1_Neigh.txt";
+    pathIncidentFaces = "./H1/H1_IncidentFaces.txt";
+    pathIndices = "./H1/H1_Indices.txt";
+    pathIndices = "./H1/H1_Indices.txt";
+    pathBoundary = "./H1/H1_BoundaryCurve.txt";
+
+    pathSaveEiks = "./H1/H1_ComputedValuesFast.bin";
+    pathSaveGrads = "./H1/H1_ComputedGradientsFast.bin";
+    pathTimes = "./H1/H1_Times.bin";
 
     eik_gridS *eik_g2;
     eik_grid_alloc(&eik_g2);
@@ -96,7 +96,7 @@ int main(){
     start_t = clock();
     marcher_T2(eik_g2, rBall);;
     end_t = clock();
-    time = (double)(end_t - start_t)/ CLOCKS_PER_SEC;
+    time = (double)(end_t - start_t)/CLOCKS_PER_SEC;
     time_taken[0] = time;
     
 
@@ -115,19 +115,19 @@ int main(){
 
 
 
-    pathPoints = "./H7/H7_MeshPoints.txt";
-    pathFaces = "./H7/H7_Faces.txt";
-    pathEdges = "./H7/H7_Edges.txt";
-    pathEdgesInFace = "./H7/H7_EdgesInFace.txt";
-    pathNeighbors = "./H7/H7_Neigh.txt";
-    pathIncidentFaces = "./H7/H7_IncidentFaces.txt";
-    pathIndices = "./H7/H7_Indices.txt";
-    pathIndices = "./H7/H7_Indices.txt";
-    pathBoundary = "./H7/H7_BoundaryCurve.txt";
+    pathPoints = "./H2/H2_MeshPoints.txt";
+    pathFaces = "./H2/H2_Faces.txt";
+    pathEdges = "./H2/H2_Edges.txt";
+    pathEdgesInFace = "./H2/H2_EdgesInFace.txt";
+    pathNeighbors = "./H2/H2_Neigh.txt";
+    pathIncidentFaces = "./H2/H2_IncidentFaces.txt";
+    pathIndices = "./H2/H2_Indices.txt";
+    pathIndices = "./H2/H2_Indices.txt";
+    pathBoundary = "./H2/H2_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H7/H7_ComputedValues.bin";
-    pathSaveGrads = "./H7/H7_ComputedGradients.bin";
-    pathTimes = "./H7/H7_Times.bin";
+    pathSaveEiks = "./H2/H2_ComputedValuesFast.bin";
+    pathSaveGrads = "./H2/H2_ComputedGradientsFast.bin";
+    pathTimes = "./H2/H2_Times.bin";
 
     eik_gridS *eik_g3;
     eik_grid_alloc(&eik_g3);
@@ -155,19 +155,19 @@ int main(){
 
 
 
-    pathPoints = "./H8/H8_MeshPoints.txt";
-    pathFaces = "./H8/H8_Faces.txt";
-    pathEdges = "./H8/H8_Edges.txt";
-    pathEdgesInFace = "./H8/H8_EdgesInFace.txt";
-    pathNeighbors = "./H8/H8_Neigh.txt";
-    pathIncidentFaces = "./H8/H8_IncidentFaces.txt";
-    pathIndices = "./H8/H8_Indices.txt";
-    pathIndices = "./H8/H8_Indices.txt";
-    pathBoundary = "./H8/H8_BoundaryCurve.txt";
+    pathPoints = "./H3/H3_MeshPoints.txt";
+    pathFaces = "./H3/H3_Faces.txt";
+    pathEdges = "./H3/H3_Edges.txt";
+    pathEdgesInFace = "./H3/H3_EdgesInFace.txt";
+    pathNeighbors = "./H3/H3_Neigh.txt";
+    pathIncidentFaces = "./H3/H3_IncidentFaces.txt";
+    pathIndices = "./H3/H3_Indices.txt";
+    pathIndices = "./H3/H3_Indices.txt";
+    pathBoundary = "./H3/H3_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H8/H8_ComputedValues.bin";
-    pathSaveGrads = "./H8/H8_ComputedGradients.bin";
-    pathTimes = "./H8/H8_Times.bin";
+    pathSaveEiks = "./H3/H3_ComputedValuesFast.bin";
+    pathSaveGrads = "./H3/H3_ComputedGradientsFast.bin";
+    pathTimes = "./H3/H3_Times.bin";
 
     eik_gridS *eik_g4;
     eik_grid_alloc(&eik_g4);
@@ -196,19 +196,19 @@ int main(){
 
 
 
-    pathPoints = "./H8/H8_MeshPoints.txt";
-    pathFaces = "./H8/H8_Faces.txt";
-    pathEdges = "./H8/H8_Edges.txt";
-    pathEdgesInFace = "./H8/H8_EdgesInFace.txt";
-    pathNeighbors = "./H8/H8_Neigh.txt";
-    pathIncidentFaces = "./H8/H8_IncidentFaces.txt";
-    pathIndices = "./H8/H8_Indices.txt";
-    pathIndices = "./H8/H8_Indices.txt";
-    pathBoundary = "./H8/H8_BoundaryCurve.txt";
+    pathPoints = "./H4/H4_MeshPoints.txt";
+    pathFaces = "./H4/H4_Faces.txt";
+    pathEdges = "./H4/H4_Edges.txt";
+    pathEdgesInFace = "./H4/H4_EdgesInFace.txt";
+    pathNeighbors = "./H4/H4_Neigh.txt";
+    pathIncidentFaces = "./H4/H4_IncidentFaces.txt";
+    pathIndices = "./H4/H4_Indices.txt";
+    pathIndices = "./H4/H4_Indices.txt";
+    pathBoundary = "./H4/H4_BoundaryCurve.txt";
 
-    pathSaveEiks = "./H8/H8_ComputedValues.bin";
-    pathSaveGrads = "./H8/H8_ComputedGradients.bin";
-    pathTimes = "./H8/H8_Times.bin";
+    pathSaveEiks = "./H4/H4_ComputedValuesFast.bin";
+    pathSaveGrads = "./H4/H4_ComputedGradientsFast.bin";
+    pathTimes = "./H4/H4_Times.bin";
 
     eik_gridS *eik_g5;
     eik_grid_alloc(&eik_g5);

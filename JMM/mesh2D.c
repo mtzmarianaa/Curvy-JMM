@@ -435,12 +435,12 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
       listIndices[nRegions + i+1] = mesh2->eta[possibleTriangles[0]];
     }
     else if (possibleTriangles[1] != -1){
-      printf("Inside triangleFan_initFromIndices, possibleTriangles[1]: %d\n", possibleTriangles[1]);
+      //printf("Inside triangleFan_initFromIndices, possibleTriangles[1]: %d\n", possibleTriangles[1]);
       listIndices[nRegions + i+1] = mesh2->eta[possibleTriangles[1]];
     }
     else{
       // we are on the side of the box we are solving the problem in
-      printf("Inside triangleFan_initFromIndices, possibleTriangles[1] == -1 and possibleTriangles[0] == -1, index: %lu\n", nRegions + i + 1);
+      //printf("Inside triangleFan_initFromIndices, possibleTriangles[1] == -1 and possibleTriangles[0] == -1, index: %lu\n", nRegions + i + 1);
       listIndices[nRegions + i + 1] = mesh2->eta[faceBetweenPoints];
     }
     // get the 3 that make up this triangle
@@ -616,7 +616,7 @@ void triangleFan_initFromIndices(triangleFanS *triFan, mesh2S *mesh2, size_t nRe
     listIndices[nRegions] = mesh2->eta[possibleTriangles[1]];
   }
   else {
-    printf("Inside triangleFan_initFromIndices, the edge x0 xHat is on the border of square, setting it to %fl\n", listIndices[nRegions - 1]);
+    //printf("Inside triangleFan_initFromIndices, the edge x0 xHat is on the border of square, setting it to %fl\n", listIndices[nRegions - 1]);
     listIndices[nRegions] = listIndices[nRegions - 1];
   }
   // for the edges
@@ -905,10 +905,27 @@ size_t allSameTriangles(triangleFanS *triFan) {
   size_t nInd = 2*triFan->nRegions + 1;
   double testIndex = triFan->listIndices[0]; // first one
   for (i = 1; i < nInd; i ++){
-    // go around all the indices of refraction
+    // test if all the triangles in the triangle fan have the same index of refraction
     if( triFan->listIndices[i] != testIndex ){
       // we've found a different index of refraction to the first one
       return 0; // get out of the function return 0
+    }
+  }
+  
+  for( i = 1; i < triFan->nRegions; i ++){
+    // test if any of the top edges is on the boundary
+    if( triFan->listBkBk1[i][0] != 0 || triFan->listBkBk1[i][1] != 0) {
+      return 0;
+    }
+  }
+
+  for( i = 1; i < triFan->nRegions + 1; i ++){
+    // test if any of the top edges is on the boundary
+    if( triFan->listB0k[i][0] != 0 || triFan->listB0k[i][1] != 0) {
+      return 0;
+    }
+    if( triFan->listBk[i][0] != 0 || triFan->listBk[i][1] != 0) {
+      return 0;
     }
   }
   return allSame;

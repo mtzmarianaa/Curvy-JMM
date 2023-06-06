@@ -2506,8 +2506,6 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
           else:
                # There is a problem with hkM1k
-               BkBk1_0 = listBkBk1[k+1]
-               BkBk1_1 = listBkBk1[k+2]
                lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
                mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
           lamk_free = project_box(lamk)
@@ -2547,8 +2545,6 @@ def udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas, theta_gamm
                mukM1_projected = project_mukGivenlamk1(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk)
           elif( listCurvingInwards[j-1] == 1):
                # There is a problem with hkM1k
-               BkBk1_0 = listBkBk1[k+1]
-               BkBk1_1 = listBkBk1[k+2]
                lamk_projected = project_lamkGivenmuk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
                mukM1_projected = project_mukGivenlamk1_noCr(mukM1, lamk, x0, B0kM1, xkM1, BkM1, B0k, xk, Bk, BkM1Bk_0, BkM1Bk_1)
           mukM1, lamk = projections_muk_lamk1(mukM1_projected, lamk_projected, mukM1, lamk_free, k-1,
@@ -2858,7 +2854,7 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
           sk = paramsStTop[2*currentStTop + 1]
           ak = hermite_boundary(rk, xk, BkBk1_0, xk1, BkBk1_1)
           bk = hermite_boundary(sk, xk, BkBk1_0, xk1, BkBk1_1)
-          if( abs(rk - sk) > 0.01 ):
+          if( norm(ak - zk) > tolGrads ):
                grads[0, :] = ((ak - zk)/norm(ak - zk))*etak # Ray from mu1 to r1
           path[1, :] = ak
           path[2, :] = bk
@@ -3281,13 +3277,13 @@ class triangleFan:
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
           # Save nIndCrTop and nIndStTop
-          if( self.optiIndCrTop is None):
+          if( self.optiIndCrTop is None or self.optiIndCrTop[0] == -1):
                self.nIndCrTop = 0
                self.optiIndCrTop = [-1]
                self.optiParamsCrTop = [-1, -1]
           else:
                self.nIndCrTop = len(self.optiIndCrTop)
-          if( self.optiIndStTop is None):
+          if( self.optiIndStTop is None or self.optiIndStTop[0] == -1):
                self.nIndStTop = 0
                self.optiIndStTop = [-1]
                self.optiParamsStTop = [-1, -1]

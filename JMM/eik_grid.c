@@ -861,8 +861,8 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   T1 = eik_g->eik_vals[index1];
   grad1[0] = eik_g->grads[index1][0];
   grad1[1] = eik_g->grads[index1][1];
-  printf("Using index0: %zu  with T0: %f,  grad0: %f  %f,  index1: %zu  with T1: %f,  grad1: %f  %f",
-	 index0, T0, grad0[0], grad0[1], index1, T1, grad1[0], grad1[1]);
+  //printf("Using index0: %zu  with T0: %f,  grad0: %f  %f,  index1: %zu  with T1: %f,  grad1: %f  %f",
+  //	 index0, T0, grad0[0], grad0[1], index1, T1, grad1[0], grad1[1]);
   size_t indexStop;
   if(indexStop_int < 0){
     // meaning that we dont have an index stop, this is an artificial value
@@ -897,13 +897,13 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     // while we are not on the other valid edge and while the current node we are trying
     // to update is not valid (yet)
     // initialize currentTriangleFan
-    printf("\n   Trying to update neighbor: %zu\n", indexHat);
-    printf("\n    Index0: %zu     Index1: %zu      Index2: %zu     firstTriangle: %zu\n", index0, index1, index2, firstTriangle);
+    //printf("\n   Trying to update neighbor: %zu\n", indexHat);
+    //printf("\n    Index0: %zu     Index1: %zu      Index2: %zu     firstTriangle: %zu\n", index0, index1, index2, firstTriangle);
     initTriFan(eik_g, currentTriangleFan, index0, index1, index2,
 	       indexHat, firstTriangle, angleMax);
-    printf("Angle in this triangleFan %f\n", angleMax[0]);
+    //printf("Angle in this triangleFan %f\n", angleMax[0]);
     if( fabs(angleMax[0]) > 1){
-      printf("\n\nangleMax is greater than pi\n");
+      //printf("\n\nangleMax is greater than pi\n");
       return;
     }
     // initialize the triangle update
@@ -928,6 +928,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     // if we found a good update, update the values
     if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat ){
       assert( eik_g->current_states[indexHat] != 2); // no update on valid nodes
+      assert( T0 < currentTriangleFanUpdate->THat ||  T1 < currentTriangleFanUpdate->THat); // the current update must be smaller than T0
       // meaning we found a better update
       eik_g->eik_vals[indexHat] = currentTriangleFanUpdate->THat;
       eik_g->grads[indexHat][0] = currentTriangleFanUpdate->gradHat[0];
