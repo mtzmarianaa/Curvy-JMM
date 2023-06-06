@@ -2704,6 +2704,20 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                                                indCrTop, paramsCrTop, indStTop, paramsStTop,
                                                                                listCurvingInwards, gradParams)
      # THIS IS THE END OF THE FOR LOOP
+     # Test for the last one (tricky one)
+     if( params[-2] > 0.9):
+          f_Now = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                   listxk, listB0k, listBk, listBkBk1,
+                                   indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+                                   indStTop = indStTop, paramsStTop = paramsStTop)
+          params_test = np.copy(params)
+          params_test[-2] = 1.0
+          f_test = fObj_generalized(params_test, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
+                                    listxk, listB0k, listBk, listBkBk1,
+                                    indCrTop = indCrTop, paramsCrTop = paramsCrTop,
+                                    indStTop = indStTop, paramsStTop = paramsStTop)
+          if( f_Now > f_test ):
+               params[-2] = 1.0
      # We are done
      return params, paramsCrTop, paramsStTop, gradParams, gradCrTop, gradStTop
 
@@ -2712,7 +2726,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                         listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0,
                                         indStTop, paramsStTop0, listCurvingInwards, theta_gamma = 1,
-                                        tol = 1e-12, maxIter = 30, plotSteps = False):
+                                        tol = 1e-12, maxIter = 50, plotSteps = False):
      '''
      Block coordiante subgradient descent (modified) for a generalized triangle fan.
      '''
