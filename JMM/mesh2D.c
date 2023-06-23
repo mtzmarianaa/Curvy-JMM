@@ -900,26 +900,27 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 size_t allSameTriangles(triangleFanS *triFan) {
   // 0 if the triangle fan has different indices of refraction,
   // 1 if the triangle fan has all the same indices of refraction
-  int i;
+  int i, j;
   size_t allSame = 1;
   size_t nInd = 2*triFan->nRegions + 1;
-  double testIndex = triFan->listIndices[0]; // first one
-  for (i = 1; i < nInd; i ++){
+  for (i = 0; i < nInd; i ++){
     // test if all the triangles in the triangle fan have the same index of refraction
-    if( triFan->listIndices[i] != testIndex ){
+    for( j = 0; i < nInd; i++){
       // we've found a different index of refraction to the first one
-      return 0; // get out of the function return 0
+      if( triFan->listIndices[i] != triFan->listIndices[j] ){
+	return 0;
+      }
     }
   }
   
-  for( i = 1; i < triFan->nRegions; i ++){
+  for( i = 0; i < 2*triFan->nRegions; i ++){
     // test if any of the top edges is on the boundary
     if( triFan->listBkBk1[i][0] != 0 || triFan->listBkBk1[i][1] != 0) {
       return 0;
     }
   }
 
-  for( i = 1; i < triFan->nRegions + 1; i ++){
+  for( i = 0; i < triFan->nRegions + 1; i ++){
     // test if any of the top edges is on the boundary
     if( triFan->listB0k[i][0] != 0 || triFan->listB0k[i][1] != 0) {
       return 0;
@@ -929,6 +930,297 @@ size_t allSameTriangles(triangleFanS *triFan) {
     }
   }
   return allSame;
+}
+
+double thetaSnells(double grad[2], double normal[2], double eta1, double eta2) {
+  // using Snell's law compute angle
+  double dot, angle1;
+  dot = dotProd(grad, normal);
+  angle1 = dot/(l2norm(grad)*l2norm(normal));
+  return asin( (eta1*sqrt(1-angle1*angle1))/eta2  );
+}
+
+
+void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t index1,
+		    double grad0[2], double grad1[2],
+		    double grad0Snell[2], double grad1Snell[2]) {
+  // given a triangle fan where x0x1 is on the boundary recompute grad0, grad1
+  // such that they obey Snell's law
+  int possibleTriangles0[2];
+  size_t possibleThirdIndices0[2];
+  double etaOutside, etaInside;
+  double n0[2], n1[2], B0[2], B1[2], negn0[2], negn1[2];
+  double xHatMinx0[2], opt0[2], opt1[2];
+  double cosAngle0, sinAngle0, cosAngle1, sinAngle1, theta0, theta1;
+  
+  etaInside = triFan->listIndices[0];
+  grad0Snell[0] = grad0[0]; // initial
+  grad0Snell[1] = grad0[1];
+  grad1Snell[0] = grad1[0];
+  grad1Snell[1] = grad1[1];
+  
+  if( fabs( l2norm(grad0) - etaInside ) < 0.0001 || fabs( l2norm(grad1) - etaInside ) < 0.0001 ){
+    // meaning that we are not changing regions, we don't need
+    // to calculate anything differently
+    printf("No need to use Snells law, same side\n");
+    return;
+  }
+
+  B0[0] = triFan->listB0k[0][0];
+  B0[1] = triFan->listB0k[0][1];
+  B1[0] = triFan->listBk[0][0];
+  B1[1] = triFan->listBk[0][1];
+  vec2_subtraction( triFan->xHat, triFan->x0, xHatMinx0); // xHat - x0
+  n0[0] = B0[1]; // initial "guess" of the orientation of the normals
+  n0[1] = -B0[0];
+  n1[0] = B1[1];
+  n1[1] = -B1[0];
+  
+  twoTrianglesFromEdge(mesh2, index0, index1, possibleTriangles0, possibleThirdIndices0 );
+  if( possibleTriangles0[1] != -1){
+    // meaning we do have another triangle, we need to get the indices
+    if( mesh2->eta[possibleTriangles0[0]] != etaInside ){
+      etaOutside = mesh2->eta[possibleTriangles0[0]];
+    }
+    else{
+      etaOutside = mesh2->eta[possibleTriangles0[1]];
+    }
+
+    printf("   Snells law: etaInside: %fl     etaOutside: %fl\n", etaInside, etaOutside);
+    
+    // now we need to get the outward normals
+    if( dotProd( n0, xHatMinx0) < 0 ){
+      // the orientation we initially guessed was correct
+      negn0[0] = -n0[0];
+      negn0[1] = -n0[1];
+      negn1[0] = -n1[0];
+      negn1[1] = -n1[1];
+    }
+    else{
+      // we need to rotate more
+      negn0[0] = n0[0];
+      negn0[1] = n0[1];
+      negn1[0] = n1[0];
+      negn1[1] = n1[1];
+      n0[0] = -n0[0];
+      n0[1] = -n0[1];
+      n1[0] = -n1[0];
+      n1[1] = -n1[1];
+    }
+
+    // Once we have the normals we can compute the angles theta02 and theta12
+    theta0 = thetaSnells(grad0, n0, etaOutside, etaInside);
+    theta1 = thetaSnells(grad1, n1, etaOutside, etaInside);
+    cosAngle0 = cos(theta0);
+    sinAngle0 = sin(theta0);
+    cosAngle1 = cos(theta1);
+    sinAngle1 = sin(theta1);
+
+    // Compute one of the options for the rotated gradient
+    opt0[0] = cosAngle0*negn0[0] - sinAngle0*negn0[1];
+    opt0[1] = sinAngle0*negn0[0] + cosAngle0*negn0[1];
+    opt1[0] = cosAngle1*negn1[0] - sinAngle1*negn1[1];
+    opt1[1] = sinAngle1*negn1[0] + cosAngle1*negn1[1];
+
+    // Compute the right rotation - either clockwise or counter clockwise
+    if( dotProd(grad0, opt0) < 0 ){
+      // we need the clockwise rotation
+      opt0[0] = cosAngle0*negn0[0] + sinAngle0*negn0[1];
+      opt0[1] = -sinAngle0*negn0[0] + cosAngle0*negn0[1];
+    }
+    if( dotProd(grad1, opt1) < 0 ){
+      // we need the clockwise rotation
+      opt1[0] = cosAngle1*negn1[0] + sinAngle1*negn1[1];
+      opt1[1] = -sinAngle1*negn1[0] + cosAngle1*negn1[1];
+    }
+
+    // save
+    grad0Snell[0] = etaInside*opt0[0]/l2norm(opt0);
+    grad0Snell[1] = etaInside*opt0[1]/l2norm(opt0);
+    grad1Snell[0] = etaInside*opt1[0]/l2norm(opt1);
+    grad1Snell[1] = etaInside*opt1[1]/l2norm(opt1);
+    
+  }
+  
+}
+
+
+void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
+		       double gradOutside[2],
+		       double tanChange[2], double etaOutside, double etaInside,
+		       double gradSnell[2]) {
+  // given a point on the boundary with tangent tanChange
+  // an a gradient coming from the outside we calculate the gradient inside the
+  // different region using Snells law
+  gradSnell[0] = gradOutside[0];
+  gradSnell[1] = gradOutside[1];
+  if( fabs( l2norm(gradOutside) - etaInside ) < 0.0001 ){
+    // meaning that we are not changing regions, we don't need
+    // to calculate anything differently
+    printf("No need to use Snells law for one point, same side\n");
+    return;
+  }
+
+  printf("   Snells law: etaInside: %fl     etaOutside: %fl\n", etaInside, etaOutside);
+
+  // we need to know how to rotate the tangent
+  double xHatminx[2];
+  double normal[2], minNormal[2];
+  vec2_subtraction( xHat, point, xHatminx);
+  // initial guess of the normal
+  normal[0] = tanChange[1];
+  normal[1] = -tanChange[0];
+  if( dotProd( normal, xHatminx) < 0){
+    // the orientation we initially guessed was correct
+    minNormal[0] = -normal[0];
+    minNormal[1] = -normal[1];
+  }
+  else{
+    // we need to rotate more
+    minNormal[0] = normal[0];
+    minNormal[1] = normal[1];
+    normal[0] = -normal[0];
+    normal[1] = -normal[1];
+  }
+
+  // Once we have the normals we can compute the angle theta0
+  double cosTheta, sinTheta, opt[2];
+  double theta = thetaSnells(gradOutside, normal, etaOutside, etaInside);
+  cosTheta = cos(theta);
+  sinTheta = sin(theta);
+
+  // compute one of the options for the rotated gradient
+  opt[0] = cosTheta*minNormal[0] - sinTheta*minNormal[1];
+  opt[1] = sinTheta*minNormal[0] + cosTheta*minNormal[1];
+
+  // Compute the right rotation
+  if( dotProd( gradOutside, opt) < 0){
+    // we need the clockwise rotation
+    opt[0] = cosTheta*minNormal[0] + sinTheta*minNormal[1];
+    opt[1] = -sinTheta*minNormal[0] + cosTheta*minNormal[1];
+  }
+
+  // save
+  gradSnell[0] = etaInside*opt[0]/l2norm(opt);
+  gradSnell[1] = etaInside*opt[1]/l2norm(opt);
+
+  
+}
+
+
+void getTangentChangeReg(mesh2S *mesh2, size_t indexPoint, size_t firstTriangle,
+			 double tanChange[2], double etaOutside) {
+  // get the tangent to the boundary at indexPoint where the region changes
+  double indexInitial = mesh2->eta[firstTriangle];
+  printf("  Index initial when searching for the tangent: %fl\n", indexInitial);
+  size_t pointsTriangleInit[2];
+  int i, k;
+  k = 0;
+  // find the other two vertices of this triangle
+  for( i = 0; i<3; i ++){
+    if( mesh2->faces[firstTriangle][i] != indexPoint ) {
+      pointsTriangleInit[k] = mesh2->faces[firstTriangle][i];
+      k ++;
+    }
+  }
+
+  // start going around the incident faces
+  int possibleTriangles[2];
+  size_t possibleThirdVertices[2];
+  int prevTriangle = (int) firstTriangle;
+  int currentTriangle = firstTriangle;
+  size_t currentVertex = pointsTriangleInit[0];
+  size_t prevVertex = pointsTriangleInit[0];
+  size_t edgeConsidered;
+  etaOutside = indexInitial;
+  
+  while( currentTriangle != -1 && currentVertex != pointsTriangleInit[1] ){
+    // while there is another triangle to march along and we haven't circled fully around
+    twoTrianglesFromEdge(mesh2, indexPoint, currentVertex,
+			 possibleTriangles, possibleThirdVertices);
+    prevTriangle = currentTriangle;
+    prevVertex = currentVertex;
+    // update currentTriangle
+    if( possibleTriangles[0] != prevTriangle){
+      currentTriangle = possibleTriangles[0];
+      currentVertex = possibleThirdVertices[0];
+    }
+    else{
+      currentTriangle = possibleTriangles[1];
+      currentVertex = possibleThirdVertices[1];
+    }
+    // see if they have the same index as the original triangle
+    if( mesh2->eta[currentTriangle] != indexInitial ){
+      // we've found a different index, we need the edge defined by indexPoint and previousVertex
+      etaOutside = mesh2->eta[currentTriangle];
+      for( k = 0; k < 3; k++){
+	// get the edge
+	edgeConsidered = mesh2->edgesInFace[currentTriangle][k];
+	printf("Considering edge: %lu\n", edgeConsidered);
+	// se if the edge is the edge we want
+	if( mesh2->edges[edgeConsidered][0] == indexPoint &&
+	    mesh2->edges[edgeConsidered][1] == prevVertex){
+	  // the tangent we want is B0
+	  tanChange[0] = mesh2->h_i[edgeConsidered].B[0][0];
+	  tanChange[1] = mesh2->h_i[edgeConsidered].B[0][1];
+	  return;
+	}
+	if( mesh2->edges[edgeConsidered][1] == indexPoint &&
+	    mesh2->edges[edgeConsidered][0] == prevVertex){
+	  // the tangent we want is B1
+	  tanChange[0] = mesh2->h_i[edgeConsidered].B[1][0];
+	  tanChange[1] = mesh2->h_i[edgeConsidered].B[1][1];
+	  return;
+	}
+      }
+    }
+  }
+}
+
+
+/* size_t nDifIndicesFromPoint(mesh2S *mesh2, size_t indexPoint, size_t firstTriangle) { */
+/*   // returns the number of different indices of refraction of the faces */
+/*   // incident to a point */
+/*   int currentTriangle, prevTriangle; */
+/*   int currentVertex, prevVertex; */
+/*   double indexInit, indexCompare; */
+/*   size_t nIndices = 1; // there is just one index of refraction */
+/*   int possibleTriangles[2], possibleThirdVertices[2]; */
+/*   size_t pointsTriangleInit[2]; */
+/*   int i, k; */
+/*   k = 0; */
+/*   // find the other two points on the initial triangle that are different to indexPoint */
+/*   for(i = 0; i < 3; i++){ */
+/*     if( mesh2->faces[firstTriangle][i] != indexPoint ){ */
+/*       pointsTriangleInit[k] = mesh2->faces[firstTriangle][i]; */
+/*       k ++; */
+/*     } */
+/*   } */
+/*   // march */
+/*   prevTriangle = (int) firstTriangle; */
+/*   twoTrianglesFromEdge(mesh2, indexPoint, pointsTriangleInit[0], */
+/* 		       possibleTriangles, possibleThirdVertices); */
+  
+/* } */
+
+
+size_t pointOnBoundary(mesh2S *mesh2, size_t indexPoint) {
+  // returns 0 if point is not on the Boundary, 1 if it is
+  int neiTri, nNeisTris;
+  double indexInit, indexCompare;
+  size_t flag = 0;
+  nNeisTris = mesh2->incidentFaces[indexPoint].len;
+  neiTri = mesh2->incidentFaces[indexPoint].neis_i[0];
+  indexInit = mesh2->eta[neiTri]; // initial index, point of comparison
+  for( int i = 1; i < nNeisTris; i ++){
+    neiTri = mesh2->incidentFaces[indexPoint].neis_i[i];
+    indexCompare = mesh2->eta[neiTri];
+    if( indexCompare != indexInit ){
+      flag = 1;
+      return flag;
+    }
+  }
+  return flag;
 }
 
 

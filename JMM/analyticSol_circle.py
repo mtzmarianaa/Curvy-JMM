@@ -165,7 +165,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
     # print("First tangent point", zx_1, zy_1)
     # print("Second tangent point", zx_2, zy_2)
     # print("inner_angleSource", inner_angleSource)
-    if( round(xi**2 + yi**2, 3) < R**2 ): 
+    if( round( (xi**2 + yi**2), 5) < R**2 ): 
         # If this is the case then the target is INSIDE the circle, we have two options: reached byu creeping ray or reached with 2 segments of lines (Snell's law)
         tau_optOriginal, opt_thetaOriginal = insideTwoSegmentLine(xi, yi, angle_Source, thtan, x0, center, R, eta1, eta2, eps) # reached with 2 segments of straight lines
         tau_optCreepingRay, opt_thetaShedRay, angle_z = insideCreepingRay(xi, yi, zx_1, zy_1, zx_2, zy_2, thtan, angle_Source, x0, center, R, eta1, eta2, eps) # reached by going around the circle
@@ -178,7 +178,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
             normG = sqrt(grad[0]**2 + grad[1]**2)
             if( normG == 0 ):
                 grad[0], grad[1] = 0, 0
-            elif( round(xi**2 + yi**2, 3) >= R**2  ):
+            elif( round( (xi**2 + yi**2), 5) >= R**2  ):
                 grad = [ xi - x0[0], yi - x0[1]   ]
                 normG = sqrt( grad[0]**2 + grad[1]**2   )
                 grad[0] = eta1/(normG)*grad[0]
@@ -238,7 +238,7 @@ def trueSolution(xi, yi, x0, center, R, eta1, eta2, eps = np.finfo(np.float64).r
                 normG = sqrt(grad[0]**2 + grad[1]**2)
                 if( normG == 0 ):
                     grad[0], grad[1] = 0, 0
-                if(  round(xi**2 + yi**2, 3) <= R**2 ):
+                if(  round( (xi**2 + yi**2), 5) <= R**2 ):
                     # This means that the point is on the boundary
                     option1 = (-yi)*(-x0[0]) + (xi)*(-x0[1])
                     option2 = (yi)*(-x0[0]) + (-xi)*(-x0[1])

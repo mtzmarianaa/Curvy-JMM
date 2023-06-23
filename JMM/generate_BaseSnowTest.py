@@ -21,11 +21,11 @@ colormap2_r = "cet_linear_worb_100_25_c53"
 
 plt.ion()
 
-h = 0.005
+h =  0.025
 h_string = str(h)
 eta1 = 1.0
 eta2 = 1.45
-currentH = "H9"
+currentH = "H6"
 path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
 path_info = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
 
@@ -58,8 +58,8 @@ def round_trip_connect(start, end, boundary_tan = False, tans = None, hc = None)
         # This means that we also want to get the boundary tan struct
         B = []
         for i in range(start, end):
-            tans_i = tans[i]/norm(tans[i])*hc[i-1]
-            tans_i1 = tans[i+1]/norm(tans[i+1])*hc[i]
+            tans_i = tans[i]/norm(tans[i])*hc[i]
+            tans_i1 = tans[i+1]/norm(tans[i+1])*hc[i+1]
             B.append( (i, i+1, tans_i[0], tans_i[1], tans_i1[0], tans_i1[1] ) )
         tans_n = tans[end]/norm(tans[end])*hc[end]
         tans_1 = tans[start]/norm(tans[start])*hc[start]
@@ -314,6 +314,10 @@ np.savetxt(path_info + currentH + '/'+ currentH +'_Faces.txt', mesh_square_tris.
 
 np.savetxt(path_info + currentH + '/'+ currentH +'_NeighTriangles.txt', mesh_square_neigTriangles.astype(int), delimiter =', ', fmt ='%.0f')
 
+
+# Sort mesh_square_boundaryCurve
+IndOrg = np.argsort( mesh_square_boundaryCurve[:,0] ) # Order according to zeroth column (i.e. edge number)
+mesh_square_boundaryCurve = mesh_square_boundaryCurve[IndOrg]
 np.savetxt(path_info + currentH + '/'+ currentH +'_BoundaryCurve.txt', mesh_square_boundaryCurve, delimiter =', ', fmt = '%.8f' )
 
 np.savetxt(path_info + currentH + '/'+ currentH +'_Indices.txt', np.array(faces_label), delimiter =', ', fmt = '%.8f' )

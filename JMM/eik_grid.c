@@ -512,38 +512,38 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   fprintf(fp, "{");
 
   // write x0
-  fprintf(fp, "\"x0\": [%g, %g], ",
+  fprintf(fp, "\"x0\": [%1.20f, %1.20f], ",
 	  fanUpdate->triFan->x0[0], fanUpdate->triFan->x0[1]);
 
   // write T0
-  fprintf(fp, "\"T0\": %g, ", fanUpdate->T0 );
+  fprintf(fp, "\"T0\": %1.20f, ", fanUpdate->T0 );
 
   // write grad0
-  fprintf(fp, "\"grad0\": [%g, %g], ",
+  fprintf(fp, "\"grad0\": [%1.20f, %1.20f], ",
 	  fanUpdate->grad0[0], fanUpdate->grad0[1]);
 
 
   // write x1
-  fprintf(fp, "\"x1\": [%g, %g], ",
+  fprintf(fp, "\"x1\": [%1.20f, %1.20f], ",
 	  fanUpdate->triFan->x1[0], fanUpdate->triFan->x1[1]);
 
   // write T1
-  fprintf(fp, "\"T1\": %g, ", fanUpdate->T1 );
+  fprintf(fp, "\"T1\": %1.20f, ", fanUpdate->T1 );
 
   // write grad1
-  fprintf(fp, "\"grad1\": [%g, %g], ",
+  fprintf(fp, "\"grad1\": [%1.20f, %1.20f], ",
 	  fanUpdate->grad1[0], fanUpdate->grad1[1]);
 
 
   // write xHat
-  fprintf(fp, "\"xHat\": [%g, %g], ",
+  fprintf(fp, "\"xHat\": [%1.20f, %1.20f], ",
 	  fanUpdate->triFan->xHat[0], fanUpdate->triFan->xHat[1]);
 
 
   // use a for loop to add the list of indices
   fprintf(fp, "\"listIndices\": [");
   for(i = 0; i<2*fanUpdate->triFan->nRegions + 1; i++){
-    fprintf(fp, "%g", fanUpdate->triFan->listIndices[i]);
+    fprintf(fp, "%1.20f", fanUpdate->triFan->listIndices[i]);
     if( i < 2*fanUpdate->triFan->nRegions ){
       fprintf(fp, ",");
     }
@@ -555,7 +555,7 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   // use a loop to add the list of xk
   fprintf(fp, "\"listxk\": [");
   for(i = 0; i<fanUpdate->triFan->nRegions + 2; i++){
-    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listxk[i][0], fanUpdate->triFan->listxk[i][1]);
+    fprintf(fp, "[%1.20f, %1.20f]", fanUpdate->triFan->listxk[i][0], fanUpdate->triFan->listxk[i][1]);
     if( i < fanUpdate->triFan->nRegions + 1){
       fprintf(fp, ",");
     }
@@ -566,7 +566,7 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   // use a loop to add the list of B0k
   fprintf(fp, "\"listB0k\": [");
   for(i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
-    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listB0k[i][0], fanUpdate->triFan->listB0k[i][1]);
+    fprintf(fp, "[%1.20f, %1.20f]", fanUpdate->triFan->listB0k[i][0], fanUpdate->triFan->listB0k[i][1]);
     if( i < fanUpdate->triFan->nRegions ){
       fprintf(fp, ",");
     }
@@ -577,7 +577,7 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   // use a loop to add the list of B0k
   fprintf(fp, "\"listBk\": [");
   for(i = 0; i<fanUpdate->triFan->nRegions + 1; i++){
-    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listBk[i][0], fanUpdate->triFan->listBk[i][1]);
+    fprintf(fp, "[%1.20f, %1.20f]", fanUpdate->triFan->listBk[i][0], fanUpdate->triFan->listBk[i][1]);
     if( i < fanUpdate->triFan->nRegions ){
       fprintf(fp, ",");
     }
@@ -588,7 +588,7 @@ void createJSONFile(fanUpdateS *fanUpdate, char const *path) {
   // use a loop to add the list of BkBk1
   fprintf(fp, "\"listBkBk1\": [");
   for(i = 0; i<2*fanUpdate->triFan->nRegions; i++){
-    fprintf(fp, "[%g, %g]", fanUpdate->triFan->listBkBk1[i][0], fanUpdate->triFan->listBkBk1[i][1]);
+    fprintf(fp, "[%1.20f, %1.20f]", fanUpdate->triFan->listBkBk1[i][0], fanUpdate->triFan->listBkBk1[i][1]);
     if( i < 2*fanUpdate->triFan->nRegions-1 ){
       fprintf(fp, ",");
     }
@@ -626,7 +626,7 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj) {
   nIndStTop = (size_t)json_object_get_double(json_object_object_get(output_obj, "nIndStTop"));
   //printf("\nnIndStTop %zu\n", nIndStTop);
   THat = json_object_get_double(json_object_object_get(output_obj, "THat"));
-  //printf("\nTHat %g\n", THat);
+  //printf("\nTHat %1.20f\n", THat);
 
   // now for the lists
   json_object *output_list, *value_arr;
@@ -813,6 +813,7 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   // using pipes and a lot of fancy methos call python from here
   // and optimize the triangle fan in fanUpdate, save all info
   // create JSON object to represent input data
+  
   char path[1024 + 1];
   sprintf(path, "updates/update%d.json", updateNumber);
   createJSONFile(fanUpdate, path);
@@ -834,7 +835,7 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   // try to separate this
   double output[3];
   separateARowDb(&buf[0], 3, output);
-  printf("Row in double: %f   %f   %f\n", output[0], output[1], output[2]);
+  printf("Row in double: %1.20f   %1.20f   %1.20f\n", output[0], output[1], output[2]);
   // add this information to fanUpdate
   fanUpdate->THat = output[0];
   fanUpdate->gradHat[0] = output[1];
@@ -912,10 +913,69 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     currentTriangleFanUpdate->THat = eik_g->eik_vals[indexHat];
     /////////////////// OPTIMIZE!
     allSameIndices = allSameTriangles(currentTriangleFan); // see if all the indices in this fan are the same
+    // MAYBE WE NEED SNELLS LAW
+    double etaOutside, tanChange[2], etaInside, gradSnell[2];
+    // test if maybe only x0 or x1 are on the boundary
+    if( pointOnBoundary(eik_g->mesh2, index0) == 1){
+      printf("\nNeed to recompute grad0 using Snells\n");
+      printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]);
+      // compute the tangent and eta inside the first triangle
+      etaInside = currentTriangleFanUpdate->triFan->listIndices[0];
+      etaOutside = l2norm(currentTriangleFanUpdate->grad0);
+      getTangentChangeReg(eik_g->mesh2, index0, firstTriangle, tanChange, etaOutside);
+      printf("Tangent at x0: %fl %fl\n", tanChange[0], tanChange[1]);
+      printf("Eta inside: %fl,  eta outside:  %fl\n", etaInside, etaOutside);
+      // compute the new gradient on this side 
+      oneGradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan->x0,
+			currentTriangleFanUpdate->triFan->xHat,
+			currentTriangleFanUpdate->grad0, tanChange,
+			etaOutside, etaInside, gradSnell);
+      // update
+      currentTriangleFanUpdate->grad0[0] = gradSnell[0];
+      currentTriangleFanUpdate->grad0[1] = gradSnell[1];
+    }
+
+    if( pointOnBoundary(eik_g->mesh2, index1) == 1){
+      printf("\nNeed to recompute grad1 using Snells\n");
+      printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]);
+      // compute the tangent and eta inside the first triangle
+      etaInside = currentTriangleFanUpdate->triFan->listIndices[0];
+      etaOutside = l2norm(currentTriangleFanUpdate->grad1);
+      getTangentChangeReg(eik_g->mesh2, index1, firstTriangle, tanChange, etaOutside);
+      // compute the new gradient on this side
+      printf("Tangent at x0: %fl %fl\n", tanChange[0], tanChange[1]);
+      printf("Eta inside: %fl,  eta outside:  %fl\n", etaInside, etaOutside);
+      oneGradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan->x1,
+			currentTriangleFanUpdate->triFan->xHat,
+			currentTriangleFanUpdate->grad1, tanChange,
+			etaOutside, etaInside, gradSnell);
+      // update
+      currentTriangleFanUpdate->grad1[0] = gradSnell[0];
+      currentTriangleFanUpdate->grad1[1] = gradSnell[1];
+    }
+    
     if( allSameIndices == 0){
       // there are different indices of refraction in this triangle fan, we need the
       // complicated optimization technique
       printf("\nOptimization using Python\n\n");
+      // if this is the case we need to see if the edge x0x1 is on the boundary
+      // if it is then we need to change grad0 and grad1 using Snell's law
+      if( currentTriangleFanUpdate->triFan->listB0k[0][0] != 0 && currentTriangleFanUpdate->triFan->listB0k[0][1] != 0 ){
+	// meaning that the edge x0x1 is on the boundary, now we need to get the two indices of refraction
+	double grad0Snell[2], grad1Snell[2];
+	printf("\nNeed to recompute grad0 grad1 using Snells\n");
+	printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]);
+	printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]);
+	gradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan,
+		       index0, index1,
+		       currentTriangleFanUpdate->grad0,
+		       currentTriangleFanUpdate->grad1, grad0Snell, grad1Snell);
+	// change grad0 and grad1 inside the triangle fan update
+	currentTriangleFanUpdate->grad0[0] = grad0Snell[0];
+	currentTriangleFanUpdate->grad0[1] = grad0Snell[1];
+	currentTriangleFanUpdate->grad1[0] = grad1Snell[0];
+	currentTriangleFanUpdate->grad1[1] = grad1Snell[1];
+      }
       optimizeTriangleFan_wPython(currentTriangleFanUpdate);
     }
     else{

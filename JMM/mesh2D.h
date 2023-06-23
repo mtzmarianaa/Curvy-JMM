@@ -95,6 +95,22 @@ void triangleFan_init(triangleFanS *triFan, size_t nRegions, double x0[2],
 
 size_t allSameTriangles(triangleFanS *triFan);
 
+double thetaSnells(double grad[2], double normal[2], double eta1, double eta2);
+
+void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t index1,
+		    double grad0[2], double grad1[2],
+		    double grad0Snell[2], double grad1Snell[2])  ;
+
+void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
+		       double gradOutside[2],
+		       double tanChange[2], double etaOutside, double etaInside,
+		       double gradSnell[2]) ;
+
+void getTangentChangeReg(mesh2S *mesh2, size_t indexPoint, size_t firstTriangle,
+			 double tanChange[2], double etaOutside);
+
+size_t pointOnBoundary(mesh2S *mesh2, size_t indexPoint);
+
 void printEverythingTriFan(triangleFanS *triFan);
 
 

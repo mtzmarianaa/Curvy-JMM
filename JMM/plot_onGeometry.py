@@ -16,6 +16,8 @@ import pandas as pd
 import colorcet as cc
 import matplotlib.colors as clr
 
+plt.ion()
+
 # Previous useful definitions
 
 colormap1 = plt.cm.get_cmap('BuPu')
@@ -70,7 +72,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
                                   zi_lin = None, point_errors_eik = None, point_errors_grads = None,
                                   saveFigures = False,
                                   show = False, 
-                                  path_to_save = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/'):
+                                  path_to_save = '/Users/marianamartinez/Documents/NYU-Courant/FMM-bib/Figures/TestBaseSnow/', path_save_vals = "/Users/marianamartinez/Documents/Curvy-JMM/JMM/"):
     '''
     Function To Generate plots regarding the numerical solution to the Eikonal in the geometry
     with the circle.
@@ -136,6 +138,10 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
             point_errors_eik[i] = sol - eik_vals[i]
             point_errors_grads[i] = angle_error( trueGrad, eik_grads[i, :])
         point_errors_grads[0] = 0 # source
+        point_errors_eik[0] = 0
+        # Save the true_sol and true_grads
+        np.savetxt(path_save_vals + H + "/" + "H_trueEiks.txt", true_sol, delimiter = ", ", fmt = '%.0f' )
+        np.savetxt(path_save_vals + H + "/" + "H_trueGrads.txt", true_grads, delimiter = ", ", fmt = '%.0f' )
     if point_errors_grads is None and true_grads is not None:
          point_errors_grads = np.zeros((nPoints))
          for i in range(nPoints):
@@ -358,6 +364,36 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
     ax.set_ylim([-18,24])
     if (saveFigures):
         plt.savefig(path_to_save + H + "/" + H + '_GradAngleErrorsTri.png', dpi=my_dpi * 10)
+
+    # ERRORS IN EIKONAL
+    vmaxGrad = np.max(abs(point_errors_grads))
+    fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
+    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 2 + round(7500/len(eik_coords)), c = point_errors_eik, cmap = colormap1, vmin = 0, vmax = max(abs(point_errors_eik)))
+    plt.colorbar(im2_11)
+    plt.title("Point errors Eikonal")
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_PointErrEik.png', dpi=my_dpi * 10)
+
+    balEikGrads = abs(point_errors_eik)/np.max(abs(point_errors_eik)) + abs(point_errors_grads)/np.max(abs(point_errors_grads))
+    balEikGrads = balEikGrads/2
+
+    # ERRORS IN EIKONAL AND GRAD BALANCED
+    fig = plt.figure(figsize = (800/my_dpi, 800/my_dpi), dpi = my_dpi)
+    plt.triplot( eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-', c = "#9affe8", lw = 0.3 )
+    im2_11 = plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 5 + round(7500/len(eik_coords)), c = balEikGrads, cmap = colormap1, vmin = 0, vmax = max(abs(balEikGrads)))
+    plt.colorbar(im2_11)
+    plt.title("Average absolute point wise error Eikonal and gradient")
+    ax = plt.gca()
+    ax.set_aspect('equal')
+    ax.set_xlim([-18,18])
+    ax.set_ylim([-18,24])
+    if (saveFigures):
+        plt.savefig(path_to_save + H + "/" + H + '_PointErrAverage.png', dpi=my_dpi * 10)
+
 
     if(show):
         plt.show()

@@ -2705,7 +2705,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                                                listCurvingInwards, gradParams)
      # THIS IS THE END OF THE FOR LOOP
      # Test for the last one (tricky one)
-     if( params[-2] > 0.9):
+     if( params[-2] > 0.4):
           f_Now = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                    listxk, listB0k, listBk, listBkBk1,
                                    indCrTop = indCrTop, paramsCrTop = paramsCrTop,
@@ -2726,7 +2726,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
 def blockCoordinateGradient_generalized(params0, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                         listxk, listB0k, listBk, listBkBk1, indCrTop, paramsCrTop0,
                                         indStTop, paramsStTop0, listCurvingInwards, theta_gamma = 1,
-                                        tol = 1e-12, maxIter = 50, plotSteps = False):
+                                        tol = 1e-14, maxIter = 75, plotSteps = False):
      '''
      Block coordiante subgradient descent (modified) for a generalized triangle fan.
      '''
@@ -3115,8 +3115,8 @@ class triangleFan:
         self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
         self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
         self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
-        self.maxIter = 40
-        self.tol = 1e-12
+        self.maxIter = 75
+        self.tol = 1e-14
         self.plotSteps = False
         self.saveIterates = False
         self.params_dict = None # dictionary for reading with json
@@ -3275,7 +3275,12 @@ class triangleFan:
                                  paramsStTop = paramsStTop, listBkBk1 = self.listBkBk1)
                     plt.title("Initial parameters in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=f_before))
                paramsk, paramsCrTopk, paramsStTopk, _, _, _, listObjVals,_, _, _ = blockCoordinateGradient_generalized(self.params, self.x0, self.T0, self.grad0, self.x1, self.T1, self.grad1, self.xHat, self.listIndices, self.listxk, self.listB0k, self.listBk, self.listBkBk1, indCrTop, paramsCrTop, indStTop, paramsStTop, self.listCurvingInwards, plotSteps = False, maxIter = self.maxIter)
-               fk = listObjVals[-1]
+               fk = fObj_generalized(paramsk, self.x0, self.T0, self.grad0,
+                                                      self.x1, self.T1, self.grad1, self.xHat,
+                                                      self.listIndices, self.listxk, self.listB0k,
+                                                      self.listBk, self.listBkBk1,
+                                                      indCrTop, paramsCrTopk,
+                                                      indStTop, paramsStTopk)
                if( self.plotAfter ):
                     itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk,
                                  params = paramsk, indCrTop = indCrTop,
@@ -3284,12 +3289,17 @@ class triangleFan:
                     plt.title("Optimal parameters in triangle fan for this type of path, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=fk))
                if(fk < self.opti_fVal):
                     # We've found a better path and type of path
-                    self.opti_fVal = fk
                     self.optiParams = paramsk
                     self.optiIndCrTop = indCrTop
                     self.optiParamsCrTop = paramsCrTopk
                     self.optiIndStTop = indStTop
                     self.optiParamsStTop = paramsStTopk
+                    self.opti_fVal = fObj_generalized(self.optiParams, self.x0, self.T0, self.grad0,
+                                                      self.x1, self.T1, self.grad1, self.xHat,
+                                                      self.listIndices, self.listxk, self.listB0k,
+                                                      self.listBk, self.listBkBk1,
+                                                      self.optiIndCrTop, self.optiParamsCrTop,
+                                                      self.optiIndStTop, self.optiParamsStTop)
           # Save nIndCrTop and nIndStTop
           if( self.optiIndCrTop is None or self.optiIndCrTop[0] == -1):
                self.nIndCrTop = 0
