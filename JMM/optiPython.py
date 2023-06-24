@@ -2698,7 +2698,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                                                           gradParams, gradStTop)
           else:
                # Meaning that we dont have [rkM1, skM1] on the side of the edge, in this case we just need to update [lamk, muk]
-                params, paramsCrTop, paramsStTop, gradParams = udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas,
+               params, paramsCrTop, paramsStTop, gradParams = udapteFromh0kM1(n, j, currentCrTop, currentStTop, params, gammas,
                                                                                theta_gamma, x0, T0, grad0, x1, T1, grad1, xHat,
                                                                                listIndices, listxk, listB0k, listBk, listBkBk1,
                                                                                indCrTop, paramsCrTop, indStTop, paramsStTop,
@@ -3252,16 +3252,33 @@ class triangleFan:
                     paramsCrTop = None
                else:
                     indCrTop = indCrTop + 1
-                    paramsCrTop = 0.4*np.ones((2*len(indCrTop)))
-                    paramsCrTop[::2] = 0.6
+                    paramsCrTop = 0.7*np.ones((2*len(indCrTop)))
+                    paramsCrTop[::2] = 0.3
                indStTop = np.where(thisOption == 2)[0]
                if(len(indStTop) == 0):
                     indStTop = None
                     paramsStTop = None
                else:
                     indStTop = indStTop + 1
-                    paramsStTop = 0.4*np.ones((2*len(indStTop)))
-                    paramsStTop[::2] = 0.6
+                    paramsStTop = 0.7*np.ones((2*len(indStTop)))
+                    paramsStTop[::2] = 0.3
+                    thisOption = self.optionsTop[k] # Current option we are considering
+               indCrTop = np.where(thisOption == 1)[0]
+               if(len(indCrTop) == 0):
+                    indCrTop = None
+                    paramsCrTop = None
+               else:
+                    indCrTop = indCrTop + 1
+                    paramsCrTop = 0.7*np.ones((2*len(indCrTop)))
+                    paramsCrTop[::2] = 0.3
+               indStTop = np.where(thisOption == 2)[0]
+               if(len(indStTop) == 0):
+                    indStTop = None
+                    paramsStTop = None
+               else:
+                    indStTop = indStTop + 1
+                    paramsStTop = 0.7*np.ones((2*len(indStTop)))
+                    paramsStTop[::2] = 0.3
                # We have everything that we need, now we solve the current optimization problem
                if( self.plotBefore ):
                     f_before = fObj_generalized(self.params, self.x0, self.T0, self.grad0,

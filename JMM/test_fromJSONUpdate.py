@@ -28,7 +28,7 @@ def printWhichUpdate(xHat, path = "./updates/", maxF = 16560):
 
 
 # Read necessary information
-H = "H4"
+H = "H0"
 path_general = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
 path_information = path_general + H + "/" + H
 eik_vals = np.fromfile(path_information + "_ComputedValuesFast.bin")
@@ -52,6 +52,7 @@ trueEik, typeSol, trueGrad = trueSolution( xHat[0], xHat[1], xSource, center, R,
 
 
 self = triFan
+trueEik, typeSol, trueGrad = trueSolution( self.xHat[0], self.xHat[1], xSource, center, R, eta1, eta2  )
 relErr = abs(self.opti_fVal - trueEik)/trueEik
 relAngle = np.arccos( np.dot(self.lastGrad, trueGrad)/(norm(self.lastGrad)*norm(trueGrad) ) )
 
@@ -218,7 +219,9 @@ plt.legend()
 # Change parameters
 
 newParams = np.copy(self.optiParams)
-newParams[0] = 0.65
+newParams[1] = 0
+newParamsCrTop = [0.1, 0.9]
+newIndCrTop = [1]
 
 f_test = fObj_generalized(newParams, self.x0, self.T0, self.grad0,
                             self.x1, self.T1, self.grad1, self.xHat,
@@ -265,6 +268,8 @@ relErr = abs(f_test - trueEik)/trueEik
 relAngle = np.arccos( np.dot(gradLast, trueGrad)/(norm(gradLast)*norm(trueGrad) ) )
 
 plt.title(" THAT: " + "{0:0.5f}".format(f_test) + "  true: " + "{0:0.5f}".format(trueEik) + " relErrEik: " + "{0:0.5f}".format(relErr) + " angleErr: " + "{0:0.5f}".format(relAngle) + " params change" )
+
+
 
 
 
