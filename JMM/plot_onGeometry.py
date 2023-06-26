@@ -140,8 +140,8 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
         point_errors_grads[0] = 0 # source
         point_errors_eik[0] = 0
         # Save the true_sol and true_grads
-        np.savetxt(path_save_vals + H + "/" + "H_trueEiks.txt", true_sol, delimiter = ", ", fmt = '%.0f' )
-        np.savetxt(path_save_vals + H + "/" + "H_trueGrads.txt", true_grads, delimiter = ", ", fmt = '%.0f' )
+        np.savetxt(path_save_vals + H + "/" + H + "_true_values.txt", true_sol, delimiter = ", ", fmt = '%5.12f' )
+        np.savetxt(path_save_vals + H + "/" + H + "_true_grads.txt", true_grads, delimiter = ", ", fmt = '%5.12f' )
     if point_errors_grads is None and true_grads is not None:
          point_errors_grads = np.zeros((nPoints))
          for i in range(nPoints):
