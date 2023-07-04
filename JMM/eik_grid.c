@@ -914,13 +914,17 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     /////////////////// OPTIMIZE!
     allSameIndices = allSameTriangles(currentTriangleFan); // see if all the indices in this fan are the same
     // MAYBE WE NEED SNELLS LAW
-    double etaOutside, tanChange[2], etaInside, gradSnell[2];
+    double etaOutside, tanChange[2], etaInside, gradSnell[2], needSnells0, needSnells1;
+    size_t indexLastFace;
+    needSnells0 = fabs( l2norm(currentTriangleFanUpdate->grad0) - currentTriangleFanUpdate->triFan->listIndices[0] );
+    needSnells1 = fabs( l2norm(currentTriangleFanUpdate->grad1) - currentTriangleFanUpdate->triFan->listIndices[0] );
     // test if maybe only x0 or x1 are on the boundary
-    if( pointOnBoundary(eik_g->mesh2, index0) == 1){
+    if( pointOnBoundary(eik_g->mesh2, index0) == 1 && needSnells0 > 0.01 && pointOnBoundary(eik_g->mesh2, index1) == 0  )   {
       printf("\nNeed to recompute grad0 using Snells\n");
       printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]);
       // compute the tangent and eta inside the first triangle
-      etaInside = currentTriangleFanUpdate->triFan->listIndices[0];
+      indexLastFace = currentTriangleFanUpdate->triFan->nRegions - 1;
+      etaInside = currentTriangleFanUpdate->triFan->listIndices[indexLastFace];
       etaOutside = l2norm(currentTriangleFanUpdate->grad0);
       getTangentChangeReg(eik_g->mesh2, index0, firstTriangle, tanChange, etaOutside);
       printf("Tangent at x0: %fl %fl\n", tanChange[0], tanChange[1]);
@@ -935,11 +939,12 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
       currentTriangleFanUpdate->grad0[1] = gradSnell[1];
     }
 
-    if( pointOnBoundary(eik_g->mesh2, index1) == 1){
+    if( pointOnBoundary(eik_g->mesh2, index1) == 1 && needSnells1 > 0.01 && pointOnBoundary(eik_g->mesh2, index0) == 0){
       printf("\nNeed to recompute grad1 using Snells\n");
       printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]);
       // compute the tangent and eta inside the first triangle
-      etaInside = currentTriangleFanUpdate->triFan->listIndices[0];
+      indexLastFace = currentTriangleFanUpdate->triFan->nRegions - 1;
+      etaInside = currentTriangleFanUpdate->triFan->listIndices[indexLastFace];
       etaOutside = l2norm(currentTriangleFanUpdate->grad1);
       getTangentChangeReg(eik_g->mesh2, index1, firstTriangle, tanChange, etaOutside);
       // compute the new gradient on this side
@@ -960,22 +965,22 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
       printf("\nOptimization using Python\n\n");
       // if this is the case we need to see if the edge x0x1 is on the boundary
       // if it is then we need to change grad0 and grad1 using Snell's law
-      if( currentTriangleFanUpdate->triFan->listB0k[0][0] != 0 && currentTriangleFanUpdate->triFan->listB0k[0][1] != 0 ){
-	// meaning that the edge x0x1 is on the boundary, now we need to get the two indices of refraction
-	double grad0Snell[2], grad1Snell[2];
-	printf("\nNeed to recompute grad0 grad1 using Snells\n");
-	printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]);
-	printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]);
-	gradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan,
-		       index0, index1,
-		       currentTriangleFanUpdate->grad0,
-		       currentTriangleFanUpdate->grad1, grad0Snell, grad1Snell);
-	// change grad0 and grad1 inside the triangle fan update
-	currentTriangleFanUpdate->grad0[0] = grad0Snell[0];
-	currentTriangleFanUpdate->grad0[1] = grad0Snell[1];
-	currentTriangleFanUpdate->grad1[0] = grad1Snell[0];
-	currentTriangleFanUpdate->grad1[1] = grad1Snell[1];
-      }
+      /* if( currentTriangleFanUpdate->triFan->listB0k[0][0] != 0 && currentTriangleFanUpdate->triFan->listB0k[0][1] != 0 ){ */
+      /* 	// meaning that the edge x0x1 is on the boundary, now we need to get the two indices of refraction */
+      /* 	double grad0Snell[2], grad1Snell[2]; */
+      /* 	printf("\nNeed to recompute grad0 grad1 using Snells\n"); */
+      /* 	printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]); */
+      /* 	printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]); */
+      /* 	gradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan, */
+      /* 		       index0, index1, */
+      /* 		       currentTriangleFanUpdate->grad0, */
+      /* 		       currentTriangleFanUpdate->grad1, grad0Snell, grad1Snell); */
+      /* 	// change grad0 and grad1 inside the triangle fan update */
+      /* 	currentTriangleFanUpdate->grad0[0] = grad0Snell[0]; */
+      /* 	currentTriangleFanUpdate->grad0[1] = grad0Snell[1]; */
+      /* 	currentTriangleFanUpdate->grad1[0] = grad1Snell[0]; */
+      /* 	currentTriangleFanUpdate->grad1[1] = grad1Snell[1]; */
+      /* } */
       optimizeTriangleFan_wPython(currentTriangleFanUpdate);
     }
     else{

@@ -28,7 +28,7 @@ def printWhichUpdate(xHat, path = "./updates/", maxF = 16560):
 
 
 # Read necessary information
-H = "H0"
+H = "H4"
 path_general = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
 path_information = path_general + H + "/" + H
 eik_vals = np.fromfile(path_information + "_ComputedValuesFast.bin")
@@ -38,7 +38,7 @@ eik_grads = eik_grads.reshape(len(eik_coords), 2)
 triangles_points = np.genfromtxt(path_information + "_Faces.txt", delimiter=",")
 
 
-indHat = 517
+indHat = 54
 xHat = eik_coords[indHat]
 xSource = np.array([-15, -10])
 eta1 = 1.0
@@ -96,8 +96,8 @@ plt.legend()
 
 
 # Plot what was stored
-ind0 = 101
-ind1 = 102
+ind0 = 55
+ind1 = 668
 x0 = eik_coords[ind0]
 grad0 = eik_grads[ind0]
 x1 = eik_coords[ind1]
@@ -219,9 +219,7 @@ plt.legend()
 # Change parameters
 
 newParams = np.copy(self.optiParams)
-newParams[1] = 0
-newParamsCrTop = [0.1, 0.9]
-newIndCrTop = [1]
+newParams[0] = 0.15
 
 f_test = fObj_generalized(newParams, self.x0, self.T0, self.grad0,
                             self.x1, self.T1, self.grad1, self.xHat,

@@ -25,7 +25,8 @@ colormap1 = plt.cm.get_cmap('BuPu')
 colormap2  = "cet_linear_worb_100_25_c53_r"
 
 
-colormap3  = "cet_diverging_cwm_80_100_c22"
+#colormap3  = "cet_diverging_cwm_80_100_c22"
+colormap3 = "cet_diverging_linear_bjr_30_55_c53"
 
 
 colormap4  = "cet_linear_worb_100_25_c53"
@@ -136,7 +137,7 @@ def generatePlotsOnGeometryCircle(H, xi, yi,
             true_sol[i] = sol
             true_grads[i, :] = trueGrad
             point_errors_eik[i] = sol - eik_vals[i]
-            point_errors_grads[i] = angle_error( trueGrad, eik_grads[i, :])
+            point_errors_grads[i] = angle_error( trueGrad, eik_grads[i, :]) 
         point_errors_grads[0] = 0 # source
         point_errors_eik[0] = 0
         # Save the true_sol and true_grads

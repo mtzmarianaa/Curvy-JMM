@@ -948,7 +948,7 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
   // such that they obey Snell's law
   int possibleTriangles0[2];
   size_t possibleThirdIndices0[2];
-  double etaOutside, etaInside;
+  double etaOutside, etaInside, baseReference0[2], baseReference1[2];
   double n0[2], n1[2], B0[2], B1[2], negn0[2], negn1[2];
   double xHatMinx0[2], opt0[2], opt1[2];
   double cosAngle0, sinAngle0, cosAngle1, sinAngle1, theta0, theta1;
@@ -995,6 +995,10 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
       negn0[1] = -n0[1];
       negn1[0] = -n1[0];
       negn1[1] = -n1[1];
+      baseReference0[0] = B0[0];
+      baseReference0[1] = B0[1];
+      baseReference1[0] = B1[0];
+      baseReference1[1] = B1[1];
     }
     else{
       // we need to rotate more
@@ -1006,6 +1010,10 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
       n0[1] = -n0[1];
       n1[0] = -n1[0];
       n1[1] = -n1[1];
+      baseReference0[0] = -B0[0];
+      baseReference0[1] = -B0[1];
+      baseReference1[0] = -B1[0];
+      baseReference1[1] = -B1[1];
     }
 
     // Once we have the normals we can compute the angles theta02 and theta12
@@ -1023,12 +1031,12 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
     opt1[1] = sinAngle1*negn1[0] + cosAngle1*negn1[1];
 
     // Compute the right rotation - either clockwise or counter clockwise
-    if( dotProd(grad0, opt0) < 0 ){
+    if( dotProd(baseReference0, opt0) < 0 ){
       // we need the clockwise rotation
       opt0[0] = cosAngle0*negn0[0] + sinAngle0*negn0[1];
       opt0[1] = -sinAngle0*negn0[0] + cosAngle0*negn0[1];
     }
-    if( dotProd(grad1, opt1) < 0 ){
+    if( dotProd(baseReference1, opt1) < 0 ){
       // we need the clockwise rotation
       opt1[0] = cosAngle1*negn1[0] + sinAngle1*negn1[1];
       opt1[1] = -sinAngle1*negn1[0] + cosAngle1*negn1[1];
@@ -1065,11 +1073,14 @@ void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
 
   // we need to know how to rotate the tangent
   double xHatminx[2];
-  double normal[2], minNormal[2];
+  double normal[2], minNormal[2], baseReference[2]; // baseReference helps when deciding which reflection Snells to use
   vec2_subtraction( xHat, point, xHatminx);
-  // initial guess of the normal
+  // initial guess of the normal, rotate 90 deg clockwise
   normal[0] = tanChange[1];
   normal[1] = -tanChange[0];
+  // also initialize the base reference
+  baseReference[0] = tanChange[0];
+  baseReference[1] = tanChange[1];
   if( dotProd( normal, xHatminx) < 0){
     // the orientation we initially guessed was correct
     minNormal[0] = -normal[0];
@@ -1083,6 +1094,14 @@ void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
     normal[1] = -normal[1];
   }
 
+  // need to know which base to take as reference (so that we know if we need to + or -
+  // from the inward normal
+  if( dotProd(gradOutside, baseReference) < 0 ){
+    // flip 180 the base reference
+    baseReference[0] = -baseReference[0];
+    baseReference[1] = -baseReference[1];
+  }
+
   // Once we have the normals we can compute the angle theta0
   double cosTheta, sinTheta, opt[2];
   double theta = thetaSnells(gradOutside, normal, etaOutside, etaInside);
@@ -1093,8 +1112,8 @@ void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
   opt[0] = cosTheta*minNormal[0] - sinTheta*minNormal[1];
   opt[1] = sinTheta*minNormal[0] + cosTheta*minNormal[1];
 
-  // Compute the right rotation
-  if( dotProd( gradOutside, opt) < 0){
+  // Compute the right rotation, use baseReference to know which way to rotate
+  if( dotProd( baseReference, opt) < 0){
     // we need the clockwise rotation
     opt[0] = cosTheta*minNormal[0] + sinTheta*minNormal[1];
     opt[1] = -sinTheta*minNormal[0] + cosTheta*minNormal[1];
@@ -1104,6 +1123,7 @@ void oneGradFromSnells(mesh2S *mesh2, double point[2], double xHat[2],
   gradSnell[0] = etaInside*opt[0]/l2norm(opt);
   gradSnell[1] = etaInside*opt[1]/l2norm(opt);
 
+  printf("  Grad with Snells: %fl  %fl \n", gradSnell[0], gradSnell[1]);
   
 }
 

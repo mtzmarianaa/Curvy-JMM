@@ -2705,7 +2705,7 @@ def forwardPassUpdate(params0, gammas, theta_gamma, x0, T0, grad0, x1, T1, grad1
                                                                                listCurvingInwards, gradParams)
      # THIS IS THE END OF THE FOR LOOP
      # Test for the last one (tricky one)
-     if( params[-2] > 0.4):
+     if( params[-2] < 1.0):
           f_Now = fObj_generalized(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices,
                                    listxk, listB0k, listBk, listBkBk1,
                                    indCrTop = indCrTop, paramsCrTop = paramsCrTop,
@@ -3115,7 +3115,7 @@ class triangleFan:
         self.plotBefore = True # If plot the triangle fan before optimizing for a certain type of path
         self.plotAfter = True # If plot the triangle fan after optimizing for a certain type of path
         self.plotOpti = True # If plot the triangle fan, optimal path of all possible path types
-        self.maxIter = 75
+        self.maxIter = 100
         self.tol = 1e-14
         self.plotSteps = False
         self.saveIterates = False
