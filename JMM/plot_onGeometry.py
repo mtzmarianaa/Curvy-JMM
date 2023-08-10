@@ -39,7 +39,7 @@ nx_default = 36*spacingGrid
 ny_default = 42*spacingGrid
 my_dpi=96
 eta1_default = 1.0
-eta2_default = 1.452
+eta2_default = 1.450
 x0_default = np.array([-15, -10])
 center_default = np.array([0,0])
 R_default = 10.0
@@ -59,10 +59,7 @@ def angle_error( trueGradient, numericalGradient  ):
             dProd = max( -1.0, min( 1.0, dProd  )  )
         angle_between = acos( dProd  ) # the angle between the two vectors
     return angle_between
-    
 
-def rotate(angle):
-    ax.view_init(azim=angle)
 
 def generatePlotsOnGeometryCircle(H, xi, yi,
                                   eik_vals, eik_coords, eik_grads, triangles_points,

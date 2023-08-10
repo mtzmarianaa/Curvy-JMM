@@ -103,6 +103,7 @@ void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
   fanUpdate->path = path;
   fanUpdate->gradHat[0] = gradHat[0];
   fanUpdate->gradHat[1] = gradHat[1];
+  fanUpdate->flagMultipliers = 1; // initialize as we approve this update
 }
 
 
@@ -116,6 +117,7 @@ void fanUpdate_initPreOpti(fanUpdateS *fanUpdate, triangleFanS *triFan, double T
   fanUpdate->T1 = T1;
   fanUpdate->grad1[0] = grad1[0];
   fanUpdate->grad1[1] = grad1[1];
+  fanUpdate->flagMultipliers = 1; // initialize as we approve this update
 }
 
 void eik_grid_initFromFile(eik_gridS *eik_g, size_t *start, size_t nStart, char const *pathPoints, char const *pathFaces,
@@ -249,8 +251,16 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
       previousNeighbor = thisNeighbor;
       thisNeighbor = possibleThirdVertices[0];
     }
-    else{
+    else if( possibleThirdVertices[1] != thisNeighbor ) {
       // the next neighbor is on index 1
+      previousNeighbor = thisNeighbor;
+      thisNeighbor = possibleThirdVertices[1];
+    }
+    else{
+      // meaning that we are on an edge, this fan of triangles doesn't form a complete 2pi fan
+      previousNeighbor = index0;
+      thisNeighbor = (size_t)eik_g->mesh2->neighbors[index0].neis_i[0];
+      twoTrianglesFromEdge(eik_g->mesh2, index0, thisNeighbor, possibleTriangles, possibleThirdVertices );
       previousNeighbor = thisNeighbor;
       thisNeighbor = possibleThirdVertices[1];
     }
@@ -270,11 +280,11 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
     }
     i++;
   }
-  if( eik_g->current_states[firstNeighbor] == 2 && eik_g->current_states[thisNeighbor] != 2){
+  if( eik_g->current_states[firstNeighbor] == 2 && eik_g->current_states[thisNeighbor] != 2 && j<=1){
     indices1[j] = (int)firstNeighbor;
     indices2[j] = (int)thisNeighbor;
   }
-  else if( eik_g->current_states[firstNeighbor] != 2 && eik_g->current_states[thisNeighbor] == 2){
+  else if( eik_g->current_states[firstNeighbor] != 2 && eik_g->current_states[thisNeighbor] == 2 && j<=1){
     indices1[j] = (int)thisNeighbor;
     indices2[j] = (int)firstNeighbor;
   }
@@ -432,23 +442,17 @@ void simple_Update(double x0[2], double x1[2], double xHat[2],
   // uses optimization to find xLam, which is on the line defined from x0 to x1 parametrized by lambda
 
   // first we find the optimal lambda
-  double tol, lambda0, lambda1;
+  double tol;
   int maxIter;
   tol = 0.00001;
-  maxIter = 30;
-  lambda0 = 0;
-  lambda1 = 1;
+  maxIter = 100;
 
-  *lambda = secantCubic_2D(lambda0, lambda1, T0, T1,
-			   grad0, grad1,
-			   x0, x1, xHat, tol, maxIter, indexRef); // optimal lambda found
-  // compute the approximation to That2
-  *That2 = eikApproxCubic(T0, T1, grad0, grad1,
-			  *lambda, x0, x1, xHat, indexRef);
-
+  *lambda = secantCubic_2D(T0, T1, grad0, grad1, x0, x1, xHat, tol, maxIter, indexRef);
+  *That2 = eikApproxCubic(T0, T1, grad0, grad1, *lambda, x0, x1, xHat, indexRef);
   
   // and we also approximate the eikonal gradient
   approximateEikonalGradient(x0, x1, xHat, *lambda, indexRef, grad);
+  printf("\n   T0: %fl\n   grad0: %fl % fl \n   T1: %fl\n   grad1: %fl %fl\n\n", T0, grad0[0], grad0[1], T1, grad1[0], grad1[1]);
 }
 
 void fanUpdate_fromSimple(fanUpdateS *fanUpdate) {
@@ -499,7 +503,19 @@ void fanUpdate_fromSimple(fanUpdateS *fanUpdate) {
   fanUpdate->gradHat[0] = grad[0];
   fanUpdate->gradHat[1] = grad[1];
   fanUpdate->params = params;
-  
+  // get the flag for the lagrange multipliers
+  double gPrime;
+  gPrime = gPrimeCubic(fanUpdate->T0, fanUpdate->T1, fanUpdate->grad0, fanUpdate->grad1,
+		       lambda, fanUpdate->triFan->x0, fanUpdate->triFan->x1, fanUpdate->triFan->xHat,
+		       indexRef);
+  printf("  lambda simple update: %fl\n", lambda);
+  printf("  derivative simple update: %fl\n", gPrime);
+  if( fabs(gPrime) > 0.0001 && fabs(lambda*(1-lambda)) < 0.0001  ){
+    fanUpdate->flagMultipliers = 0;
+  }
+  else{
+    fanUpdate->flagMultipliers = 1;
+  }
 }
 
 
@@ -919,7 +935,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
     needSnells0 = fabs( l2norm(currentTriangleFanUpdate->grad0) - currentTriangleFanUpdate->triFan->listIndices[0] );
     needSnells1 = fabs( l2norm(currentTriangleFanUpdate->grad1) - currentTriangleFanUpdate->triFan->listIndices[0] );
     // test if maybe only x0 or x1 are on the boundary
-    if( pointOnBoundary(eik_g->mesh2, index0) == 1 && needSnells0 > 0.01 && pointOnBoundary(eik_g->mesh2, index1) == 0  )   {
+    if( pointOnBoundary(eik_g->mesh2, index0) == 1 && needSnells0 > 0.01 && needSnells1 < 0.01  )   {
       printf("\nNeed to recompute grad0 using Snells\n");
       printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]);
       // compute the tangent and eta inside the first triangle
@@ -939,7 +955,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
       currentTriangleFanUpdate->grad0[1] = gradSnell[1];
     }
 
-    if( pointOnBoundary(eik_g->mesh2, index1) == 1 && needSnells1 > 0.01 && pointOnBoundary(eik_g->mesh2, index0) == 0){
+    if( pointOnBoundary(eik_g->mesh2, index1) == 1 && needSnells1 > 0.01 && needSnells1 < 0.01 ){
       printf("\nNeed to recompute grad1 using Snells\n");
       printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]);
       // compute the tangent and eta inside the first triangle
@@ -948,7 +964,7 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
       etaOutside = l2norm(currentTriangleFanUpdate->grad1);
       getTangentChangeReg(eik_g->mesh2, index1, firstTriangle, tanChange, etaOutside);
       // compute the new gradient on this side
-      printf("Tangent at x0: %fl %fl\n", tanChange[0], tanChange[1]);
+      printf("Tangent at x1: %fl %fl\n", tanChange[0], tanChange[1]);
       printf("Eta inside: %fl,  eta outside:  %fl\n", etaInside, etaOutside);
       oneGradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan->x1,
 			currentTriangleFanUpdate->triFan->xHat,
@@ -964,34 +980,21 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
       // complicated optimization technique
       printf("\nOptimization using Python\n\n");
       // if this is the case we need to see if the edge x0x1 is on the boundary
-      // if it is then we need to change grad0 and grad1 using Snell's law
-      /* if( currentTriangleFanUpdate->triFan->listB0k[0][0] != 0 && currentTriangleFanUpdate->triFan->listB0k[0][1] != 0 ){ */
-      /* 	// meaning that the edge x0x1 is on the boundary, now we need to get the two indices of refraction */
-      /* 	double grad0Snell[2], grad1Snell[2]; */
-      /* 	printf("\nNeed to recompute grad0 grad1 using Snells\n"); */
-      /* 	printf("Initial grad0: %fl  %fl\n", currentTriangleFanUpdate->grad0[0], currentTriangleFanUpdate->grad0[1]); */
-      /* 	printf("Initial grad1: %fl  %fl\n", currentTriangleFanUpdate->grad1[0], currentTriangleFanUpdate->grad1[1]); */
-      /* 	gradFromSnells(eik_g->mesh2, currentTriangleFanUpdate->triFan, */
-      /* 		       index0, index1, */
-      /* 		       currentTriangleFanUpdate->grad0, */
-      /* 		       currentTriangleFanUpdate->grad1, grad0Snell, grad1Snell); */
-      /* 	// change grad0 and grad1 inside the triangle fan update */
-      /* 	currentTriangleFanUpdate->grad0[0] = grad0Snell[0]; */
-      /* 	currentTriangleFanUpdate->grad0[1] = grad0Snell[1]; */
-      /* 	currentTriangleFanUpdate->grad1[0] = grad1Snell[0]; */
-      /* 	currentTriangleFanUpdate->grad1[1] = grad1Snell[1]; */
-      /* } */
+      currentTriangleFanUpdate->flagMultipliers = 1;
       optimizeTriangleFan_wPython(currentTriangleFanUpdate);
     }
     else{
       // all the indices of refraction in this triangle fan are the same
       // there is no need to use python, this is a simple update done with C
       printf("\nSimple optimization using C\n\n");
+      currentTriangleFanUpdate->flagMultipliers = 1;
       fanUpdate_fromSimple(currentTriangleFanUpdate);
     }
     printf("THat found: %f\n", currentTriangleFanUpdate->THat);
-    // if we found a good update, update the values
-    if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat ){
+    printf("flag multipliers: %zu\n", currentTriangleFanUpdate->flagMultipliers );
+    // if we found a good update and have zero lagrange multipliers, update the values
+    if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat &&
+	currentTriangleFanUpdate->flagMultipliers == 1 ){
       assert( eik_g->current_states[indexHat] != 2); // no update on valid nodes
       assert( T0 < currentTriangleFanUpdate->THat ||  T1 < currentTriangleFanUpdate->THat); // the current update must be smaller than T0
       // meaning we found a better update

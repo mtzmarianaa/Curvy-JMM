@@ -36,6 +36,7 @@ typedef struct fanUpdate {
   double (*grads)[2]; // gradients computed using all params, paramsCrTop, paramsStTop, length 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop
   double (*path)[2]; // path computed using all params, paramsCrTop, paramsStTop, length 2*nRegions + 1 + 2*nIndCrTop + 2*nIndStTop
   double gradHat[2]; // gradient which is going to be used for xHat
+  size_t flagMultipliers; // 0 if non zero lagrange multipliers, 1 if zero lagrange multipliers
 } fanUpdateS;
 
 typedef struct eik_grid {

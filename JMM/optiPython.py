@@ -983,7 +983,7 @@ def project_mukGivenlamk1_noCr(muk, lamk1, x0, B0k, xk, Bk, B0k1, xk1, Bk1, BkBk
      # Test if muk < mukMin
      if(dotTestMin_fromh0hk < 0 ):
           tMin = lambda mu: t4(mu, x0, xk, B0k, Bk, yk1, B0k1_lamk1)
-          rootMin = root_scalar(tMin, bracket = [0,1])
+          rootMin = root_scalar(tMin, method = "secant", x0 = 0.4, x1 = 0.5)
           muk = rootMin.root
           zk = hermite_boundary(muk, x0, B0k, xk, Bk)
           B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
@@ -2999,46 +2999,85 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
      
 
 
+# To be able to tell if we have non zero lagrange multipliers we compute gradG
+
+# def gradG(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
+#           listB0k, listBk, listBkBk1, indCrTop = None, paramsCrTop = None,
+#           indStTop = None, paramsStTop = None):
+#      '''
+#      Function that computes gradG, useful to determine lagrange multipliers
+#      '''
+#      if(paramsStTop is None or indStTop is None):
+#           indStTop = [-1]
+#           paramsStTop = [0,0]
+#           nTop = 0
+#      else:
+#           nTop = len(paramsStTop)/2
+#      # Set indCrTop if indStTop is given
+#      if(paramsCrTop is None or indCrTop is None):
+#           indCrTop = [-1]
+#           paramsCrTop = [0,0]
+#      else:
+#           nTop = nTop + len(paramsCrTop)/2
+#      currentCrTop = 0
+#      currentStTop = 0
+#      n = len(listxk) - 2
+#      gradP = np.zeros( (2*n, 1))
+#      gradTop = np.zeros( ( 2*nTop, 1))
+#      muk = params[0]
+#      etak = listIndices[0]
+#      Bk = listBk[0]
+#      B0k = listB0k[0]
+#      zk = hermite_boundary(muk, x0, B0k, x1, Bk)
+#      gradP[0] = der_hermite_interpolationT( muk, x0, T0, grad0, x1, T1, grad1)
+#      for j in range(1, n+1):
+#           # j goes from 1 to n
+#           # We have to circle around all the regions
+#           k = 2*j - 1
+#           nTop = j # Number of boundary on the top that we are considering
+#           mukM1 = params[k-1]
+#           lamk = params[k]
+#           muk = params[k+1]
+#           B0k = listB0k[j]
+#           xkM1 = listxk[j]
+#           xk = listxk[j+1]
+#           Bk = listBk[j]
+#           BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+#           BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
+#           etakPrev = etak
+#           etak = listIndices[j]
+#           etaMin = min(etakPrev, etak)
+#           # Compute the points
+#           zkPrev = zk
+#           zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+#           yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+#           # Then we need to know if we have points on the triangle top
+#           # See if there are points on the triangle top and if they are associated with a creeping ray
+#           if( nTop == indCrTop[currentCrTop] ):
+#                # This means that there is creeping along this triangle top
+#                # Hence from zkPrev the path goes to ak and creeps to bk
+#                # which then shoots to yk and then creeps to zk
+#                etaRegionOutside = listIndices[n + j]
+#                etaMinCr = min(etaRegionOutside, etakPrev)
+#                rk = paramsCrTop[2*currentCrTop]
+#                sk = paramsCrTop[2*currentCrTop + 1]
+#                ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+#                bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+#                if( mukM1>0.99 and rk<0.001 and rk == sk):
+#                     # The path almost jumps directly from mukM1 to lamk
+#                     B0kM1_mukM1 = gradientBoundary(mukM1, x0, listB0k[j-1], xkM1, listBk[j-1])
+#                     gradP[k-1] += -np.dot( B0kM1_mukM1, yk - zkPrev)/norm(yk - zkPrev)
+#                elif( mukM1>0.99 and rk<0.001):
+#                     # mukM1 and rk are the same point
+#                     gradP[k-1] += 
+#                gradP[k] +=  # partial with respect to lambda_k
+     
+
+
+
 ######## Define function and class such that we can put everything in order
 # and know which cases to solve for
 
-
-triInf = [
-     ('nRegions', int32),
-     ('params', float64[:]),
-     ('x0', float64[:]),
-     ('T0', float64),
-     ('grad0', float64[:]),
-     ('x1', float64[:]),
-     ('T1', float64),
-     ('grad1', float64[:]),
-     ('xHat', float64[:]),
-     ('listIndices', float64[:] ),
-     ('listxk', float64[:, :] ),
-     ('listB0k', float64[:, :] ),
-     ('listBk', float64[:, :] ),
-     ('listBkBk1', float64[:, :] ),
-     ('listCurvingInwards', int32[:] ),
-     ('optionsTop', int32[:, :]),
-     ('optiParams', float64[:]),
-     ('optiIndCrTop', int32[:]),
-     ('optiParamsCrTop', float64[:]),
-     ('nIndCrTop', int32),
-     ('optiIndStTop', int32[:]),
-     ('optiParamsStTop', float64[:]),
-     ('nIndStTop', int32),
-     ('opti_fVal', float64),
-     ('path', float64[:, :]),
-     ('grads', float64[:, :]),
-     ('lastGrad', float64[:]),
-     ('plotBefore', int32),
-     ('plotAfter', int32),
-     ('plotOpti', int32),
-     ('maxIter', int32),
-     ('tol', float64),
-     ('plotSteps', boolean),
-     ('saveIterates', boolean)
-     ]
 
 
 

@@ -987,6 +987,11 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
     }
 
     printf("   Snells law: etaInside: %fl     etaOutside: %fl\n", etaInside, etaOutside);
+
+    baseReference0[0] = B0[0];
+    baseReference0[1] = B0[1];
+    baseReference1[0] = B1[0];
+    baseReference1[1] = B1[1];
     
     // now we need to get the outward normals
     if( dotProd( n0, xHatMinx0) < 0 ){
@@ -995,10 +1000,6 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
       negn0[1] = -n0[1];
       negn1[0] = -n1[0];
       negn1[1] = -n1[1];
-      baseReference0[0] = B0[0];
-      baseReference0[1] = B0[1];
-      baseReference1[0] = B1[0];
-      baseReference1[1] = B1[1];
     }
     else{
       // we need to rotate more
@@ -1010,10 +1011,17 @@ void gradFromSnells(mesh2S *mesh2, triangleFanS *triFan, size_t index0, size_t i
       n0[1] = -n0[1];
       n1[0] = -n1[0];
       n1[1] = -n1[1];
-      baseReference0[0] = -B0[0];
-      baseReference0[1] = -B0[1];
-      baseReference1[0] = -B1[0];
-      baseReference1[1] = -B1[1];
+    }
+
+    // need to know which base to take as reference (so that we know if we need to + or - from the inward norma
+
+    if( dotProd(grad0, baseReference0) < 0 ){
+      baseReference0[0] = -baseReference0[0];
+      baseReference0[1] = -baseReference0[1];
+    }
+    if( dotProd(grad1, baseReference1) < 0){
+      baseReference1[0] = -baseReference1[0];
+      baseReference1[0] = -baseReference1[1];
     }
 
     // Once we have the normals we can compute the angles theta02 and theta12

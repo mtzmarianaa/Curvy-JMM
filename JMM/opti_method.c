@@ -7,9 +7,6 @@ Optimization methods for the 2D JMM
 #include "linAlg.h"
 
 #include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 
 
 
@@ -98,13 +95,69 @@ double gPrimeCubic(double T0, double T1, double grad0[2], double grad1[2], doubl
 
 }
 
-double secantCubic_2D(double lambda0, double lambda1, double T0, double T1, double grad0[2], double grad1[2],
-		     double x0[2], double x1[2], double xHat[2], double tol, int maxIter, double indexRef){
+
+double stepSize(double d, double T0, double T1, double grad0[2], double grad1[2],
+		double lambda, double x0[2], double x1[2], double xHat[2], double indexRef){
+  double alpha0, g_current, g_past, newLambda;
+  size_t i = 0;
+  alpha0 = 2;
+  if( fabs(d) < 0.000001 ){
+    return 0;
+  }
+  newLambda = lambda - alpha0*d;
+  if( newLambda < 0){
+    newLambda = 0.0;
+  }
+  if( newLambda > 1){
+    newLambda = 1.0;
+  }
+  g_past = eikApproxCubic(T0, T1, grad0, grad1, lambda, x0, x1, xHat, indexRef);
+  g_current = eikApproxCubic(T0, T1, grad0, grad1, newLambda, x0, x1, xHat, indexRef);
+  // start cycle
+  while( g_current > g_past && i < 100 ){
+    alpha0 = 0.9*alpha0;
+    newLambda = lambda - alpha0*d;
+    g_current = eikApproxCubic(T0, T1, grad0, grad1, newLambda, x0, x1, xHat, indexRef);
+    i ++;
+  }
+  return alpha0;
+}
+
+double gradDescentCubic_2D(double T0, double T1, double grad0[2], double grad1[2],
+			   double x0[2], double x1[2], double xHat[2],
+			   double tol, size_t maxIter, double indexRef) {
+  // gradient descent to optimize a simple path from xlambda to xhat
+  // T(xlambda) is approximated with a cubic Hermite polynomial
+  int k = 1;
+  double lambda, d, alpha;
+  lambda = 0.5;
+  d = gPrimeCubic(T0, T1, grad0, grad1, lambda, x0, x1, xHat, indexRef);
+  while( fabs(d)>tol && k < maxIter ){
+    alpha = stepSize(d, T0, T1, grad0, grad1, lambda, x0, x1, xHat, indexRef);
+    lambda = lambda - alpha*d;
+    if( lambda < 0){
+      lambda = 0.0;
+    }
+    if( lambda > 1){
+      lambda = 1.0;
+    }
+    d = gPrimeCubic(T0, T1, grad0, grad1, lambda, x0, x1, xHat, indexRef);
+    k ++;
+  }
+  return lambda;
+}
+
+double secantCubic_2D(double T0, double T1, double grad0[2], double grad1[2],
+		      double x0[2], double x1[2], double xHat[2], double tol,
+		      int maxIter, double indexRef) {
     // This method is the implementation of the secant method to optimize the path from xlambda to xhat
    // T(xlambda) is approximated with a cubic Hermite polynomial 
     int k = 1;
-    double lam, gPrime0, gPrime1;
-
+    double lam, gPrime0, gPrime1, lambda1, alpha;
+    double lambda0 = 0.5;
+    gPrime0 = gPrimeCubic(T0, T1, grad0, grad1, lambda0, x0, x1, xHat, indexRef);
+    alpha = stepSize(gPrime0, T0, T1, grad0, grad1, lambda0, x0, x1, xHat, indexRef);
+    lambda1 = lambda0 - alpha*gPrime0;
     gPrime1 = gPrimeCubic(T0, T1, grad0, grad1, lambda1, x0, x1, xHat, indexRef);
     // printf("Initial, with lambda = %fl   the value of gPrime is: %fl\n", lambda0, gPrime(T0, T1, lambda0, x0, x1, xHat, indexRef));
     // printf("Initial, with lambda = %fl   the value of gPrime is: %fl\n", lambda1, gPrime1);
@@ -113,9 +166,9 @@ double secantCubic_2D(double lambda0, double lambda1, double T0, double T1, doub
       gPrime0 = gPrimeCubic(T0, T1, grad0, grad1, lambda0, x0, x1, xHat, indexRef);
       gPrime1 = gPrimeCubic(T0, T1, grad0, grad1, lambda1, x0, x1, xHat, indexRef);
       lam = lambda1 - gPrime1*(lambda1 - lambda0)/( gPrime1 - gPrime0 );
-       lambda0 = lambda1;
-       lambda1 = lam;
-       k ++;
+      lambda0 = lambda1;
+      lambda1 = lam;
+      k ++;
     }
     if(lambda1<0){
         lambda1 = 0;

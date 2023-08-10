@@ -1,13 +1,8 @@
-# Generate test geometry but just its base (i.e. just the circle) specifying h# Generation of test geometry and producing its triangular mesh
-# I also generated a triangular mesh in a square because I'm going to 
-# first test my fmm method here (very naivly)
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
 from math import pi, sqrt, floor, ceil
 import meshpy.triangle as triangle
-from matplotlib.patches import Arc
-import numpy.linalg as la
 from matplotlib.colors import ListedColormap
 import colorcet as cc
 
@@ -21,36 +16,30 @@ colormap2_r = "cet_linear_worb_100_25_c53"
 
 plt.ion()
 
-h =  0.200
+h =  0.0450
 h_string = str(h)
 eta1 = 1.0
-eta2 = 1.45
-currentH = "H9"
-path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/TestBaseSnow/"
-path_info = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
+eta2 = 1.0
+currentH = "H10"
+path_figures = "/Users/marianamartinez/Documents/Documents - Mariana’s MacBook Pro/NYU-Courant/FMM-bib/Figures/EasyGeom/"
+path_info = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/EasyGeom/'
 
-############# Generate the two circles
 
 my_dpi=96
+def nPoints(h):
+    return ceil(4/h) + 1;
 
-def circ_base(t):
+def points_division(t):
     '''
-    Parametrization of the base cirlce (base of the snowman) for the test geometry.
-    t can be a number or an array or numbers. If t is a number the output are the
-    coordinates [x, y]. If t is an array the output is a n, 2 array, the first 
-    column corresponds to the coordinates of x, the second to the coordinates of y.
+    Parametrization of the segment of the straigh line
+    going from (-2, 0) to (2, 0), also returns tangents
     '''
     points = np.zeros((len(t), 2))
     tan_points = np.zeros((len(t), 2))
-    points[:, 0] = 10*np.cos(t)
-    points[:, 1] = 10*np.sin(t)
-    tan_points[:, 0] = -np.sin(t)
-    tan_points[:, 1] = np.cos(t)
+    points[:, 0] = t;
+    tan_points[:, 0] = 1;
     return points, tan_points
 
-
-
-############# Useful functions
 
 def round_trip_connect(start, end, boundary_tan = False, tans = None, hc = None):
     facets = [(i, i + 1) for i in range(start, end)] + [(end, start)]
@@ -68,39 +57,42 @@ def round_trip_connect(start, end, boundary_tan = False, tans = None, hc = None)
     else:
         return facets
 
-def connect(start, end):
-    return [(i, i + 1) for i in range(start, end)]
+
+def connect(start, end, boundary_tan = False, tans = None, hc = None):
+    '''
+    Facets and tangents for a open curve
+    '''
+    facets = [(i, i+1) for i in range(start, end)]
+    if( boundary_tan ):
+        # This means that we also want to get the boundary tan struct
+        B = []
+        for i in range(start, end-1):
+            tans_i = tans[i]/norm(tans[i])*hc[i]
+            tans_i1 = tans[i+1]/norm(tans[i+1])*hc[i+1]
+            B.append( (i, i+1, tans_i[0], tans_i[1], tans_i1[0], tans_i1[1] ) )
+        return facets, B
+    else:
+        return facets
 
 def needs_refinement(vertices, area):
     max_area = (1.73205080757)/4*(h**2)
     return bool(area > max_area)
-    
-def nPoints(h):
-    '''
-    With this function we know how many points we need in the top of the snowman and in the bottom, depending on which h we want
-    WE ASSUME THAT WE ARE DISTRIBUTING UNIFORMLY THESE POINTS
-    '''
-    nBottom = ceil(20*pi/h) 
-    return nBottom
 
-Nbase = nPoints(h)
 
-t = np.linspace(3/4, 11/4, num = Nbase , endpoint = False)
-t = np.multiply(t, pi)
-
-points_base, tan_base = circ_base(t)
-hc = [norm( points_base[0, :] - points_base[1, :] )]*len(points_base) # All are the same because the points are equispaced on the circle
-    
-
-# The points on the outline of the snowman and the tangent
-points =  [(-15, -10)] # start with x0 so that in each mesh we know its index
+Nline = nPoints(h)
+t = np.linspace(-2, 2, num = Nline, endpoint = True)
+points_line, tan_line = points_division(t)
+hc = [ norm(points_line[0, :] - points_line[1, :] ) ] *len(points_line)
+points = [(0, -1.5)]
 hc = [0] + hc
-points.extend([ (points_base[i, 0], points_base[i, 1]) for i in range( len(points_base) ) ] )
+points.extend([ (points_line[i, 0], points_line[i, 1]) for i in range( len(points_line) ) ] )
 # Add the facets
 tans = np.zeros((len(points), 2))
-tans[1:, :] = tan_base
-facets, mesh_square_boundaryCurve = round_trip_connect(1, len(points) -1, boundary_tan = True, tans = tans, hc = hc ) # we don't want to connnect x0
+tans[1:, :] = tan_line
+facets, mesh_square_boundaryCurve = connect(1, len(points) , boundary_tan = True, tans = tans, hc = hc ) # we don't want to connnect x0
 mesh_square_boundaryCurve = np.array(mesh_square_boundaryCurve)
+
+
 
 
 ##############################################################################
@@ -109,7 +101,7 @@ mesh_square_boundaryCurve = np.array(mesh_square_boundaryCurve)
 ##############################################################################
 ###### SQUARE ON THE OUTSIDE
 
-edges_square = [(-18, -18), (18, -18), (18, 24), (-18, 24)]
+edges_square = [(-2, -2), (2, -2), (2, 2), (-2, 2)]
 
 # Add them to the points 
 points_square = points + edges_square
@@ -138,6 +130,8 @@ print("Triangulation done, number of points: ", len(mesh_square_points))
 N_points_square = len(mesh_square_points)
 mesh_square_neigh = [[] for i in range(N_points_square)]
 MaxN_square = 0
+
+
 
 
 # Create the list of lists
@@ -238,14 +232,11 @@ for fi in range(len(mesh_square_tris)):
     p1 =  mesh_square_points[mesh_square_tris[fi, 0] , :]
     p2 =  mesh_square_points[mesh_square_tris[fi, 1] , :]
     p3 =  mesh_square_points[mesh_square_tris[fi, 2] , :]
-    if ( sqrt(p1[0]**2 + p1[1]**2)<= 10 ) and ( sqrt(p2[0]**2 + p2[1]**2)<= 10 ) and (sqrt(p3[0]**2 + p3[1]**2)<= 10):
-        faces_label += [eta2]
-        colors += [0.3]
-    elif( (sqrt(p1[0]**2 + p1[1]**2) + sqrt(p2[0]**2 + p2[1]**2) + sqrt(p3[0]**2 + p3[1]**2))<= 30  ):
-        faces_label += [eta2]
+    if ( p1[1]<= 0 ) and ( p2[1]<= 0 ) and ( p3[1]<= 0):
+        faces_label += [eta1]
         colors += [0.3]
     else:
-        faces_label += [eta1]
+        faces_label += [eta2]
         colors += [0.1]
 
 print("Lists of faces labels done")
@@ -256,15 +247,12 @@ print("Lists of faces labels done")
 # #Plot
 plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
-ax = fig.gca()
 plt.gca().set_aspect('equal')
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#6800ff')
-circle_b = plt.Circle((0, 0), 10, color="#000536",fill=False)
-ax.add_patch(circle_b)
 plt.title('Delaunay triangulation of test geometry, H = '+h_string)
 plt.savefig(path_figures + currentH + '/'+ currentH + '_TriangulationWhite.png', dpi=my_dpi * 10)
-plt.xlim([-18, 18])
-plt.ylim([-18, 24])
+plt.xlim([-2, 2])
+plt.ylim([-2, 2])
 plt.show(block=False)
 
 
@@ -284,23 +272,29 @@ plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, faces_label, cmap = colormap2)
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
 plt.title('Delaunay triangulation of test geometry, H = '+h_string)
-plt.xlim([-18, 18])
-plt.ylim([-18, 24])
+plt.xlim([-2, 2])
+plt.ylim([-2, 2])
 plt.show(block = False)
 plt.savefig(path_figures + currentH + '/'+ currentH + '_Triangulation.png', dpi=my_dpi * 10)
 
 
 # With the tangents
+
 plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
 fig = plt.gcf()
 plt.gca().set_aspect('equal')
 plt.tripcolor(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, faces_label, cmap = colormap2)
 plt.triplot(mesh_square_points[:, 0], mesh_square_points[:, 1], mesh_square_tris, '-.', lw=0.5, c='#00fffb')
-plt.quiver(points_base[:,0], points_base[:,1], mesh_square_boundaryCurve[:, 1],
-           mesh_square_boundaryCurve[:, 2], width = 0.005, scale = 1.0, scale_units = 'xy')
+arr = np.zeros( points_line.shape)
+arr[0, 0] = mesh_square_boundaryCurve[0, 1]
+arr[0, 1] = mesh_square_boundaryCurve[0, 2]
+arr[1:, 0] = mesh_square_boundaryCurve[:, 1]
+arr[1:, 1] = mesh_square_boundaryCurve[:, 2]
+plt.quiver(points_line[:,0], points_line[:,1], arr[:, 0],
+           arr[:, 1], width = 0.005, scale = 1.0, scale_units = 'xy')
 plt.title('Delaunay triangulation of test geometry, H = '+h_string)
-plt.xlim([-18, 18])
-plt.ylim([-18, 24])
+plt.xlim([-2, 2])
+plt.ylim([-2, 2])
 plt.show(block = False)
 plt.savefig(path_figures + currentH + '/'+ currentH + '_TriangulationTangents.png', dpi=my_dpi * 10)
 
@@ -338,3 +332,7 @@ with open(path_info + currentH + '/'+ currentH + "_IncidentFaces.txt", "w") as o
         out_file.write(out_string)
         
 plt.show()
+
+
+
+    
