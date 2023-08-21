@@ -15,11 +15,12 @@ with open(Path(sys.argv[1])) as f:
     nRegions = len(params_dict['listxk']) - 2
     triFan = oP.triangleFan(nRegions) # initialize a triangle fan
     dict_out = triFan.outputJSON(triInfo)
+    flagLagrange = triFan.setLagrangeFlag()
     # try:
     #     dict_out = triFan.outputJSON(triInfo)
     # except:
     #     import ipdb; ipdb.set_trace()
-    print(dict_out["THat"], ", ", dict_out["gradHat"][0], ", ", dict_out["gradHat"][1])
+    print(flagLagrange, ", ", dict_out["THat"], ", ", dict_out["gradHat"][0], ", ", dict_out["gradHat"][1])
     #str_out = json.dumps(dict_out)
     #print(str_out)
 

@@ -3001,76 +3001,187 @@ def getPathGradEikonal(params, listIndices, listxk, listB0k, listBk, listBkBk1, 
 
 # To be able to tell if we have non zero lagrange multipliers we compute gradG
 
-# def gradG(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
-#           listB0k, listBk, listBkBk1, indCrTop = None, paramsCrTop = None,
-#           indStTop = None, paramsStTop = None):
-#      '''
-#      Function that computes gradG, useful to determine lagrange multipliers
-#      '''
-#      if(paramsStTop is None or indStTop is None):
-#           indStTop = [-1]
-#           paramsStTop = [0,0]
-#           nTop = 0
-#      else:
-#           nTop = len(paramsStTop)/2
-#      # Set indCrTop if indStTop is given
-#      if(paramsCrTop is None or indCrTop is None):
-#           indCrTop = [-1]
-#           paramsCrTop = [0,0]
-#      else:
-#           nTop = nTop + len(paramsCrTop)/2
-#      currentCrTop = 0
-#      currentStTop = 0
-#      n = len(listxk) - 2
-#      gradP = np.zeros( (2*n, 1))
-#      gradTop = np.zeros( ( 2*nTop, 1))
-#      muk = params[0]
-#      etak = listIndices[0]
-#      Bk = listBk[0]
-#      B0k = listB0k[0]
-#      zk = hermite_boundary(muk, x0, B0k, x1, Bk)
-#      gradP[0] = der_hermite_interpolationT( muk, x0, T0, grad0, x1, T1, grad1)
-#      for j in range(1, n+1):
-#           # j goes from 1 to n
-#           # We have to circle around all the regions
-#           k = 2*j - 1
-#           nTop = j # Number of boundary on the top that we are considering
-#           mukM1 = params[k-1]
-#           lamk = params[k]
-#           muk = params[k+1]
-#           B0k = listB0k[j]
-#           xkM1 = listxk[j]
-#           xk = listxk[j+1]
-#           Bk = listBk[j]
-#           BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
-#           BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
-#           etakPrev = etak
-#           etak = listIndices[j]
-#           etaMin = min(etakPrev, etak)
-#           # Compute the points
-#           zkPrev = zk
-#           zk = hermite_boundary(muk, x0, B0k, xk, Bk)
-#           yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
-#           # Then we need to know if we have points on the triangle top
-#           # See if there are points on the triangle top and if they are associated with a creeping ray
-#           if( nTop == indCrTop[currentCrTop] ):
-#                # This means that there is creeping along this triangle top
-#                # Hence from zkPrev the path goes to ak and creeps to bk
-#                # which then shoots to yk and then creeps to zk
-#                etaRegionOutside = listIndices[n + j]
-#                etaMinCr = min(etaRegionOutside, etakPrev)
-#                rk = paramsCrTop[2*currentCrTop]
-#                sk = paramsCrTop[2*currentCrTop + 1]
-#                ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
-#                bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
-#                if( mukM1>0.99 and rk<0.001 and rk == sk):
-#                     # The path almost jumps directly from mukM1 to lamk
-#                     B0kM1_mukM1 = gradientBoundary(mukM1, x0, listB0k[j-1], xkM1, listBk[j-1])
-#                     gradP[k-1] += -np.dot( B0kM1_mukM1, yk - zkPrev)/norm(yk - zkPrev)
-#                elif( mukM1>0.99 and rk<0.001):
-#                     # mukM1 and rk are the same point
-#                     gradP[k-1] += 
-#                gradP[k] +=  # partial with respect to lambda_k
+def gradG(params, x0, T0, grad0, x1, T1, grad1, xHat, listIndices, listxk,
+          listB0k, listBk, listBkBk1, indCrTop = None, paramsCrTop = None,
+          indStTop = None, paramsStTop = None):
+     '''
+     Function that computes gradG, useful to determine lagrange multipliers
+     '''
+     if(paramsStTop is None or indStTop is None):
+          indStTop = [-1]
+          paramsStTop = [0,0]
+     # Set indCrTop if indStTop is given
+     if(paramsCrTop is None or indCrTop is None):
+          indCrTop = [-1]
+          paramsCrTop = [0,0]
+     currentCrTop = 0
+     currentStTop = 0
+     n = len(listxk) - 2
+     gradP = np.zeros( (2*n + 1, 1))
+     gradTop = np.zeros( ( 2*n, 1))
+     muk = params[0]
+     etak = listIndices[0]
+     Bk = listBk[0]
+     B0k = listB0k[0]
+     zk = hermite_boundary(muk, x0, B0k, x1, Bk)
+     gradP[0] = der_hermite_interpolationT( muk, x0, T0, grad0, x1, T1, grad1)
+     for j in range(1, n+1):
+          # j goes from 1 to n
+          # We have to circle around all the regions
+          k = 2*j - 1 # goes from 0 to 2n-1
+          nTop = j # Number of boundary on the top that we are considering
+          mukM1 = params[k-1]
+          lamk = params[k]
+          muk = params[k+1]
+          B0k = listB0k[j]
+          xkM1 = listxk[j]
+          xk = listxk[j+1]
+          Bk = listBk[j]
+          BkBk1_0 = listBkBk1[k-1] # grad of hkhk1 at xk
+          BkBk1_1 = listBkBk1[k] # grad of hkhk1 at xk1
+          etakPrev = etak
+          etak = listIndices[j]
+          etaMin = min(etakPrev, etak)
+          # Compute the points
+          zkPrev = zk
+          zk = hermite_boundary(muk, x0, B0k, xk, Bk)
+          yk = hermite_boundary(lamk, x0, B0k, xk, Bk)
+          B0kM1_mukM1 = gradientBoundary(mukM1, x0, listB0k[j-1], xkM1, listBk[j-1])
+          B0k_muk = gradientBoundary(muk, x0, B0k, xk, Bk)
+          B0k_lamk = gradientBoundary(lamk, x0, B0k, xk, Bk)
+          # Then we need to know if we have points on the triangle top
+          # See if there are points on the triangle top and if they are associated with a creeping ray
+          if( nTop == indCrTop[currentCrTop] ):
+               # This means that there is creeping along this triangle top
+               etaRegionOutside = listIndices[n + j]
+               etaMinCr = min(etaRegionOutside, etakPrev)
+               rk = paramsCrTop[2*currentCrTop]
+               sk = paramsCrTop[2*currentCrTop + 1]
+               ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               Bsk = gradientBoundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               Brk = gradientBoundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               # Compute the derivative of the creeping if necessary
+               if( abs(rk - sk) > 0.0001):
+                    B_halves = gradientBoundary((rk + sk)/2, xkM1, BkBk1_0, xk, BkBk1_1)
+                    secondDer_halves = itt.secondDer_Boundary((rk + sk)/2, xkM1, BkBk1_0, xk, BkBk1_1)
+                    secondDer_rk = itt.secondDer_Boundary(rk, xkM1, BkBk1_0, BkBk1_1)
+                    secondDer_sk = itt.secondDer_Boundary(sk, xkM1, BkBk1_0, BkBk1_1)
+                    parLshooter = partial_L_muk(rk, sk, BkBk1_0, secondDer_rk, B_halves, secondDer_halves, BkBk1_1)
+                    parLreceiver = partial_L_lamk(rk, sk, BkBk1_0, B_halves, secondDer_halves, BkBk1_1, secondDer_sk)
+               # Update the gradient WHERE rk,sk, mukM1 GO, WHERE lamk COMES FROM
+               if( lamk > 0.99 and sk > 0.99):
+                    # lamk and sk are the same point, sk goes nowhere
+                    if( abs(sk - rk) < 0.0001):
+                         # lamk, sk, rk are the same point, the path jumps from mukM1 to this point
+                         # lamk comes from mukM1, sk, rk go nowhere
+                         gradP[k] += etakPrev*np.dot( B0k_lamk, yk - zkPrev)/norm(yk-zkPrev)
+                    else:
+                         # lamk and sk are the same point, but not rk, the path creeps from rk to this point
+                         # lamk comes from rk, sk goes nowhere, rk goes to sk
+                         gradP[k] += etakPrev*np.dot( B0k_lamk, yk - ak)/norm(yk-ak)
+                         gradTop[2*nTop-1] += etaMinCr*parLshooter
+               else:
+                    # lamk, sk are different points
+                    # lamk comes from sk
+                    gradP[k] += etakPrev*np.dot( B0k_lamk, yk - bk)/norm(yk-bk)
+                    if( abs(sk - rk) < 0.0001):
+                         # sk and rk are the same points, they go to lamk
+                         gradTop[2*nTop-1] += -etakPrev*np.dot( Bsk, yk - ak)/norm(yk-ak)
+                         gradTop[2*nTop] += -etakPrev*np.dot( Bsk, yk - ak)/norm(yk-ak)
+                    else:
+                         # sk and rk are different, rk goes creeping to sk, sk goes to lamk
+                         gradTop[2*nTop-1] += etaMinCr*parLreceiver
+                         gradTop[2*nTop] += -etakPrev*np.dot( Bsk, yk - bk)/norm(yk-bk)
+               if( mukM1<0.9999 or rk>0.0001):
+                    # mukM1 goes to rk
+                    gradP[k-1] += -etakPrev*np.dot(B0kM1_mukM1, ak - zkPrev)/norm(ak - zkPrev)
+               # Update the gradient where rk, sk come from
+               if( mukM1<0.9999 or rk > 0.0001):
+                    # rk comes from mukM1
+                    gradTop[2*nTop-1] += etakPrev*np.dot(Brk, ak - zkPrev)/norm(ak - zkPrev)
+                    if( abs(rk - sk) < 0.0001):
+                         # rk and sk are the same point
+                         gradTop[2*nTop] += etakPrev*np.dot(Brk, ak - zkPrev)/norm(ak - zkPrev)
+               if( abs(rk - sk)>0.0001):
+                    # rk and sk are different points, sk comes from rk
+                    gradTop[2*nTop] += etaMinCr*parLreceiver
+               # Update the current index of the creeping updates
+               if (currentCrTop  < len(indCrTop) - 1):
+                    currentCrTop += 1
+          elif( nTop == indStTop[currentStTop]):
+               # We have a straight path along this triangle top
+               etaRegionOutside = listIndices[n + j]
+               rk = paramsStTop[2*currentStTop]
+               sk = paramsStTop[2*currentStTop + 1]
+               ak = hermite_boundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               bk = hermite_boundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               Bsk = gradientBoundary(sk, xkM1, BkBk1_0, xk, BkBk1_1)
+               Brk = gradientBoundary(rk, xkM1, BkBk1_0, xk, BkBk1_1)
+               # Update the gradient WHERE rk,sk, mukM1 GO, WHERE lamk COMES FROM
+               if( lamk > 0.99 and sk > 0.99):
+                    # lamk and sk are the same point, sk goes nowhere
+                    if( abs(sk - rk) < 0.0001):
+                         # lamk, sk, rk are the same point, the path jumps from mukM1 to this point
+                         # lamk comes from mukM1, sk, rk go nowhere
+                         gradP[k] += etakPrev*np.dot( B0k_lamk, yk - zkPrev)/norm(yk-zkPrev)
+                    else:
+                         # lamk and sk are the same point, but not rk, the path goes from rk to this point
+                         # lamk comes from rk, sk goes nowhere, rk goes to sk
+                         gradP[k] += etakPrev*np.dot( B0k_lamk, yk - ak)/norm(yk-ak)
+                         gradTop[2*nTop-1] += -etaRegionOutside*np.dot( Brk, bk - ak)/norm(bk - ak)
+               else:
+                    # lamk, sk are different points
+                    # lamk comes from sk
+                    gradP[k] += etakPrev*np.dot( B0k_lamk, yk - bk)/norm(yk-bk)
+                    if( abs(sk - rk) < 0.0001):
+                         # sk and rk are the same points, they go to lamk
+                         gradTop[2*nTop-1] += -etakPrev*np.dot( Bsk, yk - ak)/norm(yk-ak)
+                         gradTop[2*nTop] += -etakPrev*np.dot( Bsk, yk - ak)/norm(yk-ak)
+                    else:
+                         # sk and rk are different, rk goes to sk, sk goes to lamk
+                         gradTop[2*nTop-1] += -etaRegionOutside*np.dot( Brk, bk - ak)/norm(bk - ak)
+                         gradTop[2*nTop] += -etakPrev*np.dot( Bsk, yk - bk)/norm(yk-bk)
+               if( mukM1<0.9999 or rk>0.0001):
+                    # mukM1 goes to rk
+                    gradP[k-1] += -etakPrev*np.dot(B0kM1_mukM1, ak - zkPrev)/norm(ak - zkPrev)
+               # Update the gradient where rk, sk come from
+               if( mukM1<0.9999 or rk > 0.0001):
+                    # rk comes from mukM1
+                    gradTop[2*nTop-1] += etakPrev*np.dot(Brk, ak - zkPrev)/norm(ak - zkPrev)
+                    if( abs(rk - sk) < 0.0001):
+                         # rk and sk are the same point
+                         gradTop[2*nTop] += etakPrev*np.dot(Brk, ak - zkPrev)/norm(ak - zkPrev)
+               if( abs(rk - sk)>0.0001):
+                    # rk and sk are different points, sk comes from rk
+                    gradTop[2*nTop] += etaRegionOutside*np.dot( Bsk, bk - ak)/norm(bk - ak)
+               # Update the current index of the creeping updates
+               if (currentStTop  < len(indStTop) - 1):
+                    currentStTop += 1
+          else:
+               # We don't have points along this triangle top, lamk comes from mukM1 (if different)
+               if( lamk>0.0001 or mukM1 > 0.0001):
+                    # lamk comes from mukM1
+                    gradP[k] += etakPrev*np.dot( B0k_lamk, yk - zkPrev)/norm(yk - zkPrev)
+          # Independently where they come from, update lamk and muk
+          if( abs( lamk - muk) > 0.0001):
+               # lamk and muk are different points, lamk goes to muk
+               B_halves = gradientBoundary( (lamk + muk)/2, x0, B0k, xk, Bk)
+               secondDer_halves = itt.secondDer_Boundary( (lamk + muk)/2, x0, B0k, xk, Bk)
+               secondDer_lamk = itt.secondDer_Boundary( lamk, x0, B0k, xk, Bk)
+               secondDer_muk = itt.secondDer_Boundary( muk, x0, B0k, xk, Bk)
+               parLshooter = partial_L_muk(lamk, muk, B0k, secondDer_muk, B_halves, secondDer_halves, Bk)
+               parLreceiver = partial_L_lamk(lamk, muk, B0k, B_halves, secondDer_halves, Bk, secondDer_lamk)
+               gradP[k] = etaMin*parLreceiver
+               gradP[k+1] = etaMin*parLshooter
+          else:
+               if( k>2 and abs(params[k-2] - mukM1)< 0.0001 ):
+                    # lamkM1 and mukM1 are the same
+                    gradP[k-1] += gradP[k-2]
+                    gradP[k-2] = gradP[k-1]
+     return gradP, gradTop
+               
+                    
      
 
 
@@ -3159,6 +3270,7 @@ class triangleFan:
         self.plotSteps = False
         self.saveIterates = False
         self.params_dict = None # dictionary for reading with json
+        self.flagMultipliers = 1 # flag 1 Lagrange multipliers are ok, -1 they are not ok
 
      def initFromJSON(self, jsonString):
           '''
@@ -3388,6 +3500,57 @@ class triangleFan:
                             paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
                plt.title("Optimal path in triangle fan, $g^*_{C,D}$ =" + " {fk:6.3f}".format(fk=self.opti_fVal) )
           return self.opti_fVal
+
+     def setLagrangeFlag(self):
+          '''
+          After optimizing calculate the Lagrange multipliers.
+          If they are close to zero then set the flag to 1, if there
+          are problems with them set the flag to -1
+          '''
+          flag = 1
+          gradP, gradTop = gradG(self.optiParams, self.x0, self.T0, self.grad0, self.x1, self.T1, self.grad1,
+                                 self.xHat, self.listIndices, self.listxk, self.listB0k, self.listBk,
+                                 self.listBkBk1, self.optiIndCrTop, self.optiParamsCrTop,
+                                 self.optiIndStTop, self.optiParamsStTop)
+          h = ( norm( self.x0 - self.x1) + norm(self.x0 - self.xHat))/2
+          # Check the multipliers for the points on H0k
+          for j in range(len(gradP)-1):
+               if( self.optiParams[j] == 0 and gradP[j] > h ):
+                    print(j)
+                    flag = -1
+                    return flag
+               elif( self.optiParams[j] == 1 and gradP[j] < -h):
+                    print(j)
+                    flag = -1
+                    return flag
+          # Check the multipliers for the points on Hkk1
+          currentCrTop = 0
+          currentStTop = 0
+          for j in range( len(self.listxk)-2):
+               k = 2*j - 1
+               if( j == self.optiIndCrTop[currentCrTop] ):
+                    rk = self.optiParamsCrTop[2*currentCrTop]
+                    sk = self.optiParamsCrTop[2*currentCrTop + 1]
+                    if( (rk == 0 and gradTop[k] > h) or (rk == 1 and gradTop[k] < -h) ):
+                         flag = -1
+                         return flag
+                    if( (sk == 0 and gradTop[k+1] > h) or (sk == 1 and gradTop[k+1] < -h) ):
+                         flag = -1
+                         return flag
+                    if( currentCrTop < len(self.optiIndCrTop) - 1):
+                         currentCrTop += 1
+               elif( j == self.optiIndStTop[currentStTop]):
+                    rk = self.optiParamsStTop[2*currentStTop]
+                    sk = self.optiParamsStTop[2*currentStTop + 1]
+                    if( (rk == 0 and gradTop[k] > h) or (rk == 1 and gradTop[k] < -h) ):
+                         flag = -1
+                         return flag
+                    if( (sk == 0 and gradTop[k+1] > h) or (sk == 1 and gradTop[k+1] < -h) ):
+                         flag = -1
+                         return flag
+                    if( currentStTop < len(self.optiIndStTop) - 1):
+                         currentStTop += 1
+          return flag
 
      def outputReadableJSON(self, triInfo):
           '''

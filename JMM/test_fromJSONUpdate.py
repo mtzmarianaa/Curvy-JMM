@@ -271,3 +271,104 @@ plt.title(" THAT: " + "{0:0.5f}".format(f_test) + "  true: " + "{0:0.5f}".format
 
 
 
+
+
+
+
+# Plots Lagrange multipliers
+
+indHat = 4297
+xHat = eik_coords[indHat]
+
+
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.plot( [xHat[0], x0[0]], [xHat[1], x0[1]], linewidth = 0.5, color = "black")
+
+ind0 = 2895
+ind1 = 5100
+
+plt.scatter( eik_coords[indHat, 0], eik_coords[indHat, 1], marker = '*', c = "#ff00b6", label = 'xHat')
+plt.scatter( eik_coords[ind0, 0], eik_coords[ind0, 1], marker = '+', label = 'x0')
+plt.scatter( eik_coords[ind1, 0], eik_coords[ind1, 1], marker = 's', label = 'x1')
+plt.legend()
+
+
+
+# Find points with problems
+indFinite = np.where( points_errors_eik > -np.inf)
+np.average( points_errors_eik[indFinite])
+
+indProblems = np.where( points_errors_eik >= 0.0001)
+indProblems = indProblems[0]
+
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.scatter( eik_coords[indProblems, 0], eik_coords[indProblems, 1])
+
+
+coordsProblems = eik_coords[indProblems] - x0
+test = np.argmin( norm(coordsProblems, axis = 1))
+#indHat = indProblems[test]
+
+indHat = 803
+xHat = eik_coords[indHat]
+norm( xHat - x0)
+
+ind0 = 492
+ind1 = 71
+
+ind0Used = 71
+ind1Used = 70
+
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.plot( [xHat[0], xSource[0]], [xHat[1], xSource[1]], linewidth = 0.5, color = "black")
+plt.scatter( eik_coords[indHat, 0], eik_coords[indHat, 1], marker = '*', c = "#ff00b6", label = 'xHat')
+plt.scatter( eik_coords[ind0, 0], eik_coords[ind0, 1], marker = '+', label = 'x0')
+plt.scatter( eik_coords[ind1, 0], eik_coords[ind1, 1], marker = 's', label = 'x1')
+plt.scatter( eik_coords[ind0Used, 0], eik_coords[ind0Used, 1], marker = '+', label = 'x0 used')
+plt.scatter( eik_coords[ind1Used, 0], eik_coords[ind1Used, 1], marker = 's', label = 'x1 used')
+plt.legend()
+
+
+
+
+
+
+self = triFan
+params = self.optiParams
+x0 = self.x0
+T0 = self.T0
+grad0 = self.grad0
+x1 = self.x1
+T1 = self.T1
+grad1 = self.grad1
+xHat = self.xHat
+listIndices = self.listIndices
+listxk = self.listxk
+listB0k = self.listB0k
+listBk = self.listBk
+listBkBk1 = self.listBkBk1
+indCrTop = self.optiIndCrTop
+indStTop = self.optiIndStTop
+paramsCrTop = self.optiParamsCrTop
+paramsStTop = self.optiParamsStTop
+
+
+gradP, gradTop = gradG(params, x0, T0, grad0, x1, T1, grad1, xHat,
+                       listIndices, listxk, listB0k, listBk,
+                       listBkBk1, indCrTop, paramsCrTop,
+                       indStTop, paramsStTop)
+
+
+itt.plotFann(self.x0, self.listB0k, self.listxk, self.listBk,
+             params = params, indCrTop = self.optiIndCrTop,
+             paramsCrTop = self.optiParamsCrTop, indStTop = self.optiIndStTop,
+             paramsStTop = self.optiParamsStTop, listBkBk1 = self.listBkBk1)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.plot( [xHat[0], xSource[0]], [xHat[1], xSource[1]], linewidth = 0.5, color = "black")
+
+print(params)
+print(-1*gradP)
+norm(gradP)

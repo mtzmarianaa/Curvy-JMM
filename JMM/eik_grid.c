@@ -510,7 +510,11 @@ void fanUpdate_fromSimple(fanUpdateS *fanUpdate) {
 		       indexRef);
   printf("  lambda simple update: %fl\n", lambda);
   printf("  derivative simple update: %fl\n", gPrime);
-  if( fabs(gPrime) > 0.0001 && fabs(lambda*(1-lambda)) < 0.0001  ){
+  double comparison, x1Minx0[2];
+  vec2_subtraction(fanUpdate->triFan->x1, fanUpdate->triFan->x0, x1Minx0);
+  comparison = l2norm(x1Minx0);
+  comparison = comparison*comparison;
+  if( fabs(gPrime) > comparison && fabs(lambda*(1-lambda)) < comparison  ){
     fanUpdate->flagMultipliers = 0;
   }
   else{
@@ -849,14 +853,16 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
   printf("ex python\n");
   pclose(fp);
   // try to separate this
-  double output[3];
-  separateARowDb(&buf[0], 3, output);
-  printf("Row in double: %1.20f   %1.20f   %1.20f\n", output[0], output[1], output[2]);
+  double output[4];
+  separateARowDb(&buf[0], 4, output);
+  printf("Row in double: %1.2f   %1.20f   %1.20f   %1.20f\n", output[0], output[1], output[2], output[3]);
   // add this information to fanUpdate
-  fanUpdate->THat = output[0];
-  fanUpdate->gradHat[0] = output[1];
-  fanUpdate->gradHat[1] = output[2];
-
+  fanUpdate->THat = output[1];
+  fanUpdate->gradHat[0] = output[2];
+  fanUpdate->gradHat[1] = output[3];
+  if( output[0] < 0){
+    fanUpdate->flagMultipliers = 0;
+  }
   updateNumber ++;
 
 }
