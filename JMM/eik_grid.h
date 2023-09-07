@@ -3,6 +3,7 @@
 #include "mesh2D.h"
 #include "linAlg.h"
 #include "priority_queue.h"
+#include "memCache.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,6 +40,7 @@ typedef struct fanUpdate {
   size_t flagMultipliers; // 0 if non zero lagrange multipliers, 1 if zero lagrange multipliers
 } fanUpdateS;
 
+
 typedef struct eik_grid {
   size_t *start; // the index of the point that is the source (could be multiple, that's why its a pointer)
   size_t nStart; // number of points in start
@@ -47,6 +49,8 @@ typedef struct eik_grid {
   double (*grads)[2]; // gradient of the eikonal
   p_queue *p_queueG; // priority queue struct
   size_t *current_states; // 0 far, 1 trial, 2 valid
+  size_t (*parents)[2]; // parents associated with each update for each node
+  memCacheS *memCache; // memory cache for the children of each node
 } eik_gridS;
 
 void eik_grid_alloc(eik_gridS **eik_g );
@@ -57,6 +61,10 @@ void fanUpdate_alloc(fanUpdateS **fanUpdate);
 
 void fanUpdate_dalloc(fanUpdateS **fanUpdate);
 
+void fanCache_alloc(fanCacheS **fanCache);
+
+void fanCache_dealloc(fanCacheS **fanCache);
+
 void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh2);
 
 void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
@@ -65,6 +73,9 @@ void fanUpdate_init(fanUpdateS *fanUpdate, triangleFanS *triFan, double *params,
 		    size_t nIndStTop, size_t *indStTop, double *paramsStTop,
 		    double THat, double (*grads)[2], double (*path)[2],
 		    double gradHat[2]);
+
+void fanCache_init(fanCacheS *fanCache, size_t index0, size_t index1,
+		   size_t index2, size_t indexChild, size_t firstTriangle);
 
 void fanUpdate_initPreOpti(fanUpdateS *fanUpdate, triangleFanS *triFan, double T0,
 			   double grad0[2], double T1, double grad1[2]);
@@ -81,6 +92,10 @@ void printInfoFanUpdate(fanUpdateS *fanUpdate);
 void printAllInfoMesh(eik_gridS *eik_g);
 
 void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int indices2[2], int firstTriangles[2]);
+
+size_t countValidNeighbors(eik_gridS *eik_g, size_t index0);
+
+void findFiniteEdges(eik_gridS *eik_g, size_t index0, size_t nValid, size_t *index1);
 
 void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
 		size_t index0, size_t index1, size_t index2,
@@ -101,8 +116,17 @@ void deserializeJSONoutput(fanUpdateS *fanUpdate, json_object *output_obj);
 
 void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate);
 
+void optimizeTriangleFan(eik_gridS *eik_g, fanUpdateS *fanUpdate,
+			 size_t firstTriangle, size_t index0,
+			 size_t index1);
+
 void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
 		  int indexStop_int, size_t firstTriangle);
+
+void adjust_fromCache(eik_gridS *eik_g, size_t indexHat);
+
+void updateOneWayLabelCorrect(eik_gridS *eik_g, size_t index0, size_t index1,
+			      size_t index2, size_t firstTriangle);
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex);
 

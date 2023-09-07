@@ -23,6 +23,9 @@ int main(){
     start = &start_int;
     nStart = 1;
 
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /* pathPoints = "./EasyGeom/H00/H00_MeshPoints.txt"; */
     /* pathFaces = "./EasyGeom/H00/H00_Faces.txt"; */
     /* pathEdges = "./EasyGeom/H00/H00_Edges.txt"; */
@@ -67,7 +70,7 @@ int main(){
 
     /* eik_grid_dealloc(&eik_g1); */
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     pathPoints = "./EasyGeom/H10/H10_MeshPoints.txt";
     pathFaces = "./EasyGeom/H10/H10_Faces.txt";
@@ -105,10 +108,12 @@ int main(){
     printGeneralInfo(eik_g4);
 
     eik_grid_dealloc(&eik_g4);
+    
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-
+    
     /* pathPoints = "./EasyGeom/H01/H01_MeshPoints.txt"; */
     /* pathFaces = "./EasyGeom/H01/H01_Faces.txt"; */
     /* pathEdges = "./EasyGeom/H01/H01_Edges.txt"; */
@@ -145,6 +150,9 @@ int main(){
     /* printGeneralInfo(eik_g2); */
 
     /* eik_grid_dealloc(&eik_g2); */
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -188,7 +196,8 @@ int main(){
 
 
 
-
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
 
     /* pathPoints = "./EasyGeom/H02/H02_MeshPoints.txt"; */
     /* pathFaces = "./EasyGeom/H02/H02_Faces.txt"; */
@@ -226,6 +235,50 @@ int main(){
     /* printGeneralInfo(eik_g3); */
 
     /* eik_grid_dealloc(&eik_g3); */
+
+
+    
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     
+
+    /* pathPoints = "./EasyGeom/H12/H12_MeshPoints.txt"; */
+    /* pathFaces = "./EasyGeom/H12/H12_Faces.txt"; */
+    /* pathEdges = "./EasyGeom/H12/H12_Edges.txt"; */
+    /* pathEdgesInFace = "./EasyGeom/H12/H12_EdgesInFace.txt"; */
+    /* pathNeighbors = "./EasyGeom/H12/H12_Neigh.txt"; */
+    /* pathIncidentFaces = "./EasyGeom/H12/H12_IncidentFaces.txt"; */
+    /* pathIndices = "./EasyGeom/H12/H12_Indices.txt"; */
+    /* pathIndices = "./EasyGeom/H12/H12_Indices.txt"; */
+    /* pathBoundary = "./EasyGeom/H12/H12_BoundaryCurve.txt"; */
+
+    /* pathSaveEiks = "./EasyGeom/H12/H12_ComputedValuesFast.bin"; */
+    /* pathSaveGrads = "./EasyGeom/H12/H12_ComputedGradientsFast.bin"; */
+    /* pathTimes = "./EasyGeom/H12/H12_TimesFast.bin"; */
+
+    /* eik_gridS *eik_g3; */
+    /* eik_grid_alloc(&eik_g3); */
+
+    /* eik_grid_initFromFile(eik_g3, start, nStart, pathPoints, pathFaces, pathEdges, pathEdgesInFace, */
+    /* 			  pathNeighbors, pathIncidentFaces, pathIndices, pathBoundary); */
+
+    /* printEverythingInMesh(eik_g3->mesh2); */
+
+    /* start_t = clock(); */
+    /* marcher_T2(eik_g3, rBall);; */
+    /* end_t = clock(); */
+    /* time = (double)(end_t - start_t)/ CLOCKS_PER_SEC; */
+    /* time_taken[0] = time; */
+    
+
+    /* saveComputedValues(eik_g3, pathSaveEiks); */
+    /* saveComputedGradients(eik_g3, pathSaveGrads); */
+    /* saveTimes(time_taken, pathTimes); */
+
+    /* printGeneralInfo(eik_g3); */
+
+    /* eik_grid_dealloc(&eik_g3); */
+
 
 
     

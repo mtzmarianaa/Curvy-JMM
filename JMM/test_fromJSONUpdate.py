@@ -29,7 +29,7 @@ def printWhichUpdate(xHat, path = "./updates/", maxF = 16560):
 
 # Read necessary information
 H = "H5"
-path_general = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/'
+path_general = '/Users/marianamartinez/Documents/Curvy-JMM/JMM/EasyGeom/'
 path_information = path_general + H + "/" + H
 eik_vals = np.fromfile(path_information + "_ComputedValuesFast.bin")
 eik_coords = np.genfromtxt(path_information + "_MeshPoints.txt", delimiter=",")
@@ -372,3 +372,48 @@ plt.plot( [xHat[0], xSource[0]], [xHat[1], xSource[1]], linewidth = 0.5, color =
 print(params)
 print(-1*gradP)
 norm(gradP)
+
+
+
+indHat = 41628
+neis = [41693, 44972, 43264, 43265, 43266, 44970, 44969]
+nNeis = len(neis)
+
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.plot( [xHat[0], xSource[0]], [xHat[1], xSource[1]], linewidth = 0.5, color = "black")
+plt.scatter( eik_coords[indHat, 0], eik_coords[indHat, 1], marker = '*', c = "#ff00b6", label = 'xHat')
+for i in range(nNeis):
+    plt.scatter( eik_coords[neis[i], 0], eik_coords[neis[i], 1], label = str(neis[i]))
+plt.legend()
+
+
+
+
+
+
+path_trueSolution = Path( path_information + "_true_values.txt" )
+path_trueGrads = Path( path_information + "_true_grads.txt" )
+path_trueSolGrid = Path( path_information + "_trueSolGrid.txt" )
+
+trueSol = np.genfromtxt(path_trueSolution, delimiter=",")
+trueGrads = np.genfromtxt(path_trueGrads, delimiter=",")
+
+points_errors_grads = np.zeros((nPoints))
+points_errors_eik = np.zeros((nPoints))
+for i in range(nPoints):
+    points_errors_grads[i] = angle_error( trueGrads[i, :], eik_grads[i, :])
+    points_errors_eik[i] = trueSol[i] - eik_vals[i]
+
+
+indOutsideInitialBall = np.where( np.sqrt( np.power( eik_coords[:, 0] - x0[0], 2) + np.power( eik_coords[:, 1] - x0[1], 2)) > 0.5)
+vMaxAbs = np.amax(points_errors_eik[indOutsideInitialBall])
+vMaxAbsGrads = np.amax(points_errors_grads[indOutsideInitialBall])
+
+
+plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)
+plt.triplot(eik_coords[:, 0], eik_coords[:, 1], triangles_points, '-.', lw=0.2, c='#000000')
+plt.scatter(eik_coords[:, 0], eik_coords[:, 1], s = 8, c = points_errors_eik, cmap = colormap1, vmin = 0, vmax = vMaxAbs)
+
+
+

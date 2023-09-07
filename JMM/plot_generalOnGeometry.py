@@ -39,8 +39,8 @@ colormap5  = "cet_linear_worb_100_25_c53"
 
 
 spacingGrid = 10
-nx_default = 36*spacingGrid
-ny_default = 42*spacingGrid
+nx_default = 50*spacingGrid
+ny_default = 50*spacingGrid
 my_dpi=96
 eta1_default = 1.0
 eta2_default = 1.0
@@ -110,6 +110,8 @@ def solutionLineOneIndex(points, x0 = x0_default):
 def generatePlotsOnGeometry(H, type = 0, x0 = None, show = True, saveFigures = True, path_information = path_information, eta1 = None, eta2 = None):
     '''
     Function To Generate plots regarding the numerical solution to the Eikonal in a given domain
+         type 0 : one index of refraction on the whole domain
+         type 1: square, two indices of refraction
     '''
     path_information = path_information + H + "/" + H
     xi, yi = np.meshgrid(np.linspace(-2, 2, nx_default), np.linspace(-2, 2, ny_default))
@@ -172,6 +174,9 @@ def generatePlotsOnGeometry(H, type = 0, x0 = None, show = True, saveFigures = T
     indOutsideInitialBall = np.where( np.sqrt( np.power( eik_coords[:, 0] - x0[0], 2) + np.power( eik_coords[:, 1] - x0[1], 2)) > 0.5)
     vMaxAbs = np.amax(points_errors_eik[indOutsideInitialBall])
     vMaxAbsGrads = np.amax(points_errors_grads[indOutsideInitialBall])
+
+    print("\n\nRELATIVE ERROR EIKONAL:     ", norm(points_errors_eik)/norm(trueSol), "\n")
+    print("\n\nRELATIVE ERROR GRADIENTS:   ", norm( norm(trueGrads - eik_grads, axis = 1 ))/ norm( norm(trueGrads, axis = 1)), "\n")
         
     # ABSOLUTE ERRORS (POINT-WISE)
     fig = plt.figure(figsize=(800/my_dpi, 800/my_dpi), dpi=my_dpi)

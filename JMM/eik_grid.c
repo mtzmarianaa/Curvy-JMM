@@ -47,10 +47,16 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   double *eik_vals;
   double (*grads)[2]; // this is a pointer to a list of the gradients of the eikonal
   size_t *current_states;
+  size_t (*parents)[2]; // initialize the parents of the nodes
+  size_t initParents;
+  memCacheS *memCache;
 
   eik_vals = malloc(mesh2->nPoints*sizeof(double));
   current_states = malloc(mesh2->nPoints*sizeof(size_t));
   grads = malloc(2*mesh2->nPoints*sizeof(double));
+  parents = malloc(2*mesh2->nPoints*sizeof(size_t));
+  memCache = malloc(mesh2->nPoints*sizeof(memCacheS));
+  initParents = mesh2->nPoints + 10;
 
 
   for(int i = 0; i<mesh2->nPoints; i++){
@@ -58,11 +64,16 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
     current_states[i] = 0; // set them all to far
     grads[i][0] = 0;
     grads[i][1] = 0;
+    parents[i][0] = initParents;
+    parents[i][1] = initParents;
+    memCache_init(&memCache[i]); // initalize, no point was children yet
   }
 
   eik_g->eik_vals = eik_vals;
   eik_g->current_states = current_states;
   eik_g->grads = grads;
+  eik_g->parents = parents;
+  eik_g->memCache = memCache;
 
   // we initialize the priority queue, all the elements in start are going to be inserted and their current states set to 1
   // notice that we need to add both the index of the starting points AND their eikonal value (which is 0) to the p_queue struct
@@ -74,6 +85,8 @@ void eik_grid_init( eik_gridS *eik_g, size_t *start, size_t nStart, mesh2S *mesh
   }
   eik_g->p_queueG = p_queueG;
   assert(&eik_g != NULL); // eik_g should not be null
+
+  
 }
 
 
@@ -305,6 +318,37 @@ void findEdgesOnValidFront(eik_gridS *eik_g, size_t index0, int indices1[2], int
   //assert( indices1[0] != -1 || indices1[1] != -1);
 }
 
+size_t countValidNeighbors(eik_gridS *eik_g, size_t index0) {
+  // counts the number of neighbors of index0 with label set to 2
+  int nNeis;
+  size_t nValid, j, thisNeighbor;
+  nValid = 0; // initally we don't have valid neighbors
+  nNeis = eik_g->mesh2->neighbors[index0].len; // get the number of neighbors of index0
+
+  for( j = 0; j<nNeis; j++){
+    thisNeighbor = eik_g->mesh2->neighbors[index0].neis_i[j];
+    if( eik_g->current_states[thisNeighbor] > 0){
+      nValid ++;
+    }
+  }
+  return nValid;
+}
+
+
+void findFiniteEdges(eik_gridS *eik_g, size_t index0, size_t nValid, size_t *index1) {
+  // given a newly accepted node with index index0 go around its neighbors
+  size_t j, i, thisNeighbor;
+  i = 0;
+  int nNeis = eik_g->mesh2->neighbors[index0].len; // get the number of neighbors of index0
+  for( j = 0; j<nNeis; j++){
+    thisNeighbor = eik_g->mesh2->neighbors[index0].neis_i[j];
+    if( eik_g->current_states[thisNeighbor] > 0){
+      index1[i] = thisNeighbor;
+      i ++;
+    }
+  }
+  
+}
 
 
 
@@ -355,6 +399,12 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
       indexk1 = possibleThirdVertices[1];
       thisTriangle = (size_t)possibleTriangles[1];
     }
+    if( indexk1 < 0 || possibleTriangles[0] == -1 ||
+	possibleTriangles[1] == -1){
+      // in case we don't have a valid next neighbor, abort constructing this triangle fan
+      angleMax[0] = 6;
+      return;
+    }
     // update
     xk[0] = xk1[0];
     xk[1] = xk1[1];
@@ -392,18 +442,24 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   listIndicesNodes[0] = index0;
   listIndicesNodes[1] =  index1;
   listIndicesNodes[2] =  index2;
+  
   while( indexk1 != indexHat ) {
     // circle around and see what we get
     twoTrianglesFromEdge(eik_g->mesh2, index0, indexk1, possibleTriangles, possibleThirdVertices);
-    if( thisTriangle != (size_t)possibleTriangles[0] ) {
+    if( thisTriangle != (size_t)possibleTriangles[0] && possibleTriangles[0] != -1 ) {
       // the next triangle is possibleTriangles[0]
       indexk1 = possibleThirdVertices[0];
       thisTriangle = (size_t)possibleTriangles[0];
     }
-    else {
+    else if(possibleTriangles[1] != -1 ){
       // the next triangle is possibleTriangles[1]
       indexk1 = possibleThirdVertices[1];
       thisTriangle = (size_t)possibleTriangles[1];
+    }
+    else{
+      indexk1 = indexHat;
+      angleMax[0] = 6;
+      return;
     }
     listIndicesNodes[i] = indexk1;
     i ++;
@@ -415,8 +471,10 @@ void initTriFan(eik_gridS *eik_g, triangleFanS *triFan,
   printf("\n Trying to initialize a triangleFan with  index0: %zu,  index1:  %zu,  indexHat:  %zu\n",
 	 index0, index1, indexHat);
   printf("For this init we have %zu Regions\n", nRegions);
-  triangleFan_initFromIndices(triFan, eik_g->mesh2, nRegions, index0,
+  if( angleMax[0] <= 0.98){
+    triangleFan_initFromIndices(triFan, eik_g->mesh2, nRegions, index0,
 			      index1, indexHat, listIndicesNodes);
+  }
 }
 
 
@@ -454,6 +512,7 @@ void simple_Update(double x0[2], double x1[2], double xHat[2],
   approximateEikonalGradient(x0, x1, xHat, *lambda, indexRef, grad);
   printf("\n   T0: %fl\n   grad0: %fl % fl \n   T1: %fl\n   grad1: %fl %fl\n\n", T0, grad0[0], grad0[1], T1, grad1[0], grad1[1]);
 }
+
 
 void fanUpdate_fromSimple(fanUpdateS *fanUpdate) {
   // update a triangle fan using a simple update (not python, just C and the secant method)
@@ -868,6 +927,77 @@ void optimizeTriangleFan_wPython(fanUpdateS *fanUpdate) {
 }
 
 
+void optimizeTriangleFan(eik_gridS *eik_g, fanUpdateS *fanUpdate,
+			 size_t firstTriangle, size_t index0, size_t index1) {
+  // assess the type of optimization method to use in this
+  // particular triangle fan and optimize it
+  // first determines if the gradients on x0, x1 should
+  // be changed to fulfill Snell's law, then determines
+  // if this is a simple triangle update or needs to use Python
+  size_t allSameIndices, indexLastFace;
+  /////////////////// OPTIMIZE!
+  allSameIndices = allSameTriangles(fanUpdate->triFan); // see if all the indices in this fan are the same
+  // MAYBE WE NEED SNELLS LAW
+  double etaOutside, tanChange[2], etaInside, gradSnell[2], needSnells0, needSnells1;
+  needSnells0 = fabs( l2norm(fanUpdate->grad0) - fanUpdate->triFan->listIndices[0] );
+  needSnells1 = fabs( l2norm(fanUpdate->grad1) - fanUpdate->triFan->listIndices[0] );
+  // test if maybe only x0 or x1 are on the boundary
+  if( pointOnBoundary(eik_g->mesh2, index0) == 1 && needSnells0 > 0.01 && needSnells1 < 0.01  )   {
+    printf("\nNeed to recompute grad0 using Snells\n");
+    printf("Initial grad0: %fl  %fl\n", fanUpdate->grad0[0], fanUpdate->grad0[1]);
+    // compute the tangent and eta inside the first triangle
+    indexLastFace = fanUpdate->triFan->nRegions - 1;
+    etaInside = fanUpdate->triFan->listIndices[indexLastFace];
+    etaOutside = l2norm(fanUpdate->grad0);
+    getTangentChangeReg(eik_g->mesh2, index0, firstTriangle, tanChange, etaOutside);
+    printf("Tangent at x0: %fl %fl\n", tanChange[0], tanChange[1]);
+    printf("Eta inside: %fl,  eta outside:  %fl\n", etaInside, etaOutside);
+    // compute the new gradient on this side 
+    oneGradFromSnells(eik_g->mesh2, fanUpdate->triFan->x0,
+		      fanUpdate->triFan->xHat,
+		      fanUpdate->grad0, tanChange,
+		      etaOutside, etaInside, gradSnell);
+    // update
+    fanUpdate->grad0[0] = gradSnell[0];
+    fanUpdate->grad0[1] = gradSnell[1];
+  }
+
+  if( pointOnBoundary(eik_g->mesh2, index1) == 1 && needSnells1 > 0.01 && needSnells1 < 0.01 ){
+    printf("\nNeed to recompute grad1 using Snells\n");
+    printf("Initial grad1: %fl  %fl\n", fanUpdate->grad1[0], fanUpdate->grad1[1]);
+    // compute the tangent and eta inside the first triangle
+    indexLastFace = fanUpdate->triFan->nRegions - 1;
+    etaInside = fanUpdate->triFan->listIndices[indexLastFace];
+    etaOutside = l2norm(fanUpdate->grad1);
+    getTangentChangeReg(eik_g->mesh2, index1, firstTriangle, tanChange, etaOutside);
+    // compute the new gradient on this side
+    printf("Tangent at x1: %fl %fl\n", tanChange[0], tanChange[1]);
+    printf("Eta inside: %fl,  eta outside:  %fl\n", etaInside, etaOutside);
+    oneGradFromSnells(eik_g->mesh2, fanUpdate->triFan->x1,
+		      fanUpdate->triFan->xHat,
+		      fanUpdate->grad1, tanChange,
+		      etaOutside, etaInside, gradSnell);
+    // update
+    fanUpdate->grad1[0] = gradSnell[0];
+    fanUpdate->grad1[1] = gradSnell[1];
+  }
+    
+  if( !allSameIndices ){
+    // there are different indices of refraction in this triangle fan, we need the
+    // complicated optimization technique
+    printf("\nOptimization using Python\n\n");
+    // if this is the case we need to see if the edge x0x1 is on the boundary
+    optimizeTriangleFan_wPython(fanUpdate);
+  }
+  else{
+    // all the indices of refraction in this triangle fan are the same
+    // there is no need to use python, this is a simple update done with C
+    printf("\nSimple optimization using C\n\n");
+    fanUpdate_fromSimple(fanUpdate);
+  }
+}
+
+
 void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
 		  int indexStop_int, size_t firstTriangle) {
   printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
@@ -884,8 +1014,8 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   T1 = eik_g->eik_vals[index1];
   grad1[0] = eik_g->grads[index1][0];
   grad1[1] = eik_g->grads[index1][1];
-  //printf("Using index0: %zu  with T0: %f,  grad0: %f  %f,  index1: %zu  with T1: %f,  grad1: %f  %f",
-  //	 index0, T0, grad0[0], grad0[1], index1, T1, grad1[0], grad1[1]);
+  printf("Using index0: %zu  with T0: %f,  grad0: %f  %f,  index1: %zu  with T1: %f,  grad1: %f  %f",
+  	 index0, T0, grad0[0], grad0[1], index1, T1, grad1[0], grad1[1]);
   size_t indexStop;
   if(indexStop_int < 0){
     // meaning that we dont have an index stop, this is an artificial value
@@ -1037,62 +1167,215 @@ void updateOneWay(eik_gridS *eik_g, size_t index0, size_t index1, size_t index2,
   fanUpdate_dalloc(&currentTriangleFanUpdate);
 }
 
+void adjust_fromCache(eik_gridS *eik_g, size_t indexHat) {
+  // if indexHat has been adjusted then we also need to update its children
+  // this is done with the memory cache
+  if( eik_g->memCache[indexHat].size == 0){
+    // no children, we don't need to update anything
+    return;
+  }
+  // if it has children then we need to update them
+  int i;
+  size_t indexChild, index0, index1, index2, firstTriangle;
+  double T0, grad0[2], T1, grad1[2], *angleMax;
+  triangleFanS *triFan;
+  fanUpdateS *fanUpdate;
+  angleMax = malloc(sizeof(double));
+  triangleFan_alloc(&triFan);
+  fanUpdate_alloc(&fanUpdate);
+  for(i = 0; i<eik_g->memCache[indexHat].size; i++){
+    // initialize the triangle fan we are working with
+    indexChild = eik_g->memCache[indexHat].indexChildren[i];
+    index0 = eik_g->memCache[indexHat].fanChildren[i].index0;
+    index1 = eik_g->memCache[indexHat].fanChildren[i].index1;
+    index2 = eik_g->memCache[indexHat].fanChildren[i].index2;
+    firstTriangle = eik_g->memCache[indexHat].fanChildren[i].firstTriangle;
+    initTriFan(eik_g, triFan, index0, index1, index2, indexChild, firstTriangle, angleMax);
+    T0 = eik_g->eik_vals[index0];
+    grad0[0] = eik_g->grads[index0][0];
+    grad0[1] = eik_g->grads[index0][1];
+    T1 = eik_g->eik_vals[index1];
+    grad1[0] = eik_g->grads[index1][0];
+    grad1[1] = eik_g->grads[index1][1];
+    fanUpdate_initPreOpti(fanUpdate, triFan, T0, grad0, T1, grad1);
+    optimizeTriangleFan(eik_g, fanUpdate, firstTriangle, index0, index1);	
+    printf("  THat found of child %zu : %f\n", indexChild, fanUpdate->THat);
+    // save this
+    eik_g->eik_vals[indexChild] = fanUpdate->THat;
+    eik_g->grads[indexChild][0] = fanUpdate->gradHat[0];
+    eik_g->grads[indexChild][1] = fanUpdate->gradHat[1];
+    // and update this value in the priority queue (update if in queue, insert if not)
+    // update the priority queue
+    if( eik_g->current_states[indexChild] == 1 ){
+      // current state of xHat = trial
+      update(eik_g->p_queueG, fanUpdate->THat, indexChild); // update THat in the queue
+    }
+    else{
+      // insert
+      eik_g->current_states[indexChild] = 1; // set current state of xHat to trial
+      insert(eik_g->p_queueG, fanUpdate->THat, indexChild); // insert THat to the queue
+    }
+  }
+  // dealloc triFan and fanUpdate
+  triangleFan_dalloc(&triFan);
+  fanUpdate_dalloc(&fanUpdate);
+}
+
+
+void updateOneWayLabelCorrect(eik_gridS *eik_g, size_t index0, size_t index1,
+			      size_t index2, size_t firstTriangle) {
+  printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+  // given a starting edge on the valid front update a far/trial
+  // set of triangles until indexStop is reached (going on the direction of firstTriangle)
+  size_t possibleNextIndices[2];
+  int possibleNextTriangles[2];
+  int i;
+  double T0, grad0[2], T1, grad1[2], *angleMax;
+  angleMax = malloc(sizeof(double));
+  T0 = eik_g->eik_vals[index0];
+  grad0[0] = eik_g->grads[index0][0];
+  grad0[1] = eik_g->grads[index0][1];
+  T1 = eik_g->eik_vals[index1];
+  grad1[0] = eik_g->grads[index1][0];
+  grad1[1] = eik_g->grads[index1][1];
+  
+  // for the first triangle
+  triangleFanS *currentTriangleFan;
+  triangleFan_alloc(&currentTriangleFan);
+  fanUpdateS *currentTriangleFanUpdate;
+  fanUpdate_alloc(&currentTriangleFanUpdate);
+  size_t prevTriang, thisTriang;
+  prevTriang = firstTriangle;
+  thisTriang = firstTriangle;
+  size_t *allPossibleIndicesNodes, nRegions; // in here we are going to store all possible
+  // nodes for the triangle fans, the key is to use nRegions to initialize correctly
+  // a specific triangle fan
+  allPossibleIndicesNodes = malloc(eik_g->mesh2->neighbors->len*sizeof(size_t));
+  ///////////////////////////////////////////////////////////
+  // FOR THE FIRST ONE
+  size_t indexHat, oldParent0, oldParent1;
+  indexHat = index2;
+  allPossibleIndicesNodes[0] = index0;
+  allPossibleIndicesNodes[1] = index1;
+  allPossibleIndicesNodes[2] = index2;
+  i = 1;
+  nRegions = 1; // because we have one triangle to begin with
+  while( i<(eik_g->mesh2->neighbors[index0].len ) && indexHat != index1 ){
+    // see if this is a viable xHat
+    initTriFan(eik_g, currentTriangleFan, index0, index1, index2,
+	       indexHat, firstTriangle, angleMax);
+    //printf("Angle in this triangleFan %f\n", angleMax[0]);
+    if( fabs(angleMax[0]) > 1.0){
+      printf("\n\nangleMax is greater than pi\n");
+      return;
+    }
+    // initialize the triangle update
+    fanUpdate_initPreOpti(currentTriangleFanUpdate, currentTriangleFan,
+			  T0, grad0, T1, grad1);
+    currentTriangleFanUpdate->THat = eik_g->eik_vals[indexHat];
+    
+    /////////////////// OPTIMIZE using void
+    optimizeTriangleFan(eik_g, currentTriangleFanUpdate, firstTriangle,
+			index0, index1);
+			
+    printf("THat found: %f\n", currentTriangleFanUpdate->THat);
+    
+    // if we found a good update OR x0, x1 were their initial parents
+    if( eik_g->eik_vals[indexHat] > currentTriangleFanUpdate->THat ||
+	(eik_g->parents[indexHat][0] == index0 && eik_g->parents[indexHat][1] == index1 ) ||
+	(eik_g->parents[indexHat][1] == index0 && eik_g->parents[indexHat][1] == index0 ) ){
+      assert( T0 < currentTriangleFanUpdate->THat ||  T1 < currentTriangleFanUpdate->THat); // the current update must be greater than T0
+      // meaning we found a better update
+      // if xHat has parents then put delete them
+      if( eik_g->parents[indexHat][0] != eik_g->parents[indexHat][1] ){
+	oldParent0 = eik_g->parents[indexHat][0];
+	oldParent1 = eik_g->parents[indexHat][1];
+	delete_child(&eik_g->memCache[oldParent0], indexHat);
+	delete_child(&eik_g->memCache[oldParent1], indexHat);
+	// and update its children
+	printf("  \nAdjusting eikonal for %zu's children\n", indexHat);
+	adjust_fromCache(eik_g, indexHat);
+      }
+      printf("\n This THat is better than the previous stored eikonal: %fl\n", eik_g->eik_vals[indexHat]);
+      eik_g->eik_vals[indexHat] = currentTriangleFanUpdate->THat;
+      eik_g->grads[indexHat][0] = currentTriangleFanUpdate->gradHat[0];
+      eik_g->grads[indexHat][1] = currentTriangleFanUpdate->gradHat[1];
+      eik_g->parents[indexHat][0] = index0; // add their parents
+      eik_g->parents[indexHat][1] = index1; // add their parents
+      // add xHat as a child of both x0 and x1
+      insert_memCache(&eik_g->memCache[index0], index0, index1, index2, indexHat, firstTriangle);
+      insert_memCache(&eik_g->memCache[index1], index0, index1, index2, indexHat, firstTriangle);
+      // update the priority queue
+      if( eik_g->current_states[indexHat] == 1 ){
+	// current state of xHat = trial
+	update(eik_g->p_queueG, currentTriangleFanUpdate->THat, indexHat); // update THat in the queue
+      }
+      else{
+	// current state of xHat = far or current state of xHat == valid, reinsert
+	eik_g->current_states[indexHat] = 1; // set current state of xHat to trial
+	insert(eik_g->p_queueG, currentTriangleFanUpdate->THat, indexHat); // insert THat to the queue
+      }
+    }
+    //////// MARCH TO THE OTHER TRIANGLE
+    prevTriang = thisTriang;
+    twoTrianglesFromEdge(eik_g->mesh2, index0, indexHat, possibleNextTriangles, possibleNextIndices);
+    if( (size_t)possibleNextTriangles[0] == prevTriang && possibleNextTriangles[1] != -1 ){
+      // we should march in the possibleNextTriangles[1] direction
+      thisTriang = (size_t)possibleNextTriangles[1];
+      indexHat = possibleNextIndices[1];
+    }
+    else if (possibleNextTriangles[0] != -1) {
+      thisTriang = (size_t)possibleNextTriangles[0];
+      indexHat = possibleNextIndices[0];
+    }
+    else{
+      // set a flag, there is no next triangle to march to
+      printf("\n Last xHat was on an edge, we can't continue marching to another triangle\n");
+      return;
+    }
+    allPossibleIndicesNodes[i] = indexHat;
+    nRegions ++;
+    i ++;
+  }
+  triangleFan_dalloc(&currentTriangleFan);
+  fanUpdate_dalloc(&currentTriangleFanUpdate);
+  printf(" - \n");
+}
+
 
 
 void addNeighbors_fromAccepted(eik_gridS *eik_g, size_t minIndex) {
   // given a recently accepted node with index minIndex we update its neighbors
-  // using triangle fans and up to two valid edges
-  // update from edges on valid front
-  int indices1[2], indices2[2], firstTriangles[2];
-  findEdgesOnValidFront(eik_g, minIndex, indices1, indices2, firstTriangles);
-  //printf("Edges from valid, indices1: %d %d\n indices2: %d %d\n firsttriangles: %d %d",
-  //	 indices1[0], indices1[1], indices2[0], indices2[1], firstTriangles[0], firstTriangles[1]);
-  // start with indices2[0]
-  size_t index1, index2, firstTriangle;
-  int indexStop_int;
-  if( indices2[0] > 0 && firstTriangles[0] != -1){
-    index1 = (size_t) indices1[0];
-    index2 = (size_t) indices2[0];
-    firstTriangle = (size_t) firstTriangles[0];
-    indexStop_int = indices1[1];
-    updateOneWay(eik_g, minIndex, index1, index2, indexStop_int, firstTriangle);
-  }
-  // now with indices2[1] if doable
-  if( indices2[1] > 0 && firstTriangles[1] != -1){
-    index1 = (size_t) indices1[1];
-    index2 = (size_t) indices2[1];
-    firstTriangle = (size_t) firstTriangles[1];
-    indexStop_int = indices1[0];
-    updateOneWay(eik_g, minIndex, index1, index2, indexStop_int, firstTriangle);
+  // first count the number of neighbors with current label set as 2
+  size_t nValid = countValidNeighbors(eik_g, minIndex);
+  size_t *indices1, index1, index2, possibleThirdVertices[2];
+  int possibleTriangles[2];
+  // save those indices
+  indices1 = malloc(nValid*sizeof(size_t));
+  findFiniteEdges(eik_g, minIndex, nValid, indices1);
+  // now loop through those indices and update all the nodes
+  size_t j;
+  for( j =0; j<nValid; j++){
+    // find the two triangles and possible third indices
+    index1 = indices1[j];
+    printf("\n index1: %zu\n", index1);
+    // then we need to consider both directions for the adjacent triangles to this edge
+    twoTrianglesFromEdge(eik_g->mesh2, minIndex, index1, possibleTriangles, possibleThirdVertices);
+    if( possibleTriangles[0] != -1){
+      // means that we do have a next triangle in this direction
+      index2 = possibleThirdVertices[0];
+      printf("\n index2 from possibleThirdVertices[0]: %zu\n", index2);
+      updateOneWayLabelCorrect(eik_g, minIndex, index1, index2, possibleThirdVertices[0]);
+    }
+    if( possibleTriangles[1] != -1){
+      // means that we do have a next triangle in this direction
+      index2 = possibleThirdVertices[1];
+      printf("\n index2 from possibleThirdVertices[1]: %zu\n", index2);
+      updateOneWayLabelCorrect(eik_g, minIndex, index1, index2, possibleThirdVertices[1]);
+    }
   }
 }
 
-
-/* void triangleFanUpdate_pointNear(eik_gridS *eik_g, size_t index0, size_t indexStart, double eta) { */
-/*   // update the triangleFanUpdate for those point who were intialized at the */
-/*   // begining of the method, at initializePoitnsNear */
-/*   double x0MinxStart[2], xStart[2], x0[2]; */
-/*   xStart[0] = eik_g->mesh2->points[indexStart][0]; */
-/*   xStart[1] = eik_g->mesh2->points[indexStart][1]; */
-/*   x0[0] = eik_g->mesh2->points[index0][0]; */
-/*   x0[1] = eik_g->mesh2->points[index0][1]; */
-/*   vec2_subtraction(x0, xStart, x0MinxStart); // for both T0 and grad0 */
-/*   double grad0[2], T0; */
-/*   T0 = eta*l2norm(x0MinxStart); */
-/*   printf("T0: %f\n", T0); */
-/*   grad0[0] = eta*x0MinxStart[0]; */
-/*   grad0[1] = eta*x0MinxStart[1]; */
-/*   // initialize the triangle Fan for the triangle fan update */
-/*   triangleFanS *triFan; */
-/*   triangleFan_alloc(&triFan); */
-/*   triangleFan_init(triFan, 0, xStart, xStart, x0, NULL, NULL, NULL, NULL, NULL, NULL, NULL); */
-/*   fanUpdate_init(&eik_g->fanUpdate[index0], triFan, NULL, */
-/* 		 0, NULL, 0, NULL, */
-/* 		 0, NULL, NULL, */
-/* 		 0, NULL, NULL, */
-/* 		 T0, NULL, NULL, grad0); */
-/*   triangleFan_dalloc(&triFan); */
-/* } */
 
 
 
@@ -1140,6 +1423,8 @@ void initializePointsNear(eik_gridS *eik_g, double rBall) {
 	printf("Update point near\n");
 	eik_g->grads[i][0] = initialEta*(xMinxStart[0]/normCurrent);
 	eik_g->grads[i][1] = initialEta*(xMinxStart[1]/normCurrent);
+	eik_g->parents[i][0] = indexStart; // both of their parents are xSource
+	eik_g->parents[i][1] = indexStart;
       }
     }
   }
